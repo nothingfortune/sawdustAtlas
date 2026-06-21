@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, Trash2, Warehouse } from 'lucide-react'
+import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ShopProject } from '../types'
 import { createId } from '../id'
 import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
@@ -25,13 +25,15 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   const [zoom, setZoom] = useState(.74)
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
   const [customObject, setCustomObject] = useState<ShopObjectDefinition>(DEFAULT_CUSTOM_OBJECT)
+  const [leftOpen, setLeftOpen] = useState(false)
+  const [rightOpen, setRightOpen] = useState(false)
   const item = project?.items.find(i => i.id === selected)
   const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateItem = (id: string, patch: Partial<ShopItem>) => project && update({ items: project.items.map(i => i.id === id ? { ...i, ...patch } : i) })
   const addItem = (definition: ShopObjectDefinition) => {
     if (!project) return
     const next = createShopItem({ ...definition, name: definition.name.trim() || 'Custom object' }, project, createId())
-    update({ items: [...project.items, next] }); setSelected(next.id)
+    update({ items: [...project.items, next] }); setSelected(next.id); setLeftOpen(false); setRightOpen(true)
   }
   const remove = () => { if (project && item) { update({ items: project.items.filter(i => i.id !== item.id) }); setSelected('') } }
 
@@ -49,7 +51,8 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       <div><span className="eyebrow">WORKSHOP PLANNER</span><div className="project-switcher"><select value={project.id} onChange={e => onSelect(e.target.value)}>{projects.map(p => <option value={p.id} key={p.id}>{p.name}</option>)}</select><ChevronDown/></div></div>
       <div className="toolbar-actions"><button className="button secondary" onClick={onCreate}><Plus/>New plan</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this workshop"><Trash2/>Delete</button></div>
     </div>
-    <div className="tool-panel left-panel">
+    <div className={`tool-panel left-panel${leftOpen ? ' open' : ''}`}>
+      <button className="drawer-close" onClick={() => setLeftOpen(false)} aria-label="Close objects panel"><X/></button>
       <h3>Objects</h3><p>Click to add to your floor plan.</p>
       <div className="template-list">{SHOP_OBJECT_TEMPLATES.map(template => <button key={template.name} onClick={() => addItem(template)}><span style={{ background: template.color }}><ObjectIcon kind={template.kind}/></span><div><b>{template.name}</b><small>{template.width} × {template.depth} mm</small></div><Plus/></button>)}</div>
       <div className="panel-section custom-object-form">
@@ -79,7 +82,8 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         </div>
       </> : <AngledShopView project={project} selected={selected} onSelect={setSelected}/>}
     </div>
-    <div className="tool-panel right-panel">
+    <div className={`tool-panel right-panel${rightOpen ? ' open' : ''}`}>
+      <button className="drawer-close" onClick={() => setRightOpen(false)} aria-label="Close inspector"><X/></button>
       {item ? <><div className="inspector-heading"><div><span className="eyebrow">SELECTED OBJECT</span><input value={item.name} onChange={e => updateItem(item.id, { name: e.target.value })}/></div><button className="icon-button danger" onClick={remove}><Trash2/></button></div>
         <div className="field-row"><Field label="Width (mm)" value={item.width} min={1} onChange={v => updateItem(item.id, { width: v })}/><Field label="Depth (mm)" value={item.depth} min={1} onChange={v => updateItem(item.id, { depth: v })}/></div>
         <Field label="Height (mm)" value={item.height} min={1} onChange={v => updateItem(item.id, { height: v })}/>
@@ -94,6 +98,8 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <button className="button secondary full" onClick={() => { const copy = { ...item, id: createId(), x: item.x + 300, y: item.y + 300 }; update({ items: [...project.items, copy] }); setSelected(copy.id) }}><Copy/>Duplicate object</button>
       </> : <div className="empty-inspector"><CircleGauge/><h3>Select an object</h3><p>Choose an item on the plan to edit its size, rotation, and working clearance.</p></div>}
     </div>
+    {(leftOpen || rightOpen) && <div className="panel-scrim" onClick={() => { setLeftOpen(false); setRightOpen(false) }}/>}
+    <div className="shop-fabs"><button className="panel-fab" onClick={() => { setLeftOpen(open => !open); setRightOpen(false) }} aria-label="Toggle objects panel"><Box/>Objects</button><button className="panel-fab" onClick={() => { setRightOpen(open => !open); setLeftOpen(false) }} aria-label="Toggle inspector"><SlidersHorizontal/>Inspector</button></div>
   </div>
 }
 

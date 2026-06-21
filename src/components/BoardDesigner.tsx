@@ -1,4 +1,5 @@
-import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, Trash2 } from 'lucide-react'
+import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { useState } from 'react'
 import { species } from '../data'
 import { StripList } from './StripList'
 import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
@@ -9,6 +10,7 @@ import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
 import type { CuttingBoardPlan } from '../domain/boardCutPlan'
 import { resolveScale } from '../domain/boardScale'
 import { useContainerWidth } from './useContainerWidth'
+import { usePinchPan } from './usePinchPan'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
@@ -20,6 +22,7 @@ interface Props { projects: BoardProject[]; project: BoardProject | undefined; o
 
 export function BoardDesigner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
+  const [panelOpen, setPanelOpen] = useState(false)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
@@ -133,7 +136,8 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
       </div>
-      <aside className="board-panel">
+      <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
+        <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
         <div className="panel-section first">
           <h3>Construction</h3>
           <div className="construction-toggle"><button className={project.construction === 'edge' ? 'active' : ''} onClick={() => update({ construction: 'edge' })}>Edge grain</button><button className={project.construction === 'end' ? 'active' : ''} onClick={() => update({ construction: 'end' })}>End grain</button></div>
@@ -154,6 +158,8 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
         <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div></>}
         <div className="panel-section"><h3>Wood library</h3><div className="species-grid">{species.map(wood => <button key={wood.id} onClick={() => addStrip(wood.id)}><i style={{ background: wood.color }}/><span>{wood.name}<small>${wood.pricePerBoardFoot}/bf</small></span><Plus/></button>)}</div></div>
       </aside>
+      {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
+      <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>
     </div>
   </div>
 }
@@ -162,14 +168,20 @@ function FinishedBoard({ project, metrics, build, edgeWidth, pxPerMm, onToggleRo
   const isEnd = project.construction === 'end'
   const lengthMm = isEnd ? Math.max(metrics.finalLength, 1) : Math.max(project.length, 1)
   const widthMm = isEnd ? Math.max(metrics.panelWidth, 1) : Math.max(edgeWidth, 1)
+  const pinch = usePinchPan()
   return <section className="finished-board">
-    <header><span className="eyebrow">FINISHED BOARD</span><span className="scale-note">true to scale · {isEnd ? 'click a slice to rotate/flip' : 'top view'}</span></header>
-    <ScaledBoardFrame lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
-      {isEnd
-        ? <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
-        : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
-      }
-    </ScaledBoardFrame>
+    <header><span className="eyebrow">FINISHED BOARD</span><span className="scale-note">true to scale · {isEnd ? 'tap a slice · pinch to zoom' : 'top view · pinch to zoom'}</span></header>
+    <div className="pinch-viewport" {...pinch.handlers}>
+      <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})` }}>
+        <ScaledBoardFrame lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
+          {isEnd
+            ? <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
+            : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
+          }
+        </ScaledBoardFrame>
+      </div>
+      {pinch.active && <button className="zoom-reset" onClick={pinch.reset}>Reset zoom</button>}
+    </div>
     <p className="board-dims">{format(build.length.finished)} × {format(build.width.finished)} × {format(build.thickness.finished)} mm finished{isEnd && Math.abs(metrics.faceShift) > 0.1 ? ` · square width ${format(metrics.finishedWidth)} mm after trimming` : ''}</p>
   </section>
 }

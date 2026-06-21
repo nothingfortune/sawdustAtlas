@@ -76,3 +76,48 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .toolbar-actions { display:flex;gap:8px;align-items:center; }
 .button.secondary.danger { color:#a7523c;border-color:#d8c2ba; }
 .button.secondary.danger:hover { background:#f6e9e4;border-color:#a7523c; }
+
+/* Touch ergonomics: enlarge hit targets on coarse (finger) pointers only. */
+@media (pointer: coarse) {
+  .button { min-height:44px; }
+  .icon-button { width:42px;height:42px; }
+  .icon-button svg { width:18px; }
+  .field input, .field select, .inspector-heading input { min-height:42px;font-size:14px; }
+  .construction-toggle button { padding:12px 10px; }
+  .strip-row { grid-template-columns:30px 18px minmax(56px,1fr) 56px 18px 56px 12px 36px;gap:7px;padding:7px 6px; }
+  .strip-row select, .strip-row input { font-size:13px; }
+  .strip-row .grip-handle { min-width:30px;min-height:42px; }
+  .strip-row > button { padding:9px 4px; }
+  .strip-row > button svg { width:17px; }
+  .add-strip { min-height:46px; }
+  .species-grid button, .pattern-actions button, .row-tools button, .template-list button { min-height:48px; }
+  .nav-button { min-height:50px; }
+  .canvas-controls button { padding:11px 16px;font-size:19px; }
+  .view-mode-toggle button, .feed-direction-buttons button, .rotation-buttons button { padding:12px 8px; }
+  .project-switcher select { font-size:18px; }
+}
+
+/* Portrait: editor panels become slide-over drawers; canvas goes full-width. */
+.panel-fab, .shop-fabs, .panel-scrim, .drawer-close { display:none; }
+@media (orientation: portrait) {
+  .board-main { grid-template-columns:1fr; }
+  .board-panel { position:fixed;top:63px;right:0;bottom:0;width:min(440px,90vw);transform:translateX(103%);transition:transform .22s ease;z-index:30;box-shadow:-12px 0 32px #0000003d; }
+  .board-panel.open { transform:none; }
+  .designer-layout { grid-template-columns:1fr; }
+  .left-panel { position:fixed;top:63px;left:0;bottom:0;width:min(320px,86vw);transform:translateX(-103%);transition:transform .22s ease;z-index:30;box-shadow:12px 0 32px #0000003d; }
+  .left-panel.open { transform:none; }
+  .right-panel { position:fixed;top:63px;right:0;bottom:0;width:min(340px,90vw);transform:translateX(103%);transition:transform .22s ease;z-index:30;box-shadow:-12px 0 32px #0000003d; }
+  .right-panel.open { transform:none; }
+  .panel-scrim { display:block;position:fixed;inset:63px 0 0 0;background:#0000004d;z-index:29; }
+  .panel-fab { display:inline-flex;align-items:center;gap:7px;border:0;border-radius:999px;background:var(--green);color:#fff;padding:13px 19px;font-size:13px;font-weight:600;box-shadow:0 6px 18px #0000003d; }
+  .panel-fab svg { width:18px; }
+  .board-main > .panel-fab { position:fixed;right:16px;bottom:16px;z-index:28; }
+  .shop-fabs { display:flex;gap:10px;position:fixed;right:16px;bottom:16px;z-index:28; }
+  .drawer-close { display:flex;position:sticky;top:0;float:right;margin:-6px -6px 0 auto;border:0;background:transparent;color:#6a756d;padding:6px;align-items:center;justify-content:center; }
+  .drawer-close svg { width:20px; }
+}
+
+/* Pinch-zoom viewport for the finished board (two-finger zoom/pan on touch). */
+.pinch-viewport { position:relative;overflow:hidden;touch-action:none; }
+.pinch-content { transform-origin:0 0;will-change:transform; }
+.zoom-reset { position:absolute;top:8px;right:8px;z-index:5;border:1px solid var(--line);background:#fffffff2;color:var(--ink);padding:7px 11px;border-radius:999px;font-size:11px;box-shadow:0 2px 8px #0000002e; }

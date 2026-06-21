@@ -7,7 +7,7 @@ import type { ShopObjectDefinition } from '../domain/shopObjects'
 import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
 import type { Point2D } from '../domain/shopGeometry'
 
-interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void }
+interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void; onDelete: (id: string) => void }
 const SCALE = .094
 
 const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
@@ -20,7 +20,7 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
   color: '#66766d',
 }
 
-export function ShopPlanner({ projects, project, onSelect, onCreate, onChange }: Props) {
+export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const [selected, setSelected] = useState<string>('')
   const [zoom, setZoom] = useState(.74)
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
@@ -47,7 +47,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange }:
   return <div className="designer-layout">
     <div className="designer-toolbar">
       <div><span className="eyebrow">WORKSHOP PLANNER</span><div className="project-switcher"><select value={project.id} onChange={e => onSelect(e.target.value)}>{projects.map(p => <option value={p.id} key={p.id}>{p.name}</option>)}</select><ChevronDown/></div></div>
-      <button className="button secondary" onClick={onCreate}><Plus/>New plan</button>
+      <div className="toolbar-actions"><button className="button secondary" onClick={onCreate}><Plus/>New plan</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this workshop"><Trash2/>Delete</button></div>
     </div>
     <div className="tool-panel left-panel">
       <h3>Objects</h3><p>Click to add to your floor plan.</p>

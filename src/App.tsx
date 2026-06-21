@@ -24,6 +24,21 @@ export default function App() {
   const updateShop = (project: ShopProject) => setData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
   const updateBoard = (project: BoardProject) => setData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
 
+  const deleteShop = (id: string) => {
+    const project = data.shops.find(p => p.id === id)
+    if (!project || !window.confirm(`Delete workshop "${project.name}"? This can't be undone.`)) return
+    const remaining = data.shops.filter(p => p.id !== id)
+    setData(current => ({ ...current, shops: current.shops.filter(p => p.id !== id) }))
+    if (activeShop === id) setActiveShop(remaining[0]?.id ?? '')
+  }
+  const deleteBoard = (id: string) => {
+    const project = data.boards.find(p => p.id === id)
+    if (!project || !window.confirm(`Delete board "${project.name}"? This can't be undone.`)) return
+    const remaining = data.boards.filter(p => p.id !== id)
+    setData(current => ({ ...current, boards: current.boards.filter(p => p.id !== id) }))
+    if (activeBoard === id) setActiveBoard(remaining[0]?.id ?? '')
+  }
+
   const createShop = () => {
     const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, items: [], updatedAt: new Date().toISOString() }
     setData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
@@ -69,8 +84,8 @@ export default function App() {
       </header>
       <section className="workspace">
         {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard}/>} 
-        {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop}/>} 
-        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard}/>} 
+        {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop}/>}
+        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard}/>}
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])}/>

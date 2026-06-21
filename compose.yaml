@@ -1,0 +1,7 @@
+services:
+  sawdust-atlas:
+    build: .
+    container_name: sawdust-atlas
+    restart: unless-stopped
+    ports:
+      - "8080:80"

@@ -1,5 +1,5 @@
-import type { AtlasData, BoardProject } from './types'
-import { starterData } from './data'
+import type { AtlasData, BoardProject, WoodSpecies } from './types'
+import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
 
@@ -15,8 +15,13 @@ export function loadData(): AtlasData {
 }
 
 export function normalizeData(data: AtlasData): AtlasData {
+  const savedWoods = Array.isArray(data.woods) && data.woods.length > 0 ? data.woods : defaultSpecies
+  const normalizedWoods = savedWoods.map(normalizeWood)
+  const knownIds = new Set(normalizedWoods.map(wood => wood.id))
+  const missingIds = data.boards.flatMap(board => board.strips.map(strip => strip.speciesId)).filter(id => !knownIds.has(id))
   return {
     ...data,
+    woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: data.shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
     boards: data.boards.map((board): BoardProject => ({
       ...board,
@@ -41,6 +46,18 @@ export function normalizeData(data: AtlasData): AtlasData {
     })),
   }
 }
+
+function normalizeWood(wood: WoodSpecies): WoodSpecies {
+  return {
+    id: String(wood.id),
+    name: String(wood.name || wood.id || 'Custom wood'),
+    color: validColor(wood.color, '#8c6a48'),
+    accent: validColor(wood.accent, '#b18a5e'),
+    pricePerBoardFoot: Number.isFinite(wood.pricePerBoardFoot) ? Math.max(0, wood.pricePerBoardFoot) : 0,
+  }
+}
+
+function validColor(value: string, fallback: string) { return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
 
 export function saveData(data: AtlasData) {
   localStorage.setItem(KEY, JSON.stringify(data))

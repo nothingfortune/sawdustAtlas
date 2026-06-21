@@ -98,7 +98,7 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 | BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, drum sanding, and final trimming; rough-stock board feet and cost reflect purchased stock. |
 | BOARD-013 | Cut list and bill of materials | Complete | Now | Generate rough stock, rip widths, crosscut and saw-pass counts, sequence, warnings, and per-species totals from one typed domain plan. |
 | BOARD-014 | Printable build sheet | Planned | Next | Print selected previews, dimensions, numbered steps, cut list, BOM, warnings, and assumptions. |
-| BOARD-015 | Pattern presets | Planned | Later | Checkerboard, brick, basket, zig-zag, spiral, and saved user presets remain editable after insertion. |
+| BOARD-015 | Pattern presets | Partial | Next | Stripe, checkerboard, brick, and chevron exist. Add third-bond, stepped-wave, seeded-mosaic, and distinct zig-zag recipes next; presets remain editable and dimensionally validated. Basket weave and 3D blocks require BOARD-008/composite blanks, while herringbone, pinwheel, and spiral require block-level 2D assembly. See `END_GRAIN_PATTERN_RESEARCH.md`. |
 | BOARD-016 | Board features | Planned | Later | Juice grooves, handles, finger slots, feet, chamfers, edge profiles, and corner radii affect dimensions and steps. |
 | BOARD-017 | Variant comparison | Planned | Later | Compare pattern, cost, waste, and finished-size alternatives side by side. |
 | BOARD-018 | Shareable design links | Planned | Later | Encode or host versioned read-only designs without exposing private project data. |

@@ -22,7 +22,7 @@ export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreat
         <div className="project-preview shop-preview"><div className="mini-room"><i/><i/><i/></div></div><ProjectMeta type="WORKSHOP" name={project.name} detail={`${formatMetres(project.width)} × ${formatMetres(project.depth)} · ${project.items.length} objects`}/>
       </button>)}
       {data.boards.map(project => <button className="project-card" key={project.id} onClick={() => onOpenBoard(project.id)}>
-        <div className="project-preview board-preview">{project.strips.map(strip => <i key={strip.id} style={{ flex: strip.width, background: woodColor(strip.speciesId) }}/>)}</div><ProjectMeta type="CUTTING BOARD" name={project.name} detail={`${project.length} mm long · ${project.strips.reduce((n, s) => n + s.width, 0)} mm wide`}/>
+        <div className="project-preview board-preview">{project.strips.map(strip => <i key={strip.id} style={{ flex: strip.width, background: data.woods.find(wood => wood.id === strip.speciesId)?.color ?? '#8c6a48' }}/>)}</div><ProjectMeta type="CUTTING BOARD" name={project.name} detail={`${project.length} mm long · ${project.strips.reduce((n, s) => n + s.width, 0)} mm wide`}/>
       </button>)}
       <button className="project-card new-project" onClick={onCreateBoard}><Plus/><span>Start something new</span></button>
     </div>
@@ -33,7 +33,4 @@ function ProjectMeta({ type, name, detail }: { type: string, name: string, detai
   return <div className="project-meta"><small>{type}</small><h3>{name}</h3><p>{detail}</p></div>
 }
 
-function woodColor(id: string) {
-  return ({ walnut: '#5a3828', maple: '#dbc59b', cherry: '#a85637', padauk: '#b64221', purpleheart: '#65435f', 'white-oak': '#b39161' } as Record<string, string>)[id] ?? '#8c6a48'
-}
 function formatMetres(mm: number) { return `${Number((mm / 1000).toFixed(2))} m` }

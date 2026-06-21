@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { WoodSpecies } from '../../types'
 import { WoodPatterns } from './WoodPatterns'
 import { Ruler } from './Ruler'
 import { ScaleBar } from './ScaleBar'
@@ -7,7 +8,7 @@ import { ScaleBar } from './ScaleBar'
 // mm * pxPerMm so the drawing is genuinely to scale, and rulers/scale-bar share
 // the same coordinate space (a tick is provably N mm next to the wood). The
 // scroll wrapper lets long boards overflow horizontally without distorting.
-export function ScaledBoardFrame({ lengthMm, widthMm, pxPerMm, rulers = [], scaleBar = false, ariaLabel, children }: {
+export function ScaledBoardFrame({ lengthMm, widthMm, pxPerMm, rulers = [], scaleBar = false, ariaLabel, children, woods }: {
   lengthMm: number
   widthMm: number
   pxPerMm: number
@@ -15,6 +16,7 @@ export function ScaledBoardFrame({ lengthMm, widthMm, pxPerMm, rulers = [], scal
   scaleBar?: boolean
   ariaLabel?: string
   children: ReactNode
+  woods: readonly WoodSpecies[]
 }) {
   const k = 1 / pxPerMm
   const safeLength = Math.max(1, lengthMm)
@@ -35,7 +37,7 @@ export function ScaledBoardFrame({ lengthMm, widthMm, pxPerMm, rulers = [], scal
       role="img"
       aria-label={ariaLabel}
     >
-      <WoodPatterns/>
+      <WoodPatterns woods={woods}/>
       {children}
       {rulers.includes('top') && <Ruler dimMm={safeLength} pxPerMm={pxPerMm} orientation="top"/>}
       {rulers.includes('left') && <Ruler dimMm={safeWidth} pxPerMm={pxPerMm} orientation="left"/>}

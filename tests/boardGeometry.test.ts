@@ -16,6 +16,7 @@ function makeProject(overrides: Partial<BoardProject> = {}, strips: BoardStrip[]
     construction: 'end',
     strips,
     updatedAt: '2026-01-01T00:00:00.000Z',
+    allowances: { jointing: 1.5, planing: 1.5, drumSanding: 1.5, ripAllowance: 3.2, lengthTrim: 12, widthTrim: 6 },
     endGrain: {
       sourceLength: 96,
       stockThickness: 40,

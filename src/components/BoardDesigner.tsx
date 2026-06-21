@@ -1,9 +1,11 @@
 import { ChevronDown, Copy, GripVertical, Layers3, Plus, RotateCcw, Scissors, Trash2 } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { species } from '../data'
-import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
+import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics } from '../domain/boardGeometry'
-import type { BoardProject, BoardStrip, EndGrainSettings } from '../types'
+import { calculateBuildDimensions } from '../domain/boardAllowances'
+import type { BuildDimensions } from '../domain/boardAllowances'
+import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings } from '../types'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void }
 
@@ -12,17 +14,17 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
+  const updateAllowance = (patch: Partial<BuildAllowances>) => update({ allowances: { ...project.allowances, ...patch } })
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
-  const edgeBoardFeet = width * project.length * project.thickness / 2359737.216
-  const boardFeet = project.construction === 'end' ? end.sourceBoardFeet : edgeBoardFeet
+  const build = calculateBuildDimensions(project)
+  const boardFeet = build.roughBoardFeet
   const woodUsage = calculateWoodUsage(project, species, end)
-  const edgeEstimatedCost = project.strips.reduce((sum, strip) => {
+  const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
     const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]
-    const length = project.construction === 'end' ? project.endGrain.sourceLength : project.length
-    const thickness = project.construction === 'end' ? project.endGrain.stockThickness : project.thickness
-    return sum + strip.width * length * thickness / 2359737.216 * wood.pricePerBoardFoot
+    const roughWidth = build.stripRoughWidths[index] ?? strip.width
+    return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * wood.pricePerBoardFoot
   }, 0)
   const estimatedCost = project.construction === 'end'
     ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (species.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
@@ -63,11 +65,12 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
           : <EndGrainWorkflow project={project} metrics={end} onToggleRow={cycleRow}/>
         }
         <div className="board-stats">
-          <Stat label="Finished size" value={project.construction === 'end' ? `${format(end.finalLength)} × ${format(end.finishedWidth)} × ${format(project.endGrain.sliceThickness)} mm` : `${project.length} × ${format(width)} × ${project.thickness} mm`}/>
-          <Stat label="Stock required" value={`${format(boardFeet)} bf`}/>
+          <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
+          <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
           <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
           <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
+        <BuildSummary build={build}/>
       </div>
       <aside className="board-panel">
         <div className="panel-section first">
@@ -80,6 +83,7 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
           }
         </div>
         {project.construction === 'end' && <><div className="waste-card"><Scissors/><div><span>{end.sliceCount} usable slices</span><b>{format(end.kerfWaste)} mm kerf + {format(end.trimWaste + end.offcutWaste)} mm trim/offcut</b></div></div><div className="wood-usage"><span className="eyebrow">STOCK BY SPECIES</span>{woodUsage.map(usage => <div key={usage.speciesId}><i style={{ background: usage.color }}/><span>{usage.name}<small>{format(usage.requiredBoardFeet)} bf stock</small></span><b>{format(usage.wasteBoardFeet)} bf waste</b></div>)}</div></>}
+        <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Drum sanding (mm)" value={project.allowances.drumSanding} step={0.5} onChange={value => updateAllowance({ drumSanding: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
         <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {format(width)} mm panel width</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
           <div className="strip-list">{project.strips.map((strip, index) => { const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]; return <div className="strip-row" key={strip.id}><GripVertical/><span className="swatch" style={{ background: wood.color }}/><select value={strip.speciesId} onChange={event => updateStrip(strip.id, { speciesId: event.target.value })}>{species.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><input aria-label={`Strip ${index + 1} width`} title="Width in mm" type="number" min="1" step="1" value={strip.width} onChange={event => updateStrip(strip.id, { width: Number(event.target.value) })}/><span>mm</span>{project.construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => updateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}<button aria-label={`Delete strip ${index + 1}`} onClick={() => update({ strips: project.strips.filter((_, stripIndex) => stripIndex !== index) })}><Trash2/></button></div> })}</div>
           <button className="add-strip" onClick={() => addStrip()}><Plus/>Add strip</button>
@@ -145,6 +149,23 @@ function EndGrainBoardSvg({ project, sliceCount, onToggleRow }: { project: Board
 
 function EndGrainFields({ settings, onChange }: { settings: EndGrainSettings; onChange: (patch: Partial<EndGrainSettings>) => void }) {
   return <><div className="field-row"><Field label="Glue-up length (mm)" value={settings.sourceLength} onChange={value => onChange({ sourceLength: value })}/><Field label="Stock thickness (mm)" value={settings.stockThickness} onChange={value => onChange({ stockThickness: value })}/></div><div className="field-row"><Field label="Crosscut width (mm)" value={settings.sliceThickness} onChange={value => onChange({ sliceThickness: value })}/><Field label="Blade kerf (mm)" value={settings.kerf} step={0.1} onChange={value => onChange({ kerf: value })}/></div><Field label="Total end trim allowance (mm)" value={settings.trimAllowance} onChange={value => onChange({ trimAllowance: value })}/></>
+}
+
+function BuildSummary({ build }: { build: BuildDimensions }) {
+  const rows: Array<{ label: string; finished: number; rough: number; note?: string }> = [
+    { label: 'Length', finished: build.length.finished, rough: build.length.rough },
+    { label: 'Width', finished: build.width.finished, rough: build.width.rough },
+    { label: 'Thickness', finished: build.thickness.finished, rough: build.thickness.rough, note: `joint ${format(build.thickness.jointing)} · plane ${format(build.thickness.planing)} · sand ${format(build.thickness.drumSanding)}` },
+  ]
+  return <div className="build-summary">
+    <div className="build-summary-head"><span className="eyebrow">ROUGH STOCK</span><span className="eyebrow">FINISHED</span></div>
+    {rows.map(row => <div className="build-summary-row" key={row.label}>
+      <span>{row.label}{row.note && <small>{row.note}</small>}</span>
+      <b>{format(row.rough)} mm</b>
+      <b className="finished">{format(row.finished)} mm</b>
+    </div>)}
+    <div className="build-summary-row total"><span>Removed milling stock</span><b>{format(build.removedBoardFeet)} bf</b><b className="finished">{format(build.finishedBoardFeet)} bf part</b></div>
+  </div>
 }
 
 function Field({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min="0" step={step} value={value} onChange={event => onChange(Number(event.target.value))}/></label> }

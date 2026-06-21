@@ -1,4 +1,5 @@
 import type { AtlasData, WoodSpecies } from './types'
+import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 
 export const species = [
   { id: 'walnut', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12.5 },
@@ -23,6 +24,7 @@ export const starterData: AtlasData = {
   boards: [{
     id: id(), name: 'Walnut & maple daily board', length: 460, thickness: 38, construction: 'edge', updatedAt: new Date().toISOString(),
     endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
+    allowances: { ...DEFAULT_ALLOWANCES },
     strips: [
       { id: id(), speciesId: 'walnut', width: 50, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 13, trailingAngle: 0 },
       { id: id(), speciesId: 'walnut', width: 38, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 25, trailingAngle: 0 },

@@ -39,7 +39,7 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 | Area | Current implementation | Direction |
 | --- | --- | --- |
 | UI | React 19, Vite, TypeScript | Keep components focused on interaction and rendering. |
-| Domain logic | `src/domain/boardGeometry.ts` | Add independent shop and cut-plan engines. |
+| Domain logic | `src/domain/boardGeometry.ts`, `src/domain/boardAllowances.ts` | Add independent shop and cut-plan engines. |
 | Persistence | Browser local storage plus JSON import/export | Add versioned persistence adapters and shared LAN storage. |
 | Deployment | Vite LAN commands, PWA files, Docker/Nginx configuration | Add verified Docker appliance mode and private HTTPS. |
 | Quality | Repository-wide strict TypeScript, ESLint, Vitest | Add property, golden, migration, and interaction tests. |
@@ -94,7 +94,7 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 | BOARD-009 | Drag-to-reorder slices | Planned | Next | Final slices can be reordered with touch, mouse, and keyboard while retaining source identity. |
 | BOARD-010 | Custom wood library | Planned | Next | Add/edit species, price, color, texture, density, notes, and inventory references. |
 | BOARD-011 | Improved wood appearance | Partial | Next | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
-| BOARD-012 | Build allowances | Planned | Next | Separate rough and finished dimensions for jointing, planing, drum sanding, and final trimming. |
+| BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, drum sanding, and final trimming; rough-stock board feet and cost reflect purchased stock. |
 | BOARD-013 | Cut list and bill of materials | Planned | Next | Generate rip widths, stock sizes, crosscut count, kerf, offcut, sequence, and per-species totals. |
 | BOARD-014 | Printable build sheet | Planned | Next | Print selected previews, dimensions, numbered steps, cut list, BOM, warnings, and assumptions. |
 | BOARD-015 | Pattern presets | Planned | Later | Checkerboard, brick, basket, zig-zag, spiral, and saved user presets remain editable after insertion. |
@@ -185,7 +185,7 @@ The following are release requirements for any feature that reports dimensions, 
 ### M1: Trustworthy Cutting Board Workshop — Now
 
 - Finish multiple-panel and slice-reordering model (`BOARD-008`, `BOARD-009`).
-- Add rough/finished allowances (`BOARD-012`).
+- Add rough/finished allowances (`BOARD-012`). _Done._
 - Generate cut list, BOM, and printable build sheet (`BOARD-013`, `BOARD-014`).
 - Expand golden and property tests for angled and multi-panel designs.
 - Complete touch and accessibility pass for board editing.
@@ -232,16 +232,15 @@ Exit criteria: Notion improves discovery and documentation without becoming requ
 
 ## Near-Term Ordered Backlog
 
-1. `BOARD-012`: distinguish rough stock, pre-glue dimensions, and finished dimensions.
-2. `BOARD-013`: generate a typed cutting-board cut list and BOM from domain data.
-3. `BOARD-014`: create a printable build sheet with assumptions and warnings.
-4. `BOARD-008`: support multiple first glue-up panels.
-5. `BOARD-009`: reorder and transform generated slices.
-6. `CUT-001`: establish the shared cut-plan types and validation contract.
-7. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
-8. `DATA-005`: add shared LAN persistence before relying on tablet edits.
-9. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
-10. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
+1. `BOARD-013`: generate a typed cutting-board cut list and BOM from domain data (reuse `boardAllowances` rough dimensions).
+2. `BOARD-014`: create a printable build sheet with assumptions and warnings.
+3. `BOARD-008`: support multiple first glue-up panels.
+4. `BOARD-009`: reorder and transform generated slices.
+5. `CUT-001`: establish the shared cut-plan types and validation contract.
+6. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
+7. `DATA-005`: add shared LAN persistence before relying on tablet edits.
+8. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
+9. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
 
 ## Open Decisions
 

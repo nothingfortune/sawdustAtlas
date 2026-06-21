@@ -1,5 +1,6 @@
 import type { AtlasData, BoardProject } from './types'
 import { starterData } from './data'
+import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 
 const KEY = 'sawdust-atlas:v1'
 
@@ -18,6 +19,7 @@ export function normalizeData(data: AtlasData): AtlasData {
     boards: data.boards.map((board): BoardProject => ({
       ...board,
       construction: board.construction ?? 'edge',
+      allowances: { ...DEFAULT_ALLOWANCES, ...board.allowances },
       strips: board.strips.map(strip => ({ ...strip, trailingAngle: strip.trailingAngle ?? 0 })),
       endGrain: board.endGrain ? {
         ...board.endGrain,

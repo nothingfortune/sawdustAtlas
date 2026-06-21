@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Upload } from 'lucide-react'
 import type { AtlasData, BoardProject, ShopProject, View } from './types'
 import { loadData, saveData, downloadData, normalizeData } from './storage'
+import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
@@ -30,6 +31,7 @@ export default function App() {
     const project: BoardProject = {
       id: crypto.randomUUID(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
       endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
+      allowances: { ...DEFAULT_ALLOWANCES },
     }
     setData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
   }

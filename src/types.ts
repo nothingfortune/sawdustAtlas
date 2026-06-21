@@ -47,6 +47,15 @@ export interface EndGrainSettings {
   rowRotations: boolean[]
 }
 
+export interface BuildAllowances {
+  jointing: number
+  planing: number
+  drumSanding: number
+  ripAllowance: number
+  lengthTrim: number
+  widthTrim: number
+}
+
 export interface BoardProject {
   id: string
   name: string
@@ -54,6 +63,7 @@ export interface BoardProject {
   thickness: number
   construction: 'edge' | 'end'
   endGrain: EndGrainSettings
+  allowances: BuildAllowances
   strips: BoardStrip[]
   updatedAt: string
 }

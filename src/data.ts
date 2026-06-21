@@ -2,7 +2,7 @@ import type { AtlasData, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { createId } from './id'
 
-export const species = [
+export const defaultSpecies = [
   { id: 'walnut', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12.5 },
   { id: 'maple', name: 'Hard maple', color: '#dbc59b', accent: '#f0dfb9', pricePerBoardFoot: 8.75 },
   { id: 'cherry', name: 'Cherry', color: '#a85637', accent: '#cb7957', pricePerBoardFoot: 9.5 },
@@ -12,6 +12,7 @@ export const species = [
 ] satisfies [WoodSpecies, ...WoodSpecies[]]
 
 export const starterData: AtlasData = {
+  woods: defaultSpecies.map(wood => ({ ...wood })),
   shops: [{
     id: createId(), name: 'My workshop', width: 7300, depth: 6100, updatedAt: new Date().toISOString(),
     items: [

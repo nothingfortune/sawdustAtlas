@@ -76,3 +76,16 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .toolbar-actions { display:flex;gap:8px;align-items:center; }
 .button.secondary.danger { color:#a7523c;border-color:#d8c2ba; }
 .button.secondary.danger:hover { background:#f6e9e4;border-color:#a7523c; }
+
+.wood-editor-list { display:flex;flex-direction:column;gap:6px;margin-top:10px; }
+.wood-editor-row { display:grid;grid-template-columns:31px minmax(75px,1fr) 25px 25px 48px 25px 25px;align-items:center;gap:4px;background:white;border:1px solid #dedbd2;padding:5px; }
+.wood-editor-row > input { min-width:0;border:0;background:transparent;font-size:10px; }
+.wood-editor-row > label input { width:23px;height:27px;border:0;padding:0;background:transparent; }
+.wood-editor-row > span { font-size:8px;color:#888; }
+.wood-use,.wood-delete { border:0;background:transparent;padding:3px; }
+.wood-use { position:relative;width:29px;height:29px; }
+.wood-use i { display:block;position:absolute;inset:0; }
+.wood-use svg { position:relative;width:13px;color:white;filter:drop-shadow(0 1px 1px #333); }
+.wood-delete { color:#a05d4a; }
+.wood-delete svg { width:13px; }
+.wood-price { text-align:right; }

@@ -1,5 +1,4 @@
 import type { BoardStrip } from '../../types'
-import { patternSpeciesId } from './patternId'
 
 // A long-grain top face drawn in mm: strips stacked across the width, each
 // running the full length. Grain texture runs along the length, parallel to the
@@ -8,7 +7,7 @@ export function LongGrainFace({ strips, lengthMm }: { strips: BoardStrip[]; leng
   const bandHeight = (strip: BoardStrip) => Math.max(0, strip.width)
   const bands = strips.map((strip, index) => ({
     id: strip.id,
-    speciesId: patternSpeciesId(strip.speciesId),
+    speciesId: strip.speciesId,
     top: strips.slice(0, index).reduce((sum, prev) => sum + bandHeight(prev), 0),
     height: bandHeight(strip),
   }))

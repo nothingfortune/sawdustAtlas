@@ -1,15 +1,23 @@
 export type View = 'home' | 'shop' | 'boards'
 
+export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
+export type FeedDirection = 0 | 90 | 180 | 270
+
 export interface ShopItem {
   id: string
   name: string
-  kind: 'machine' | 'bench' | 'storage' | 'door'
+  kind: ShopItemKind
   x: number
   y: number
   width: number
   depth: number
+  height: number
   rotation: number
   clearance: number
+  feedDirection: FeedDirection | null
+  infeedClearance: number
+  outfeedClearance: number
+  sideClearance: number
   color: string
 }
 

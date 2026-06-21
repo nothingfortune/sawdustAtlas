@@ -56,6 +56,13 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
   const lengthTrim = nonNegative(allowance.lengthTrim)
   const widthTrim = nonNegative(allowance.widthTrim)
   const stripRoughWidths = project.strips.map(strip => nonNegative(strip.width) + rip)
+  if (stripRoughWidths.length === 1) {
+    stripRoughWidths[0] = (stripRoughWidths[0] ?? 0) + widthTrim
+  } else if (stripRoughWidths.length > 1) {
+    stripRoughWidths[0] = (stripRoughWidths[0] ?? 0) + widthTrim / 2
+    const last = stripRoughWidths.length - 1
+    stripRoughWidths[last] = (stripRoughWidths[last] ?? 0) + widthTrim / 2
+  }
 
   const thickness = (finished: number): ThicknessBreakdown => ({
     finished,
@@ -70,17 +77,21 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     const finishedLength = metrics.finalLength
     const finishedWidth = metrics.finishedWidth
     const finishedThickness = nonNegative(project.endGrain.sliceThickness)
+    const roughStockVolume = project.strips.reduce((volume, strip, index) => {
+      const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(strip.trailingAngle) * Math.PI / 180)
+      const stockWidth = (stripRoughWidths[index] ?? 0) + Math.max(0, angleShift)
+      return volume + stockWidth * project.endGrain.sourceLength * project.endGrain.stockThickness
+    }, 0)
+    const roughBoardFeet = toBoardFeet(roughStockVolume)
     return {
       construction: 'end',
       length: { finished: finishedLength, rough: finishedLength + lengthTrim },
       width: { finished: finishedWidth, rough: finishedWidth + widthTrim },
       thickness: thickness(finishedThickness),
       stripRoughWidths,
-      // The geometry engine already reports rough long-grain stock and the finished
-      // end-grain part, so it stays the authority for end-grain board feet.
-      roughBoardFeet: metrics.sourceBoardFeet,
+      roughBoardFeet,
       finishedBoardFeet: metrics.finishedBoardFeet,
-      removedBoardFeet: Math.max(0, metrics.sourceBoardFeet - metrics.finishedBoardFeet),
+      removedBoardFeet: Math.max(0, roughBoardFeet - metrics.finishedBoardFeet),
     }
   }
 
@@ -107,3 +118,4 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
 function toBoardFeet(cubicMillimeters: number) { return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT }
 function nonNegative(value: number) { return Number.isFinite(value) ? Math.max(0, value) : 0 }
 function sum(values: readonly number[]) { return values.reduce((total, value) => total + value, 0) }
+function clampAngle(value: number) { return Math.min(Math.max(Number.isFinite(value) ? value : 0, -89), 89) }

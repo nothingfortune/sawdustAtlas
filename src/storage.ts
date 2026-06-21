@@ -1,6 +1,7 @@
 import type { AtlasData, BoardProject } from './types'
 import { starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
+import { normalizeShopItem } from './domain/shopObjects'
 
 const KEY = 'sawdust-atlas:v1'
 
@@ -16,6 +17,7 @@ export function loadData(): AtlasData {
 export function normalizeData(data: AtlasData): AtlasData {
   return {
     ...data,
+    shops: data.shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
     boards: data.boards.map((board): BoardProject => ({
       ...board,
       construction: board.construction ?? 'edge',

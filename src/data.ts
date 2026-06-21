@@ -1,5 +1,6 @@
 import type { AtlasData, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
+import { createId } from './id'
 
 export const species = [
   { id: 'walnut', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12.5 },
@@ -10,27 +11,25 @@ export const species = [
   { id: 'white-oak', name: 'White oak', color: '#b39161', accent: '#d2b681', pricePerBoardFoot: 10.25 },
 ] satisfies [WoodSpecies, ...WoodSpecies[]]
 
-const id = () => crypto.randomUUID()
-
 export const starterData: AtlasData = {
   shops: [{
-    id: id(), name: 'My workshop', width: 7300, depth: 6100, updatedAt: new Date().toISOString(),
+    id: createId(), name: 'My workshop', width: 7300, depth: 6100, updatedAt: new Date().toISOString(),
     items: [
-      { id: id(), name: 'Table saw', kind: 'machine', x: 2850, y: 2200, width: 1070, depth: 970, rotation: 0, clearance: 1200, color: '#d8863b' },
-      { id: id(), name: 'Workbench', kind: 'bench', x: 700, y: 600, width: 1830, depth: 760, rotation: 0, clearance: 450, color: '#66826d' },
-      { id: id(), name: 'Lumber rack', kind: 'storage', x: 4780, y: 250, width: 2080, depth: 460, rotation: 0, clearance: 300, color: '#637d89' },
+      { id: createId(), name: 'Table saw', kind: 'machine', x: 2850, y: 2200, width: 1070, depth: 970, height: 890, rotation: 0, clearance: 600, feedDirection: 0, infeedClearance: 2440, outfeedClearance: 2440, sideClearance: 300, color: '#d8863b' },
+      { id: createId(), name: 'Workbench', kind: 'bench', x: 700, y: 600, width: 1830, depth: 760, height: 900, rotation: 0, clearance: 450, feedDirection: null, infeedClearance: 0, outfeedClearance: 0, sideClearance: 0, color: '#66826d' },
+      { id: createId(), name: 'Lumber rack', kind: 'storage', x: 4780, y: 250, width: 2080, depth: 460, height: 2100, rotation: 0, clearance: 300, feedDirection: null, infeedClearance: 0, outfeedClearance: 0, sideClearance: 0, color: '#637d89' },
     ],
   }],
   boards: [{
-    id: id(), name: 'Walnut & maple daily board', length: 460, thickness: 38, construction: 'edge', updatedAt: new Date().toISOString(),
+    id: createId(), name: 'Walnut & maple daily board', length: 460, thickness: 38, construction: 'edge', updatedAt: new Date().toISOString(),
     endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
     allowances: { ...DEFAULT_ALLOWANCES },
     strips: [
-      { id: id(), speciesId: 'walnut', width: 50, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 13, trailingAngle: 0 },
-      { id: id(), speciesId: 'walnut', width: 38, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 25, trailingAngle: 0 },
-      { id: id(), speciesId: 'cherry', width: 50, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 25, trailingAngle: 0 },
-      { id: id(), speciesId: 'walnut', width: 38, trailingAngle: 0 }, { id: id(), speciesId: 'maple', width: 13, trailingAngle: 0 },
-      { id: id(), speciesId: 'walnut', width: 50, trailingAngle: 0 },
+      { id: createId(), speciesId: 'walnut', width: 50, trailingAngle: 0 }, { id: createId(), speciesId: 'maple', width: 13, trailingAngle: 0 },
+      { id: createId(), speciesId: 'walnut', width: 38, trailingAngle: 0 }, { id: createId(), speciesId: 'maple', width: 25, trailingAngle: 0 },
+      { id: createId(), speciesId: 'cherry', width: 50, trailingAngle: 0 }, { id: createId(), speciesId: 'maple', width: 25, trailingAngle: 0 },
+      { id: createId(), speciesId: 'walnut', width: 38, trailingAngle: 0 }, { id: createId(), speciesId: 'maple', width: 13, trailingAngle: 0 },
+      { id: createId(), speciesId: 'walnut', width: 50, trailingAngle: 0 },
     ],
   }],
 }

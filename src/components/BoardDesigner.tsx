@@ -5,7 +5,10 @@ import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetric
 import type { EndGrainMetrics } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
 import type { BuildDimensions } from '../domain/boardAllowances'
+import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
+import type { CuttingBoardPlan } from '../domain/boardCutPlan'
 import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings } from '../types'
+import { createId } from '../id'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void }
 
@@ -19,6 +22,7 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
   const build = calculateBuildDimensions(project)
+  const cutPlan = generateCuttingBoardPlan(project, species)
   const boardFeet = build.roughBoardFeet
   const woodUsage = calculateWoodUsage(project, species, end)
   const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
@@ -30,9 +34,9 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
     ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (species.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
     : edgeEstimatedCost
 
-  const addStrip = (speciesId = 'walnut') => update({ strips: [...project.strips, { id: crypto.randomUUID(), speciesId, width: 38, trailingAngle: 0 }] })
-  const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: crypto.randomUUID() }))] })
-  const mirrorPattern = () => update({ strips: [...project.strips, ...[...project.strips].reverse().map(strip => ({ ...strip, id: crypto.randomUUID() }))] })
+  const addStrip = (speciesId = 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
+  const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
+  const mirrorPattern = () => update({ strips: [...project.strips, ...[...project.strips].reverse().map(strip => ({ ...strip, id: createId() }))] })
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
@@ -71,6 +75,7 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
           <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
         <BuildSummary build={build}/>
+        <CutPlanView plan={cutPlan}/>
       </div>
       <aside className="board-panel">
         <div className="panel-section first">
@@ -110,11 +115,11 @@ function EndGrainWorkflow({ project, metrics, onToggleRow }: { project: BoardPro
     '--trim-pct': `${project.endGrain.trimAllowance / 2 / project.endGrain.sourceLength * 100}%`,
     '--pitch-pct': `${(project.endGrain.sliceThickness + project.endGrain.kerf) / project.endGrain.sourceLength * 100}%`,
     '--slice-pct': `${project.endGrain.sliceThickness / project.endGrain.sourceLength * 100}%`,
-    '--used-pct': `${(project.endGrain.trimAllowance / 2 + metrics.sliceCount * project.endGrain.sliceThickness + Math.max(0, metrics.sliceCount - 1) * project.endGrain.kerf) / project.endGrain.sourceLength * 100}%`,
+    '--used-pct': `${(project.endGrain.trimAllowance / 2 + metrics.sliceCount * project.endGrain.sliceThickness + metrics.crosscutCount * project.endGrain.kerf) / project.endGrain.sourceLength * 100}%`,
   } as CSSProperties
   return <div className="workflow-stack">
-    <section className="workflow-step"><div className="step-heading"><span>1</span><div><h3>First glue-up</h3><p>Long-grain strips before any crosscuts · {project.endGrain.sourceLength} × {format(metrics.panelWidth)} × {project.endGrain.stockThickness} mm</p></div></div><div className="glueup-preview"><LongGrainStrips strips={project.strips}/></div>{project.strips.some(strip => strip.trailingAngle !== 0) && <div className="cross-section"><span>Angled strip cross-section</span><EndGrainTemplateSvg project={project}/></div>}{Math.abs(metrics.faceShift) > .1 && <div className="angle-warning">Outer faces differ by {format(Math.abs(metrics.faceShift))} mm. Balance the trailing angles or plan to trim the white wedges shown after the turn.</div>}</section>
-    <section className="workflow-step"><div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div><div className="cut-plan" style={cutStyle}><div className="cut-plan-wood"><LongGrainStrips strips={project.strips}/></div><div className="trim start">TRIM</div><div className="cut-repeat"/><div className="trim end">OFFCUT</div></div></section>
+    <section className="workflow-step"><div className="step-heading"><span>1</span><div><h3>First glue-up</h3><p>Long boards stacked across the panel before crosscutting · {project.endGrain.sourceLength} × {format(metrics.panelWidth)} × {project.endGrain.stockThickness} mm</p></div></div><div className="glueup-preview" style={{ aspectRatio: `${project.endGrain.sourceLength} / ${Math.max(metrics.panelWidth, 1)}` }}><LongGrainStrips strips={project.strips}/><span className="grain-direction">GRAIN →</span></div>{project.strips.some(strip => strip.trailingAngle !== 0) && <div className="cross-section"><span>Angled strip cross-section</span><EndGrainTemplateSvg project={project}/></div>}{Math.abs(metrics.faceShift) > .1 && <div className="angle-warning">Outer faces differ by {format(Math.abs(metrics.faceShift))} mm. Balance the trailing angles or plan to trim the white wedges shown after the turn.</div>}</section>
+    <section className="workflow-step"><div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices cut perpendicular to the grain at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div><div className="cut-plan" style={cutStyle}><div className="cut-plan-wood"><LongGrainStrips strips={project.strips}/><span className="grain-direction">GRAIN →</span></div><div className="trim start">TRIM</div><div className="cut-repeat"/><div className="trim end">OFFCUT</div></div></section>
     <section className="workflow-step final-step"><div className="step-heading"><span>3</span><div><h3>After the 90° turn</h3><p>Click a slice to cycle normal, rotated, flipped, and both</p></div></div><EndGrainBoardSvg project={project} sliceCount={metrics.sliceCount} onToggleRow={onToggleRow}/><div className="transform-legend"><span>N normal</span><span>R rotated</span><span>F flipped</span><span>RF both</span></div></section>
   </div>
 }
@@ -165,6 +170,18 @@ function BuildSummary({ build }: { build: BuildDimensions }) {
       <b className="finished">{format(row.finished)} mm</b>
     </div>)}
     <div className="build-summary-row total"><span>Removed milling stock</span><b>{format(build.removedBoardFeet)} bf</b><b className="finished">{format(build.finishedBoardFeet)} bf part</b></div>
+  </div>
+}
+
+function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {
+  return <div className="cut-plan-sheet">
+    <div className="cut-plan-title"><div><span className="eyebrow">BUILD PLAN</span><h3>Stock, cuts, and sequence</h3></div><div><b>{format(plan.summary.roughBoardFeet)} bf</b><span>rough stock</span></div><div><b>{plan.summary.ripPasses + plan.summary.crosscutPasses}</b><span>planned saw passes</span></div></div>
+    {plan.warnings.length > 0 && <div className="cut-plan-warnings">{plan.warnings.map(warning => <span key={warning}>{warning}</span>)}</div>}
+    <div className="cut-plan-columns">
+      <section><h4>Stock list</h4><div className="plan-table"><div className="plan-table-head"><span>Qty / species</span><span>Rough dimensions</span><span>BF</span></div>{plan.stock.map(row => <div key={row.id}><span><b>{row.quantity}×</b> {row.speciesName}{row.trailingAngle !== 0 && <small>{format(row.trailingAngle)}° trailing angle</small>}</span><span>{format(row.length)} × {format(row.width)} × {format(row.thickness)} mm</span><span>{format(row.boardFeet)}</span></div>)}</div></section>
+      <section><h4>Machine cuts</h4><div className="plan-table cuts"><div className="plan-table-head"><span>Operation</span><span>Target</span><span>Passes</span></div>{plan.cuts.map(cut => <div key={cut.id}><span><b>{cut.label}</b><small>{cut.note}</small></span><span>{cut.targetWidth !== undefined ? `${format(cut.targetWidth)} mm` : '—'}{cut.trailingAngle !== undefined && cut.trailingAngle !== 0 && <small>{format(cut.trailingAngle)}°</small>}</span><span>{cut.passes}</span></div>)}</div></section>
+    </div>
+    <section className="build-sequence"><h4>Build sequence</h4><ol>{plan.steps.map(step => <li key={step.id}><span>{step.order}</span><div><b>{step.title}</b><p>{step.instruction}</p></div></li>)}</ol></section>
   </div>
 }
 

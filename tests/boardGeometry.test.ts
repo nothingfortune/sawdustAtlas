@@ -48,6 +48,16 @@ describe('end-grain crosscut geometry', () => {
     expect(3 * 30 + 2 * 3).toBeGreaterThan(95.999)
   })
 
+  it('reserves a final kerf when an offcut must be separated', () => {
+    const project = makeProject()
+    project.endGrain.sourceLength = 65
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.sliceCount).toBe(1)
+    expect(metrics.crosscutCount).toBe(1)
+    expect(metrics.kerfWaste).toBe(3)
+    expect(metrics.offcutWaste).toBe(32)
+  })
+
   it('handles a zero-kerf theoretical cut without a phantom loss', () => {
     const project = makeProject()
     project.endGrain.sourceLength = 90
@@ -115,7 +125,7 @@ describe('material accounting', () => {
       const metrics = calculateEndGrainMetrics(project)
       expect(metrics.errors).toEqual([])
       expect(metrics.sourceBoardFeet).toBeCloseTo(metrics.finishedBoardFeet + metrics.totalWasteBoardFeet, 9)
-      const consumed = metrics.sliceCount * project.endGrain.sliceThickness + Math.max(0, metrics.sliceCount - 1) * project.endGrain.kerf
+      const consumed = metrics.sliceCount * project.endGrain.sliceThickness + metrics.crosscutCount * project.endGrain.kerf
       expect(consumed).toBeLessThanOrEqual(project.endGrain.sourceLength - project.endGrain.trimAllowance + 1e-8)
     }
   })

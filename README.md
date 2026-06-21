@@ -23,9 +23,11 @@ Install Docker Desktop, then run this once from the project directory:
 docker compose up -d --build
 ```
 
-Open `http://<computer-ip>:8080` on the tablet. On this computer's current network that would be `http://10.0.0.36:8080`. The address can change when the router assigns a new lease; reserving the computer's address in the router keeps the bookmark stable.
+Open `http://<computer-ip>:8080` on the tablet. This computer currently answers at both `http://10.0.0.36:8080` (Ethernet) and `http://10.0.0.49:8080` (Wi-Fi). Use the address for the network shared with the tablet. The address can change when the router assigns a new lease; reserving it in the router keeps the bookmark stable.
 
-The container restarts with Docker Desktop. Update it after code changes with the same command, inspect it with `docker compose ps`, and stop it with `docker compose down`.
+The container restarts with Docker Desktop. Update it after code changes with the same command, inspect it with `docker compose ps`, and stop it with `docker compose down`. A healthy deployment reports `Up ... (healthy)`.
+
+If the service becomes unhealthy, recreate it with `docker compose down` followed by `docker compose up -d --build`. Project data currently belongs to each browser's local storage, not the container, so container recreation does not erase it. Keep periodic JSON exports until shared LAN persistence and automated backups are implemented.
 
 ### Direct development server
 
@@ -41,13 +43,27 @@ For a production-style local server, use `pnpm serve:lan` and open the printed a
 
 The manifest allows the site to be added to the tablet's home screen. Full offline installation and service-worker caching require a secure HTTPS context; plain LAN HTTP still works while the computer is reachable. A private option such as Tailscale Serve can provide trusted HTTPS without exposing the app publicly.
 
+### Trusted HTTPS with Tailscale
+
+For the simplest tablet-safe HTTPS setup, install Tailscale on this computer and the tablet, sign both into the same private tailnet, and enable HTTPS certificates for the tailnet. With the Docker app running, expose it using:
+
+```powershell
+tailscale serve --bg http://127.0.0.1:8080
+tailscale serve status
+```
+
+Open the `https://...ts.net` address printed by Tailscale on the tablet. This keeps the app private to authorized tailnet devices and supplies a browser-trusted certificate. Remove the proxy later with `tailscale serve reset`.
+
+Caddy or mkcert can also provide LAN HTTPS, but their local certificate authority must be installed and trusted on every tablet. That is useful for a LAN-only appliance, but it is more maintenance than Tailscale for the current single-user setup.
+
 ## Current features
 
 - Millimeter-first dimensions throughout
-- Scaled workshop floor plans with draggable machines, benches, storage, doors, rotation, and working-clearance zones
+- Scaled workshop floor plans with top and measured angled views, draggable catalog and custom objects, editable heights, rotation, color, general clearance, and directional infeed/outfeed zones
 - Edge-grain cutting board patterns with six wood species, editable strip widths, pattern helpers, board-foot usage, and material estimates
 - End-grain workflow showing the first glue-up, kerf-aware crosscut plan, and the board after its 90-degree turn
 - Per-strip trailing angles, independent slice rotation and flipping, angle-aware dimensions, and species-level stock and waste totals
+- Generated rough-stock list, machine cuts, saw-pass counts, and ordered build sequence
 - Browser autosave plus JSON import and export
 - Domain models separated from the UI so additional woodworking designers and storage adapters can be added cleanly
 

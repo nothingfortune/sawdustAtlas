@@ -1,27 +1,36 @@
 import { useState } from 'react'
 import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, Trash2, Warehouse } from 'lucide-react'
-import type { ShopItem, ShopProject } from '../types'
+import type { ShopItem, ShopItemKind, ShopProject } from '../types'
+import { createId } from '../id'
+import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
+import type { ShopObjectDefinition } from '../domain/shopObjects'
+import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
+import type { Point2D } from '../domain/shopGeometry'
 
 interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void }
 const SCALE = .094
 
-const templates: Array<Omit<ShopItem, 'id' | 'x' | 'y'>> = [
-  { name: 'Table saw', kind: 'machine', width: 1070, depth: 970, rotation: 0, clearance: 1200, color: '#d8863b' },
-  { name: 'Jointer / planer', kind: 'machine', width: 1220, depth: 610, rotation: 0, clearance: 900, color: '#c76f37' },
-  { name: 'Workbench', kind: 'bench', width: 1830, depth: 760, rotation: 0, clearance: 450, color: '#66826d' },
-  { name: 'Cabinet', kind: 'storage', width: 915, depth: 510, rotation: 0, clearance: 200, color: '#637d89' },
-  { name: 'Door', kind: 'door', width: 915, depth: 125, rotation: 0, clearance: 915, color: '#9b8365' },
-]
+const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
+  name: 'Custom object',
+  kind: 'custom',
+  width: 600,
+  depth: 600,
+  height: 900,
+  clearance: 300,
+  color: '#66766d',
+}
 
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange }: Props) {
   const [selected, setSelected] = useState<string>('')
   const [zoom, setZoom] = useState(.74)
+  const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
+  const [customObject, setCustomObject] = useState<ShopObjectDefinition>(DEFAULT_CUSTOM_OBJECT)
   const item = project?.items.find(i => i.id === selected)
   const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateItem = (id: string, patch: Partial<ShopItem>) => project && update({ items: project.items.map(i => i.id === id ? { ...i, ...patch } : i) })
-  const addItem = (template: typeof templates[number]) => {
+  const addItem = (definition: ShopObjectDefinition) => {
     if (!project) return
-    const next = { ...template, id: crypto.randomUUID(), x: 900, y: 900 }
+    const next = createShopItem({ ...definition, name: definition.name.trim() || 'Custom object' }, project, createId())
     update({ items: [...project.items, next] }); setSelected(next.id)
   }
   const remove = () => { if (project && item) { update({ items: project.items.filter(i => i.id !== item.id) }); setSelected('') } }
@@ -42,31 +51,112 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange }:
     </div>
     <div className="tool-panel left-panel">
       <h3>Objects</h3><p>Click to add to your floor plan.</p>
-      <div className="template-list">{templates.map(t => <button key={t.name} onClick={() => addItem(t)}><span style={{ background: t.color }}>{t.kind === 'door' ? <DoorOpen/> : t.kind === 'storage' ? <Warehouse/> : <Box/>}</span><div><b>{t.name}</b><small>{t.width} × {t.depth} mm</small></div><Plus/></button>)}</div>
+      <div className="template-list">{SHOP_OBJECT_TEMPLATES.map(template => <button key={template.name} onClick={() => addItem(template)}><span style={{ background: template.color }}><ObjectIcon kind={template.kind}/></span><div><b>{template.name}</b><small>{template.width} × {template.depth} mm</small></div><Plus/></button>)}</div>
+      <div className="panel-section custom-object-form">
+        <h3>Add custom object</h3><p>Define anything that is not in the catalog.</p>
+        <TextField label="Name" value={customObject.name} onChange={name => setCustomObject(current => ({ ...current, name }))}/>
+        <KindField value={customObject.kind} onChange={kind => setCustomObject(current => ({ ...current, kind }))}/>
+        <div className="field-row"><Field label="Width (mm)" value={customObject.width} min={1} onChange={width => setCustomObject(current => ({ ...current, width }))}/><Field label="Depth (mm)" value={customObject.depth} min={1} onChange={depth => setCustomObject(current => ({ ...current, depth }))}/></div>
+        <Field label="Height (mm)" value={customObject.height} min={1} onChange={height => setCustomObject(current => ({ ...current, height }))}/>
+        <Field label="Working clearance (mm)" value={customObject.clearance} onChange={clearance => setCustomObject(current => ({ ...current, clearance }))}/>
+        <ColorField value={customObject.color} onChange={color => setCustomObject(current => ({ ...current, color }))}/>
+        <button className="button full" onClick={() => addItem(customObject)}><Plus/>Add custom object</button>
+      </div>
       <div className="panel-section"><h3>Room size</h3><div className="field-row"><Field label="Width (mm)" value={project.width} onChange={v => update({ width: v })}/><Field label="Depth (mm)" value={project.depth} onChange={v => update({ depth: v })}/></div></div>
     </div>
     <div className="canvas-wrap">
-      <div className="canvas-controls"><button onClick={() => setZoom(z => Math.max(.35, z - .1))}>−</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(z => Math.min(1.25, z + .1))}>+</button></div>
-      <div className="room-stage" style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80 }}>
-        <div className="room-canvas" onPointerDown={() => setSelected('')} style={{ width: project.width * SCALE, height: project.depth * SCALE, transform: `scale(${zoom})` }}>
-          {project.items.map(i => <div key={i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
-            {i.clearance > 0 && <span className="clearance" style={{ inset: -i.clearance * SCALE }}/>}<span className="object-name">{i.name}<small>{i.width} × {i.depth} mm</small></span>
-          </div>)}
-          <span className="dimension width-dimension">{project.width} mm</span><span className="dimension depth-dimension">{project.depth} mm</span>
+      <div className="view-mode-toggle"><button className={viewMode === 'top' ? 'active' : ''} onClick={() => setViewMode('top')}>Top</button><button className={viewMode === 'angled' ? 'active' : ''} onClick={() => setViewMode('angled')}>Angled</button></div>
+      {viewMode === 'top' ? <>
+        <div className="canvas-controls"><button onClick={() => setZoom(z => Math.max(.35, z - .1))}>−</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(z => Math.min(1.25, z + .1))}>+</button></div>
+        <div className="room-stage" style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80 }}>
+          <div className="room-canvas" onPointerDown={() => setSelected('')} style={{ width: project.width * SCALE, height: project.depth * SCALE, transform: `scale(${zoom})` }}>
+            <FeedClearanceLayer project={project}/>
+            {project.items.map(i => <div key={i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
+              {i.clearance > 0 && <span className="clearance" style={{ inset: -i.clearance * SCALE }}/>}<span className="object-name">{i.name}<small>{i.width} × {i.depth} mm</small></span>
+            </div>)}
+            <span className="dimension width-dimension">{project.width} mm</span><span className="dimension depth-dimension">{project.depth} mm</span>
+          </div>
         </div>
-      </div>
+      </> : <AngledShopView project={project} selected={selected} onSelect={setSelected}/>}
     </div>
     <div className="tool-panel right-panel">
       {item ? <><div className="inspector-heading"><div><span className="eyebrow">SELECTED OBJECT</span><input value={item.name} onChange={e => updateItem(item.id, { name: e.target.value })}/></div><button className="icon-button danger" onClick={remove}><Trash2/></button></div>
-        <div className="field-row"><Field label="Width (mm)" value={item.width} onChange={v => updateItem(item.id, { width: v })}/><Field label="Depth (mm)" value={item.depth} onChange={v => updateItem(item.id, { depth: v })}/></div>
+        <div className="field-row"><Field label="Width (mm)" value={item.width} min={1} onChange={v => updateItem(item.id, { width: v })}/><Field label="Depth (mm)" value={item.depth} min={1} onChange={v => updateItem(item.id, { depth: v })}/></div>
+        <Field label="Height (mm)" value={item.height} min={1} onChange={v => updateItem(item.id, { height: v })}/>
         <Field label="Working clearance (mm)" value={item.clearance} onChange={v => updateItem(item.id, { clearance: v })}/>
+        <KindField value={item.kind} onChange={kind => updateItem(item.id, { kind })}/>
+        <ColorField value={item.color} onChange={color => updateItem(item.id, { color })}/>
         <div className="field-label">Rotation</div><div className="rotation-buttons">{[0, 90, 180, 270].map(r => <button className={item.rotation === r ? 'active' : ''} onClick={() => updateItem(item.id, { rotation: r })} key={r}>{r}°</button>)}</div>
-        <button className="button secondary full" onClick={() => { const copy = { ...item, id: crypto.randomUUID(), x: item.x + 300, y: item.y + 300 }; update({ items: [...project.items, copy] }); setSelected(copy.id) }}><Copy/>Duplicate object</button>
+        <div className="panel-section feed-settings"><h3>Infeed / outfeed</h3><p>Direction is relative to the object and follows its rotation.</p>
+          <div className="feed-direction-buttons"><button className={item.feedDirection === null ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: null })}>Off</button>{([0, 90, 180, 270] as const).map(direction => <button className={item.feedDirection === direction ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: direction })} key={direction}>{direction === 0 ? '→' : direction === 90 ? '↓' : direction === 180 ? '←' : '↑'}</button>)}</div>
+          {item.feedDirection !== null && <><div className="field-row"><Field label="Infeed (mm)" value={item.infeedClearance} onChange={infeedClearance => updateItem(item.id, { infeedClearance })}/><Field label="Outfeed (mm)" value={item.outfeedClearance} onChange={outfeedClearance => updateItem(item.id, { outfeedClearance })}/></div><Field label="Side margin (mm)" value={item.sideClearance} onChange={sideClearance => updateItem(item.id, { sideClearance })}/></>}
+        </div>
+        <button className="button secondary full" onClick={() => { const copy = { ...item, id: createId(), x: item.x + 300, y: item.y + 300 }; update({ items: [...project.items, copy] }); setSelected(copy.id) }}><Copy/>Duplicate object</button>
       </> : <div className="empty-inspector"><CircleGauge/><h3>Select an object</h3><p>Choose an item on the plan to edit its size, rotation, and working clearance.</p></div>}
     </div>
   </div>
 }
 
-function Field({ label, value, onChange }: { label: string, value: number, onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min="0" step="1" value={value} onChange={e => onChange(Number(e.target.value))}/></label> }
+function FeedClearanceLayer({ project }: { project: ShopProject }) {
+  return <svg className="feed-clearance-layer" viewBox={`0 0 ${project.width} ${project.depth}`} preserveAspectRatio="none" aria-hidden="true">
+    {project.items.flatMap(item => getFeedClearanceZones(item).map(zone => {
+      const center = polygonCenter(zone.points)
+      return <g className={`feed-zone ${zone.kind}`} key={`${item.id}-${zone.kind}`}><polygon points={pointsAttribute(zone.points)}/><text x={center.x} y={center.y}>{zone.kind === 'infeed' ? 'IN' : 'OUT'}</text></g>
+    }))}
+  </svg>
+}
+
+function AngledShopView({ project, selected, onSelect }: { project: ShopProject, selected: string, onSelect: (id: string) => void }) {
+  const floor = projectPolygon([{ x: 0, y: 0 }, { x: project.width, y: 0 }, { x: project.width, y: project.depth }, { x: 0, y: project.depth }])
+  const projectedItems = [...project.items].sort((a, b) => (a.x + a.y) - (b.x + b.y)).map(item => {
+    const footprint = getShopItemFootprint(item)
+    return { item, footprint, bottom: projectPolygon(footprint), top: projectPolygon(footprint, item.height) }
+  })
+  const feedZones = project.items.flatMap(item => getFeedClearanceZones(item).map(zone => ({ ...zone, itemId: item.id, projected: projectPolygon(zone.points) })))
+  const allPoints = [...floor, ...feedZones.flatMap(zone => zone.projected), ...projectedItems.flatMap(entry => [...entry.bottom, ...entry.top])]
+  const bounds = getBounds(allPoints, 450)
+
+  return <div className="angled-shop-view"><div className="angled-view-note">Angled review view · switch to Top to move objects</div><svg viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`} role="img" aria-label="Angled workshop view">
+    <polygon className="iso-floor" points={pointsAttribute(floor)}/>
+    {feedZones.map(zone => <polygon className={`iso-feed-zone ${zone.kind}`} points={pointsAttribute(zone.projected)} key={`${zone.itemId}-${zone.kind}`}/>) }
+    {projectedItems.map(({ item, bottom, top }) => <g className={`iso-object ${selected === item.id ? 'selected' : ''}`} role="button" tabIndex={0} aria-label={item.name} onClick={() => onSelect(item.id)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onSelect(item.id) }} key={item.id}>
+      {getBoxSides(bottom, top).map((side, index) => <polygon className="iso-side" style={{ fill: item.color }} points={pointsAttribute(side)} key={index}/>) }
+      <polygon className="iso-top" style={{ fill: item.color }} points={pointsAttribute(top)}/>
+      <text x={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).x} y={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).y}>{item.name}</text>
+    </g>)}
+  </svg></div>
+}
+
+function polygonCenter(points: readonly Point2D[]): Point2D {
+  return { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length }
+}
+
+function getBoxSides(
+  bottom: [Point2D, Point2D, Point2D, Point2D],
+  top: [Point2D, Point2D, Point2D, Point2D],
+): Array<[Point2D, Point2D, Point2D, Point2D]> {
+  return [
+    [bottom[0], bottom[1], top[1], top[0]],
+    [bottom[1], bottom[2], top[2], top[1]],
+    [bottom[2], bottom[3], top[3], top[2]],
+    [bottom[3], bottom[0], top[0], top[3]],
+  ]
+}
+
+function getBounds(points: readonly Point2D[], padding: number) {
+  const xs = points.map(point => point.x)
+  const ys = points.map(point => point.y)
+  const minX = Math.min(...xs) - padding
+  const maxX = Math.max(...xs) + padding
+  const minY = Math.min(...ys) - padding
+  const maxY = Math.max(...ys) + padding
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+}
+
+function ObjectIcon({ kind }: { kind: ShopItemKind }) { return kind === 'door' ? <DoorOpen/> : kind === 'storage' ? <Warehouse/> : <Box/> }
+function TextField({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) { return <label className="field"><span>{label}</span><input value={value} onChange={e => onChange(e.target.value)}/></label> }
+function KindField({ value, onChange }: { value: ShopItemKind, onChange: (value: ShopItemKind) => void }) { return <label className="field"><span>Category</span><select value={value} onChange={e => onChange(e.target.value as ShopItemKind)}>{SHOP_ITEM_KINDS.map(kind => <option value={kind.value} key={kind.value}>{kind.label}</option>)}</select></label> }
+function ColorField({ value, onChange }: { value: string, onChange: (value: string) => void }) { return <label className="field color-field"><span>Color</span><input type="color" value={value} onChange={e => onChange(e.target.value)}/></label> }
+function Field({ label, value, min = 0, onChange }: { label: string, value: number, min?: number, onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min={min} step="1" value={value} onChange={e => onChange(Number(e.target.value))}/></label> }
 function Empty({ title, action }: { title: string, action: () => void }) { return <div className="empty-page"><h2>{title}</h2><button className="button" onClick={action}><Plus/>Create one</button></div> }
 function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max) }

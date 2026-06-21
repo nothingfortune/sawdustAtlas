@@ -25,6 +25,7 @@ export interface EndGrainMetrics {
   finishedWidth: number
   faceShift: number
   sliceCount: number
+  crosscutCount: number
   finalLength: number
   kerfWaste: number
   trimWaste: number
@@ -114,8 +115,16 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
 
   const usableLength = sourceLength - trimAllowance
   const pitch = sliceThickness + kerf
-  const sliceCount = pitch > EPSILON ? Math.max(0, Math.floor((usableLength + kerf + EPSILON) / pitch)) : 0
-  const kerfWaste = Math.max(0, sliceCount - 1) * kerf
+  let sliceCount = pitch > EPSILON ? Math.max(0, Math.floor((usableLength + kerf + EPSILON) / pitch)) : 0
+  let interiorUse = sliceCount * sliceThickness + Math.max(0, sliceCount - 1) * kerf
+  let remainderAfterInteriorCuts = usableLength - interiorUse
+  if (sliceCount > 0 && remainderAfterInteriorCuts > EPSILON && remainderAfterInteriorCuts + EPSILON < kerf) {
+    sliceCount -= 1
+    interiorUse = sliceCount * sliceThickness + Math.max(0, sliceCount - 1) * kerf
+    remainderAfterInteriorCuts = usableLength - interiorUse
+  }
+  const crosscutCount = sliceCount === 0 ? 0 : remainderAfterInteriorCuts <= EPSILON ? Math.max(0, sliceCount - 1) : sliceCount
+  const kerfWaste = crosscutCount * kerf
   const retainedLength = sliceCount * sliceThickness
   const offcutWaste = Math.max(0, usableLength - retainedLength - kerfWaste)
   const wasteLength = trimAllowance + kerfWaste + offcutWaste
@@ -135,6 +144,7 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
     finishedWidth: template.finishedWidth,
     faceShift: template.faceShift,
     sliceCount,
+    crosscutCount,
     finalLength: sliceCount * stockThickness,
     kerfWaste,
     trimWaste: trimAllowance,

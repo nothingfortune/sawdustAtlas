@@ -7,6 +7,7 @@ import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
+import { createId } from './id'
 
 export default function App() {
   const [data, setData] = useState<AtlasData>(loadData)
@@ -24,12 +25,12 @@ export default function App() {
   const updateBoard = (project: BoardProject) => setData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
 
   const createShop = () => {
-    const project: ShopProject = { id: crypto.randomUUID(), name: 'Untitled workshop', width: 6000, depth: 6000, items: [], updatedAt: new Date().toISOString() }
+    const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, items: [], updatedAt: new Date().toISOString() }
     setData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
   }
   const createBoard = () => {
     const project: BoardProject = {
-      id: crypto.randomUUID(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
+      id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
       endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
       allowances: { ...DEFAULT_ALLOWANCES },
     }

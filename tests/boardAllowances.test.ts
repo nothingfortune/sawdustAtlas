@@ -52,7 +52,8 @@ describe('edge-grain build allowances', () => {
 
   it('rips each strip oversized by the rip allowance', () => {
     const build = calculateBuildDimensions(makeProject())
-    expect(build.stripRoughWidths).toEqual([43, 23])
+    expect(build.stripRoughWidths).toEqual([46, 26])
+    expect(build.stripRoughWidths.reduce((sum, width) => sum + width, 0)).toBe(build.width.rough)
   })
 
   it('rough stock always exceeds the finished part volume', () => {
@@ -94,11 +95,11 @@ describe('end-grain build allowances', () => {
     expect(build.thickness.rough).toBe(project.endGrain.sliceThickness + 2 + 1 + 1.5)
   })
 
-  it('defers board-feet to the geometry engine for end grain', () => {
+  it('adds rip and outer-edge allowances to end-grain source stock', () => {
     const project = makeProject({ construction: 'end' })
     const metrics = calculateEndGrainMetrics(project)
     const build = calculateBuildDimensions(project)
-    expect(build.roughBoardFeet).toBe(metrics.sourceBoardFeet)
+    expect(build.roughBoardFeet).toBeGreaterThan(metrics.sourceBoardFeet)
     expect(build.finishedBoardFeet).toBe(metrics.finishedBoardFeet)
   })
 })

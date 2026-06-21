@@ -1,18 +1,25 @@
-import { ChevronDown, Copy, GripVertical, Layers3, Plus, RotateCcw, Scissors, Trash2 } from 'lucide-react'
-import type { CSSProperties } from 'react'
+import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, Trash2 } from 'lucide-react'
 import { species } from '../data'
-import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
+import { StripList } from './StripList'
+import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
 import type { BuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
 import type { CuttingBoardPlan } from '../domain/boardCutPlan'
+import { resolveScale } from '../domain/boardScale'
+import { useContainerWidth } from './useContainerWidth'
+import { ScaledBoardFrame } from './board/ScaledBoardFrame'
+import { LongGrainFace } from './board/LongGrainFace'
+import { EndGrainFace } from './board/EndGrainFace'
+import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings } from '../types'
 import { createId } from '../id'
 
-interface Props { projects: BoardProject[]; project: BoardProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void }
+interface Props { projects: BoardProject[]; project: BoardProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void }
 
-export function BoardDesigner({ projects, project, onSelect, onCreate, onChange }: Props) {
+export function BoardDesigner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
+  const [canvasRef, canvasWidth] = useContainerWidth(820)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
@@ -25,10 +32,17 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
   const cutPlan = generateCuttingBoardPlan(project, species)
   const boardFeet = build.roughBoardFeet
   const woodUsage = calculateWoodUsage(project, species, end)
+
+  // One shared px-per-mm so every preview is true-to-scale and comparable.
+  const governingLength = project.construction === 'end'
+    ? Math.max(project.endGrain.sourceLength, end.finalLength, 1)
+    : Math.max(project.length, 1)
+  const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
+
   const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
     const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]
     const roughWidth = build.stripRoughWidths[index] ?? strip.width
-    return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * wood.pricePerBoardFoot
+    return sum + roughWidth * build.length.rough * build.thickness.rough / 2359737.216 * wood.pricePerBoardFoot
   }, 0)
   const estimatedCost = project.construction === 'end'
     ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (species.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
@@ -37,12 +51,54 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
   const addStrip = (speciesId = 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
   const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
   const mirrorPattern = () => update({ strips: [...project.strips, ...[...project.strips].reverse().map(strip => ({ ...strip, id: createId() }))] })
+  const reverseStrips = () => update({ strips: [...project.strips].reverse() })
+  const reorderStrips = (orderedIds: string[]) => update({ strips: orderedIds.map(id => project.strips.find(strip => strip.id === id)).filter((strip): strip is BoardStrip => !!strip) })
+  const deleteStrip = (id: string) => update({ strips: project.strips.filter(strip => strip.id !== id) })
+
+  const twoSpecies = (): [string, string] => {
+    const primary = project.strips[0]?.speciesId ?? species[0]?.id ?? 'walnut'
+    const secondary = project.strips.find(strip => strip.speciesId !== primary)?.speciesId ?? species[1]?.id ?? primary
+    return [primary, secondary]
+  }
+  // Even count so an alternating A/B stack isn't a palindrome (needed for the
+  // vertical-mirror checkerboard and the brick offset to actually stagger).
+  const stripCount = () => { const n = Math.max(project.strips.length, 8); return n % 2 ? n + 1 : n }
+  const makeStripes = (angle = 0) => {
+    const [a, b] = twoSpecies()
+    return Array.from({ length: stripCount() }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: 40, trailingAngle: angle ? (i % 2 ? -angle : angle) : 0 }))
+  }
+  const altSlices = (predicate: (i: number) => boolean) => Array.from({ length: end.sliceCount }, (_, i) => predicate(i))
+
+  const alternateArrangement = () => {
+    const [a, b] = twoSpecies()
+    const w = project.strips[0]?.width ?? 38
+    update({ strips: Array.from({ length: stripCount() }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: w, trailingAngle: 0 })) })
+  }
+  const gradientArrangement = () => {
+    const [a, b] = twoSpecies()
+    const base = project.strips.length ? project.strips : Array.from({ length: 6 }, (_, i) => ({ id: '', speciesId: i % 2 ? b : a, width: 0, trailingAngle: 0 }))
+    const last = Math.max(1, base.length - 1)
+    update({ strips: base.map((strip, i) => ({ id: createId(), speciesId: strip.speciesId || a, width: Math.round(14 + 46 * (i / last)), trailingAngle: 0 })) })
+  }
+  const randomizeArrangement = () => {
+    const shuffled = [...project.strips]
+    for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
+    update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
+  }
+  const applyBoardPattern = (pattern: 'stripe' | 'checker' | 'brick' | 'chevron') => {
+    if (pattern === 'chevron') { update({ strips: makeStripes(45), endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: [] } }); return }
+    const strips = makeStripes(0)
+    if (pattern === 'checker') { const alt = altSlices(i => i % 2 === 1); update({ strips, endGrain: { ...project.endGrain, rowFlips: alt, rowRotations: alt, rowOffsets: [] } }) }
+    else if (pattern === 'brick') { update({ strips, endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: altSlices(i => i % 2 === 1).map(on => on ? 20 : 0) } }) }
+    else { update({ strips, endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: [] } }) }
+  }
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
     updateEnd({
       rowFlips: flips.map((flipped, index) => pattern === 'flip' ? index % 2 === 1 : pattern === 'invert' ? !flipped : false),
       rowRotations: rotations.map((rotated, index) => pattern === 'rotate' ? index % 2 === 1 : pattern === 'invert' ? !rotated : false),
+      rowOffsets: [],
     })
   }
   const cycleRow = (index: number) => {
@@ -58,16 +114,16 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
   return <div className="board-layout">
     <div className="designer-toolbar">
       <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div></div>
-      <button className="button secondary" onClick={onCreate}><Plus/>New design</button>
+      <div className="toolbar-actions"><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
     </div>
     <div className="board-main">
-      <div className="board-canvas-area">
+      <div className="board-canvas-area" ref={canvasRef}>
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final sanding' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
-        {project.construction === 'edge'
-          ? <EdgePreview project={project} width={width}/>
-          : <EndGrainWorkflow project={project} metrics={end} onToggleRow={cycleRow}/>
-        }
+
+        <FinishedBoard project={project} metrics={end} build={build} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
+        <HowItsBuilt project={project} metrics={end} pxPerMm={pxPerMm} edgeWidth={width}/>
+
         <div className="board-stats">
           <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
           <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
@@ -89,67 +145,153 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange 
         </div>
         {project.construction === 'end' && <><div className="waste-card"><Scissors/><div><span>{end.sliceCount} usable slices</span><b>{format(end.kerfWaste)} mm kerf + {format(end.trimWaste + end.offcutWaste)} mm trim/offcut</b></div></div><div className="wood-usage"><span className="eyebrow">STOCK BY SPECIES</span>{woodUsage.map(usage => <div key={usage.speciesId}><i style={{ background: usage.color }}/><span>{usage.name}<small>{format(usage.requiredBoardFeet)} bf stock</small></span><b>{format(usage.wasteBoardFeet)} bf waste</b></div>)}</div></>}
         <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Drum sanding (mm)" value={project.allowances.drumSanding} step={0.5} onChange={value => updateAllowance({ drumSanding: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
-        <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {format(width)} mm panel width</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
-          <div className="strip-list">{project.strips.map((strip, index) => { const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]; return <div className="strip-row" key={strip.id}><GripVertical/><span className="swatch" style={{ background: wood.color }}/><select value={strip.speciesId} onChange={event => updateStrip(strip.id, { speciesId: event.target.value })}>{species.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><input aria-label={`Strip ${index + 1} width`} title="Width in mm" type="number" min="1" step="1" value={strip.width} onChange={event => updateStrip(strip.id, { width: Number(event.target.value) })}/><span>mm</span>{project.construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => updateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}<button aria-label={`Delete strip ${index + 1}`} onClick={() => update({ strips: project.strips.filter((_, stripIndex) => stripIndex !== index) })}><Trash2/></button></div> })}</div>
+        <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {format(width)} mm panel width · drag to reorder</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
+          <StripList strips={project.strips} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
           <button className="add-strip" onClick={() => addStrip()}><Plus/>Add strip</button>
         </div>
-        <div className="panel-section pattern-actions"><h3>Strip tools</h3><div><button onClick={mirrorPattern}><Layers3/>Mirror pattern</button><button onClick={duplicatePattern}><Copy/>Repeat pattern</button><button onClick={() => update({ strips: [...project.strips].reverse() })}><RotateCcw/>Reverse</button></div></div>
-        {project.construction === 'end' && <div className="panel-section row-tools"><h3>After-turn row pattern</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
+        <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement}><Layers3/>Alternate</button><button onClick={gradientArrangement}><RotateCcw/>Gradient</button><button onClick={randomizeArrangement}><Shuffle/>Randomize</button><button onClick={mirrorPattern}><Layers3/>Mirror</button><button onClick={duplicatePattern}><Copy/>Repeat</button><button onClick={reverseStrips}><RotateCcw/>Reverse</button></div></div>
+        {project.construction === 'end' && <><div className="panel-section row-tools"><h3>End-grain pattern</h3><p>One-click classic looks (rebuilds the strip layout).</p><div><button onClick={() => applyBoardPattern('stripe')}>Stripe</button><button onClick={() => applyBoardPattern('checker')}>Checkerboard</button><button onClick={() => applyBoardPattern('brick')}>Brick</button><button onClick={() => applyBoardPattern('chevron')}>Chevron</button></div></div>
+        <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div></>}
         <div className="panel-section"><h3>Wood library</h3><div className="species-grid">{species.map(wood => <button key={wood.id} onClick={() => addStrip(wood.id)}><i style={{ background: wood.color }}/><span>{wood.name}<small>${wood.pricePerBoardFoot}/bf</small></span><Plus/></button>)}</div></div>
       </aside>
     </div>
   </div>
 }
 
-function EdgePreview({ project, width }: { project: BoardProject; width: number }) {
-  return <>
-    <div className="board-measure length-measure"><span>{project.length} mm</span></div>
-    <div className="board-render" style={{ aspectRatio: `${project.length} / ${Math.max(width, 1)}` }}><LongGrainStrips strips={project.strips}/></div>
-    <div className="board-measure width-measure"><span>{format(width)} mm</span></div>
-  </>
+function FinishedBoard({ project, metrics, build, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; metrics: EndGrainMetrics; build: BuildDimensions; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
+  const isEnd = project.construction === 'end'
+  const lengthMm = isEnd ? Math.max(metrics.finalLength, 1) : Math.max(project.length, 1)
+  const widthMm = isEnd ? Math.max(metrics.panelWidth, 1) : Math.max(edgeWidth, 1)
+  return <section className="finished-board">
+    <header><span className="eyebrow">FINISHED BOARD</span><span className="scale-note">true to scale · {isEnd ? 'click a slice to rotate/flip' : 'top view'}</span></header>
+    <ScaledBoardFrame lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
+      {isEnd
+        ? <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
+        : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
+      }
+    </ScaledBoardFrame>
+    <p className="board-dims">{format(build.length.finished)} × {format(build.width.finished)} × {format(build.thickness.finished)} mm finished{isEnd && Math.abs(metrics.faceShift) > 0.1 ? ` · square width ${format(metrics.finishedWidth)} mm after trimming` : ''}</p>
+  </section>
 }
 
-function EndGrainWorkflow({ project, metrics, onToggleRow }: { project: BoardProject; metrics: EndGrainMetrics; onToggleRow: (index: number) => void }) {
-  const cutStyle = {
-    '--source-ratio': `${project.endGrain.sourceLength} / ${Math.max(metrics.panelWidth, 1)}`,
-    '--trim-pct': `${project.endGrain.trimAllowance / 2 / project.endGrain.sourceLength * 100}%`,
-    '--pitch-pct': `${(project.endGrain.sliceThickness + project.endGrain.kerf) / project.endGrain.sourceLength * 100}%`,
-    '--slice-pct': `${project.endGrain.sliceThickness / project.endGrain.sourceLength * 100}%`,
-    '--used-pct': `${(project.endGrain.trimAllowance / 2 + metrics.sliceCount * project.endGrain.sliceThickness + metrics.crosscutCount * project.endGrain.kerf) / project.endGrain.sourceLength * 100}%`,
-  } as CSSProperties
-  return <div className="workflow-stack">
-    <section className="workflow-step"><div className="step-heading"><span>1</span><div><h3>First glue-up</h3><p>Long boards stacked across the panel before crosscutting · {project.endGrain.sourceLength} × {format(metrics.panelWidth)} × {project.endGrain.stockThickness} mm</p></div></div><div className="glueup-preview" style={{ aspectRatio: `${project.endGrain.sourceLength} / ${Math.max(metrics.panelWidth, 1)}` }}><LongGrainStrips strips={project.strips}/><span className="grain-direction">GRAIN →</span></div>{project.strips.some(strip => strip.trailingAngle !== 0) && <div className="cross-section"><span>Angled strip cross-section</span><EndGrainTemplateSvg project={project}/></div>}{Math.abs(metrics.faceShift) > .1 && <div className="angle-warning">Outer faces differ by {format(Math.abs(metrics.faceShift))} mm. Balance the trailing angles or plan to trim the white wedges shown after the turn.</div>}</section>
-    <section className="workflow-step"><div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices cut perpendicular to the grain at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div><div className="cut-plan" style={cutStyle}><div className="cut-plan-wood"><LongGrainStrips strips={project.strips}/><span className="grain-direction">GRAIN →</span></div><div className="trim start">TRIM</div><div className="cut-repeat"/><div className="trim end">OFFCUT</div></div></section>
-    <section className="workflow-step final-step"><div className="step-heading"><span>3</span><div><h3>After the 90° turn</h3><p>Click a slice to cycle normal, rotated, flipped, and both</p></div></div><EndGrainBoardSvg project={project} sliceCount={metrics.sliceCount} onToggleRow={onToggleRow}/><div className="transform-legend"><span>N normal</span><span>R rotated</span><span>F flipped</span><span>RF both</span></div></section>
-  </div>
-}
+function HowItsBuilt({ project, metrics, pxPerMm, edgeWidth }: { project: BoardProject; metrics: EndGrainMetrics; pxPerMm: number; edgeWidth: number }) {
+  if (project.construction === 'edge') {
+    return <section className="how-its-built">
+      <header><span className="eyebrow">HOW IT'S BUILT</span></header>
+      <div className="build-step">
+        <div className="step-heading"><span>1</span><div><h3>Glue-up order</h3><p>Glue strips edge to edge in this order · grain runs along the length</p></div></div>
+        <ScaledBoardFrame lengthMm={Math.max(project.length, 1)} widthMm={Math.max(edgeWidth, 1)} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Edge-grain glue-up order">
+          <LongGrainFace strips={project.strips} lengthMm={Math.max(project.length, 1)}/>
+        </ScaledBoardFrame>
+      </div>
+    </section>
+  }
 
-function LongGrainStrips({ strips }: { strips: BoardStrip[] }) {
-  if (!strips.length) return <div className="board-empty"><Plus/>Add strips to begin</div>
-  return strips.map(strip => { const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]; return <i key={strip.id} title={`${wood.name} · ${strip.width} mm`} className="wood-strip" style={{ flex: strip.width, '--wood': wood.color, '--grain': wood.accent } as CSSProperties}/> })
-}
-
-function WoodPatterns() {
-  return <defs>{species.map(wood => <pattern id={`end-${wood.id}`} key={wood.id} width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill={wood.color}/><ellipse cx="5" cy="7" rx="4" ry="6" fill="none" stroke={wood.accent} strokeWidth="1.2" opacity=".7"/><path d="M11 0c-4 5-4 13 0 18M15 0c-3 6-3 12 0 18" fill="none" stroke={wood.accent} strokeWidth=".8" opacity=".55"/></pattern>)}</defs>
-}
-
-function EndGrainTemplateSvg({ project }: { project: BoardProject }) {
+  const source = Math.max(project.endGrain.sourceLength, 1)
+  const panel = Math.max(metrics.panelWidth, 1)
+  const angled = project.strips.some(strip => strip.trailingAngle !== 0)
   const template = buildEndGrainTemplate(project)
-  const thickness = project.endGrain.stockThickness
-  return <svg viewBox={`0 0 ${thickness} ${template.height}`} preserveAspectRatio="xMidYMid meet"><WoodPatterns/>{template.polygons.map(polygon => <polygon key={polygon.id} points={polygon.points} fill={`url(#end-${polygon.speciesId})`} stroke="#1b211d" strokeWidth=".45"/>)}</svg>
+  return <section className="how-its-built">
+    <header><span className="eyebrow">HOW IT'S BUILT</span></header>
+
+    <div className="build-step">
+      <div className="step-heading"><span>1</span><div><h3>First glue-up</h3><p>Long boards stacked across the panel · {project.endGrain.sourceLength} × {format(metrics.panelWidth)} × {project.endGrain.stockThickness} mm</p></div></div>
+      <ScaledBoardFrame lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top', 'left']} ariaLabel="First glue-up panel">
+        <LongGrainFace strips={project.strips} lengthMm={source}/>
+      </ScaledBoardFrame>
+      {angled && Math.abs(metrics.faceShift) > 0.1 && <FaceShiftWedge leftFaceWidth={template.leftFaceWidth} rightFaceWidth={template.rightFaceWidth} finishedWidth={template.finishedWidth} stockThickness={project.endGrain.stockThickness}/>}
+    </div>
+
+    <div className="build-step">
+      <div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices cut across the grain at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div>
+      <ScaledBoardFrame lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Crosscut plan">
+        <LongGrainFace strips={project.strips} lengthMm={source}/>
+        <CrosscutOverlay project={project} metrics={metrics} heightMm={panel} pxPerMm={pxPerMm}/>
+      </ScaledBoardFrame>
+    </div>
+
+    <div className="build-step">
+      <div className="step-heading"><span>3</span><div><h3>After the 90° turn</h3><p>Slices stood on end and re-glued · edit orientation in the finished view above</p></div></div>
+      <ScaledBoardFrame lengthMm={Math.max(metrics.finalLength, 1)} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Board after the turn">
+        <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm}/>
+      </ScaledBoardFrame>
+    </div>
+  </section>
 }
 
-function EndGrainBoardSvg({ project, sliceCount, onToggleRow }: { project: BoardProject; sliceCount: number; onToggleRow: (index: number) => void }) {
+// The assembled end-grain board: one column per slice, each showing the strip
+// cross-section, with the per-slice rotate/flip transform. Interactive when
+// onToggleRow is supplied (the finished hero); static otherwise (process step).
+function AssembledBoard({ project, sliceCount, pxPerMm, onToggleRow }: { project: BoardProject; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void }) {
   const template = buildEndGrainTemplate(project)
-  const thickness = project.endGrain.stockThickness
-  const boardLength = Math.max(1, sliceCount * thickness)
-  return <svg className="endgrain-svg" viewBox={`0 0 ${boardLength} ${template.height}`} preserveAspectRatio="xMidYMid meet"><WoodPatterns/>{Array.from({ length: sliceCount }, (_, index) => {
+  const thickness = Math.max(project.endGrain.stockThickness, 0.001)
+  const height = Math.max(template.height, 0.001)
+  const k = 1 / pxPerMm
+  return <g>{Array.from({ length: sliceCount }, (_, index) => {
     const rotated = project.endGrain.rowRotations[index] ?? false
     const flipped = project.endGrain.rowFlips[index] ?? false
     const transform = rotated && flipped ? `translate(0 ${template.height}) scale(1 -1)` : rotated ? `translate(${thickness} ${template.height}) rotate(180)` : flipped ? `translate(${thickness} 0) scale(-1 1)` : undefined
     const state = `${rotated ? 'R' : ''}${flipped ? 'F' : ''}` || 'N'
-    return <g key={index} transform={`translate(${index * thickness} 0)`} role="button" tabIndex={0} aria-label={`Slice ${index + 1}: ${state}`} onClick={() => onToggleRow(index)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onToggleRow(index) }}><g transform={transform}>{template.polygons.map(polygon => <polygon key={polygon.id} points={polygon.points} fill={`url(#end-${polygon.speciesId})`} stroke="#1b211d" strokeWidth=".55"/>)}</g><rect width={thickness} height={template.height} fill="transparent"/><text x={thickness / 2} y={Math.max(8, template.height - 4)} textAnchor="middle">{state}</text></g>
-  })}</svg>
+    const offset = ((((project.endGrain.rowOffsets?.[index] ?? 0) % height) + height) % height)
+    const face = <g transform={transform}><EndGrainFace polygons={template.polygons}/></g>
+    const body = offset > 0.01
+      ? <g clipPath={`url(#sliceclip-${index})`}>
+          <clipPath id={`sliceclip-${index}`}><rect width={thickness} height={height}/></clipPath>
+          <g transform={`translate(0 ${-offset})`}>{face}</g>
+          <g transform={`translate(0 ${height - offset})`}>{face}</g>
+        </g>
+      : face
+    const interactive = !!onToggleRow
+    return <g
+      key={index}
+      transform={`translate(${index * thickness} 0)`}
+      className="slice"
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? `Slice ${index + 1}: ${state}` : undefined}
+      onClick={interactive ? () => onToggleRow(index) : undefined}
+      onKeyDown={interactive ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggleRow(index) } } : undefined}
+    >
+      {body}
+      <rect className="slice-hit" width={thickness} height={template.height} fill="transparent"/>
+      <g transform={`translate(${thickness / 2} ${template.height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{state}</text></g>
+    </g>
+  })}</g>
+}
+
+// Crosscut markers drawn in mm over the glue-up: trim, slice cut lines, kerf
+// waste between slices, and the offcut — positions straight from the metrics.
+function CrosscutOverlay({ project, metrics, heightMm, pxPerMm }: { project: BoardProject; metrics: EndGrainMetrics; heightMm: number; pxPerMm: number }) {
+  const settings = project.endGrain
+  const trim = Math.max(0, settings.trimAllowance) / 2
+  const slice = Math.max(0, settings.sliceThickness)
+  const kerf = Math.max(0, settings.kerf)
+  const pitch = slice + kerf
+  const used = trim + metrics.sliceCount * slice + metrics.crosscutCount * kerf
+  const source = Math.max(settings.sourceLength, 1)
+  const offcut = Math.max(0, source - used)
+  const cutCount = metrics.sliceCount > 0 ? metrics.sliceCount + 1 : 0
+  return <g className="crosscut-overlay">
+    {trim > 0 && <WasteBand x={0} width={trim} height={heightMm} pxPerMm={pxPerMm} label="TRIM"/>}
+    {kerf > 0 && Array.from({ length: metrics.crosscutCount }, (_, index) => {
+      const x = trim + index * pitch + slice
+      return <rect key={index} className="kerf-band" x={x} y={0} width={kerf} height={heightMm}/>
+    })}
+    {Array.from({ length: cutCount }, (_, index) => {
+      const x = trim + index * pitch
+      return <line key={`cut-${index}`} className="cut-line" x1={x} y1={0} x2={x} y2={heightMm} vectorEffect="non-scaling-stroke"/>
+    })}
+    {offcut > 0.5 && <WasteBand x={used} width={offcut} height={heightMm} pxPerMm={pxPerMm} label="OFFCUT"/>}
+  </g>
+}
+
+function WasteBand({ x, width, height, pxPerMm, label }: { x: number; width: number; height: number; pxPerMm: number; label: string }) {
+  const cx = x + width / 2
+  const cy = height / 2
+  return <g className="waste-band">
+    <rect x={x} y={0} width={width} height={height}/>
+    <g transform={`translate(${cx} ${cy}) scale(${1 / pxPerMm}) rotate(-90)`}><text textAnchor="middle" dominantBaseline="middle">{label}</text></g>
+  </g>
 }
 
 function EndGrainFields({ settings, onChange }: { settings: EndGrainSettings; onChange: (patch: Partial<EndGrainSettings>) => void }) {

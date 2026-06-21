@@ -53,6 +53,8 @@ export interface EndGrainSettings {
   trimAllowance: number
   rowFlips: boolean[]
   rowRotations: boolean[]
+  /** Per-slice vertical offset in mm for running-bond/brick patterns; wraps within the slice. */
+  rowOffsets?: number[]
 }
 
 export interface BuildAllowances {

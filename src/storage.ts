@@ -27,6 +27,7 @@ export function normalizeData(data: AtlasData): AtlasData {
         ...board.endGrain,
         rowFlips: board.endGrain.rowFlips ?? [],
         rowRotations: board.endGrain.rowRotations ?? [],
+        rowOffsets: board.endGrain.rowOffsets ?? [],
       } : {
         sourceLength: 900,
         stockThickness: board.thickness,
@@ -35,6 +36,7 @@ export function normalizeData(data: AtlasData): AtlasData {
         trimAllowance: 20,
         rowFlips: [],
         rowRotations: [],
+        rowOffsets: [],
       },
     })),
   }

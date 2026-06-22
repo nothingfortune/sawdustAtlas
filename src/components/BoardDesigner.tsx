@@ -1,4 +1,4 @@
-import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { ChevronDown, Copy, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { StripList } from './StripList'
 import { WoodLibraryEditor } from './WoodLibraryEditor'
@@ -101,10 +101,11 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   return <div className="board-layout">
     <div className="designer-toolbar">
       <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div></div>
-      <div className="toolbar-actions"><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
+      <div className="toolbar-actions"><button className="button secondary" onClick={() => window.print()} aria-label="Print build sheet"><Printer/>Print build sheet</button><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
     </div>
     <div className="board-main">
       <div className="board-canvas-area" ref={canvasRef}>
+        <BuildSheetHeader project={project} build={build} boardFeet={boardFeet} estimatedCost={estimatedCost}/>
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final sanding' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
@@ -119,6 +120,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         </div>
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
+        <BuildAssumptions project={project}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
@@ -307,6 +309,47 @@ function BuildSummary({ build }: { build: BuildDimensions }) {
     </div>)}
     <div className="build-summary-row total"><span>Removed milling stock</span><b>{format(build.removedBoardFeet)} bf</b><b className="finished">{format(build.finishedBoardFeet)} bf part</b></div>
   </div>
+}
+
+// Print-only banner leading the build sheet: name, construction, date, and the
+// headline numbers. Hidden on screen (the live .board-intro covers that there).
+function BuildSheetHeader({ project, build, boardFeet, estimatedCost }: { project: BoardProject; build: BuildDimensions; boardFeet: number; estimatedCost: number }) {
+  return <header className="print-only print-sheet-header">
+    <div>
+      <span className="eyebrow">SAWDUSTATLAS · CUTTING BOARD BUILD SHEET</span>
+      <h1>{project.name}</h1>
+      <p>{project.construction === 'end' ? 'End-grain construction' : 'Edge-grain construction'} · generated {new Date().toLocaleDateString()}</p>
+    </div>
+    <dl className="print-sheet-facts">
+      <div><dt>Finished size</dt><dd>{format(build.length.finished)} × {format(build.width.finished)} × {format(build.thickness.finished)} mm</dd></div>
+      <div><dt>Rough stock</dt><dd>{format(boardFeet)} bf</dd></div>
+      <div><dt>Material estimate</dt><dd>${estimatedCost.toFixed(2)}</dd></div>
+    </dl>
+  </header>
+}
+
+// Print-only footer spelling out the allowances and basis behind every number
+// on the sheet, so a printed plan is self-explanatory at the bench.
+function BuildAssumptions({ project }: { project: BoardProject }) {
+  const a = project.allowances
+  const rows: Array<[string, string]> = [
+    ['Units', 'All dimensions in millimeters; values are rounded only for display.'],
+    ['Milling — thickness', `Jointing ${format(a.jointing)} + planing ${format(a.planing)} + drum sanding ${format(a.drumSanding)} mm removed reaching the finished faces.`],
+    ['Milling — width', `${format(a.ripAllowance)} mm ripped per strip; ${format(a.widthTrim)} mm trimmed squaring the edges.`],
+    ['Milling — length', `${format(a.lengthTrim)} mm trimmed squaring the ends.`],
+  ]
+  if (project.construction === 'end') {
+    const e = project.endGrain
+    rows.push(
+      ['First glue-up', `${format(e.sourceLength)} mm long × ${format(e.stockThickness)} mm thick stock.`],
+      ['Crosscut', `${format(e.sliceThickness)} mm slices · ${format(e.kerf)} mm blade kerf · ${format(e.trimAllowance)} mm total end trim.`],
+    )
+  }
+  rows.push(['Cost basis', 'Estimated from rough purchased board-feet × price per board foot. Excludes glue, finish, and consumables.'])
+  return <section className="print-only build-assumptions">
+    <h4>Assumptions</h4>
+    <dl>{rows.map(([term, detail]) => <div key={term}><dt>{term}</dt><dd>{detail}</dd></div>)}</dl>
+  </section>
 }
 
 function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {

@@ -97,12 +97,16 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 | BOARD-011 | Improved wood appearance | Partial | Next | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
 | BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, drum sanding, and final trimming; rough-stock board feet and cost reflect purchased stock. |
 | BOARD-013 | Cut list and bill of materials | Complete | Now | Generate rough stock, rip widths, crosscut and saw-pass counts, sequence, warnings, and per-species totals from one typed domain plan. |
-| BOARD-014 | Printable build sheet | Planned | Next | Print selected previews, dimensions, numbered steps, cut list, BOM, warnings, and assumptions. |
+| BOARD-014 | Printable build sheet | Complete | Now | Browser print path renders previews, finished/rough dimensions, numbered build steps, cut list, BOM, warnings, and an assumptions block; app chrome is stripped via `@media print`. |
 | BOARD-015 | Pattern presets | Partial | Next | Stripe, checkerboard, brick, and chevron exist. Add third-bond, stepped-wave, seeded-mosaic, and distinct zig-zag recipes next; presets remain editable and dimensionally validated. Basket weave and 3D blocks require BOARD-008/composite blanks, while herringbone, pinwheel, and spiral require block-level 2D assembly. See `END_GRAIN_PATTERN_RESEARCH.md`. |
 | BOARD-016 | Board features | Planned | Later | Juice grooves, handles, finger slots, feet, chamfers, edge profiles, and corner radii affect dimensions and steps. |
 | BOARD-017 | Variant comparison | Planned | Later | Compare pattern, cost, waste, and finished-size alternatives side by side. |
 | BOARD-018 | Shareable design links | Planned | Later | Encode or host versioned read-only designs without exposing private project data. |
 | BOARD-019 | CNC/toolpath export | Research | Research | Export only after geometry, tool diameter, origin, and safety semantics are defined. |
+| BOARD-020 | Multiple glueups | Planned | Research | allow for user to add or remove n amount of glueups, adding additional different boards, cross cuts with the final preview rendering final state, updating live |
+| BOARD-021 | Slice Creation | Research | Research | Allow for user to create the slices of cutting board directly and generate the preview around that. Allow for addition of different shapes, (user can set angles of cuts etc etc) as alternate entry point. merges in with rest of design workflow |
+| BOARD-022 | Printable Instructions based on design and cuts | Planned | Later | Provide user with A) interactive instructions based on the currently generated design or B) A printable version that accounts for their selections,  design, cuts wood choices that are all step by step |
+
 
 ### Shared Cut Planner and Stock
 
@@ -120,7 +124,7 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | CUT-008 | Stock inventory | Planned | Next | Track species/material, length, width, thickness, quantity, cost, location, moisture, and photos. |
 | CUT-009 | Reusable offcuts | Planned | Next | Results create labeled offcuts that can be accepted into inventory or discarded. |
 | CUT-010 | Defects and no-cut zones | Planned | Later | Mark knots, checks, live edge, splits, and reserved grain features on individual stock pieces. |
-| CUT-011 | Printable labels and cut maps | Planned | Later | Print stock IDs, part labels, dimensions, grain arrows, and placement diagrams. |
+| CUT-011 | Printable labels and cut maps | Planned | Later | Print stock IDs, part labels, dimensions, grain arrows, and placement diagrams. printable via label printer or label sheet |
 
 ### Data, Tablet, and Deployment
 
@@ -188,7 +192,7 @@ The following are release requirements for any feature that reports dimensions, 
 - Finish multiple-panel and slice-reordering model (`BOARD-008`, `BOARD-009`).
 - Add rough/finished allowances (`BOARD-012`). _Done._
 - Generate cut list and BOM (`BOARD-013`). _Done._
-- Generate a printable build sheet (`BOARD-014`).
+- Generate a printable build sheet (`BOARD-014`). _Done._
 - Expand golden and property tests for angled and multi-panel designs.
 - Complete touch and accessibility pass for board editing.
 
@@ -235,14 +239,13 @@ Exit criteria: Notion improves discovery and documentation without becoming requ
 
 ## Near-Term Ordered Backlog
 
-1. `BOARD-014`: create a printable build sheet with assumptions and warnings.
-2. `BOARD-008`: support multiple first glue-up panels.
-3. `BOARD-009`: reorder and transform generated slices.
-4. `CUT-001`: establish the shared cut-plan types and validation contract.
-5. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
-6. `DATA-005`: add shared LAN persistence before relying on tablet edits.
-7. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
-8. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
+1. `BOARD-008`: support multiple first glue-up panels.
+2. `BOARD-009`: reorder and transform generated slices.
+3. `CUT-001`: establish the shared cut-plan types and validation contract.
+4. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
+5. `DATA-005`: add shared LAN persistence before relying on tablet edits.
+6. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
+7. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
 
 ## Open Decisions
 

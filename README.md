@@ -2,6 +2,8 @@
 
 A local-first design workspace for woodworking. The first two tools are a scaled workshop planner and an edge- and end-grain cutting board designer.
 
+**New to Sawdust Atlas?** Start with the plain-language [START HERE guide](START_HERE.md).
+
 See [the product plan](docs/PRODUCT_PLAN.md) for the complete feature inventory, milestones, accuracy requirements, and ordered backlog.
 
 ## Run locally

@@ -81,4 +81,5 @@ export interface BoardProject {
 export interface AtlasData {
   shops: ShopProject[]
   boards: BoardProject[]
+  woods: WoodSpecies[]
 }

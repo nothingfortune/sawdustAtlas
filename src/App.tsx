@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Upload } from 'lucide-react'
-import type { AtlasData, BoardProject, ShopProject, View } from './types'
+import type { AtlasData, BoardProject, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData } from './storage'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -23,6 +23,21 @@ export default function App() {
 
   const updateShop = (project: ShopProject) => setData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
   const updateBoard = (project: BoardProject) => setData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
+  const addWood = () => {
+    const wood: WoodSpecies = { id: createId(), name: 'Custom wood', color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 8 }
+    setData(current => ({ ...current, woods: [...current.woods, wood] }))
+  }
+  const updateWood = (id: string, patch: Partial<WoodSpecies>) => setData(current => ({
+    ...current,
+    woods: current.woods.map(wood => wood.id === id ? { ...wood, ...patch, id: wood.id } : wood),
+  }))
+  const deleteWood = (id: string) => {
+    const wood = data.woods.find(candidate => candidate.id === id)
+    if (!wood) return
+    if (data.boards.some(board => board.strips.some(strip => strip.speciesId === id))) { window.alert(`${wood.name} is used by a cutting board and cannot be deleted.`); return }
+    if (data.woods.length === 1) { window.alert('Keep at least one wood in the library.'); return }
+    if (window.confirm(`Delete ${wood.name} from the wood library?`)) setData(current => ({ ...current, woods: current.woods.filter(candidate => candidate.id !== id) }))
+  }
 
   const deleteShop = (id: string) => {
     const project = data.shops.find(p => p.id === id)
@@ -85,7 +100,7 @@ export default function App() {
       <section className="workspace">
         {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard}/>} 
         {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop}/>}
-        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard}/>}
+        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} onAddWood={addWood} onUpdateWood={updateWood} onDeleteWood={deleteWood}/>}
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])}/>

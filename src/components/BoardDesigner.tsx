@@ -1,7 +1,7 @@
 import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import { species } from '../data'
 import { StripList } from './StripList'
+import { WoodLibraryEditor } from './WoodLibraryEditor'
 import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
@@ -15,12 +15,14 @@ import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
-import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings } from '../types'
+import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
+import { applyBoardPattern, BOARD_PATTERNS } from '../domain/boardPatterns'
+import type { BoardPatternId } from '../domain/boardPatterns'
 
-interface Props { projects: BoardProject[]; project: BoardProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void }
+interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onAddWood: () => void; onUpdateWood: (id: string, patch: Partial<WoodSpecies>) => void; onDeleteWood: (id: string) => void }
 
-export function BoardDesigner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
+export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete, onAddWood, onUpdateWood, onDeleteWood }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
@@ -32,9 +34,9 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
   const build = calculateBuildDimensions(project)
-  const cutPlan = generateCuttingBoardPlan(project, species)
+  const cutPlan = generateCuttingBoardPlan(project, woods)
   const boardFeet = build.roughBoardFeet
-  const woodUsage = calculateWoodUsage(project, species, end)
+  const woodUsage = calculateWoodUsage(project, woods, end)
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -43,15 +45,15 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
   const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
 
   const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
-    const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]
+    const wood = woods.find(candidate => candidate.id === strip.speciesId) ?? woods[0]
     const roughWidth = build.stripRoughWidths[index] ?? strip.width
-    return sum + roughWidth * build.length.rough * build.thickness.rough / 2359737.216 * wood.pricePerBoardFoot
+    return sum + roughWidth * build.length.rough * build.thickness.rough / 2359737.216 * (wood?.pricePerBoardFoot ?? 0)
   }, 0)
   const estimatedCost = project.construction === 'end'
-    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (species.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
+    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woods.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
     : edgeEstimatedCost
 
-  const addStrip = (speciesId = 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
+  const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
   const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
   const mirrorPattern = () => update({ strips: [...project.strips, ...[...project.strips].reverse().map(strip => ({ ...strip, id: createId() }))] })
   const reverseStrips = () => update({ strips: [...project.strips].reverse() })
@@ -59,19 +61,13 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
   const deleteStrip = (id: string) => update({ strips: project.strips.filter(strip => strip.id !== id) })
 
   const twoSpecies = (): [string, string] => {
-    const primary = project.strips[0]?.speciesId ?? species[0]?.id ?? 'walnut'
-    const secondary = project.strips.find(strip => strip.speciesId !== primary)?.speciesId ?? species[1]?.id ?? primary
+    const primary = project.strips[0]?.speciesId ?? woods[0]?.id ?? 'walnut'
+    const secondary = project.strips.find(strip => strip.speciesId !== primary)?.speciesId ?? woods[1]?.id ?? primary
     return [primary, secondary]
   }
   // Even count so an alternating A/B stack isn't a palindrome (needed for the
   // vertical-mirror checkerboard and the brick offset to actually stagger).
   const stripCount = () => { const n = Math.max(project.strips.length, 8); return n % 2 ? n + 1 : n }
-  const makeStripes = (angle = 0) => {
-    const [a, b] = twoSpecies()
-    return Array.from({ length: stripCount() }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: 40, trailingAngle: angle ? (i % 2 ? -angle : angle) : 0 }))
-  }
-  const altSlices = (predicate: (i: number) => boolean) => Array.from({ length: end.sliceCount }, (_, i) => predicate(i))
-
   const alternateArrangement = () => {
     const [a, b] = twoSpecies()
     const w = project.strips[0]?.width ?? 38
@@ -88,13 +84,7 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
     update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
   }
-  const applyBoardPattern = (pattern: 'stripe' | 'checker' | 'brick' | 'chevron') => {
-    if (pattern === 'chevron') { update({ strips: makeStripes(45), endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: [] } }); return }
-    const strips = makeStripes(0)
-    if (pattern === 'checker') { const alt = altSlices(i => i % 2 === 1); update({ strips, endGrain: { ...project.endGrain, rowFlips: alt, rowRotations: alt, rowOffsets: [] } }) }
-    else if (pattern === 'brick') { update({ strips, endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: altSlices(i => i % 2 === 1).map(on => on ? 20 : 0) } }) }
-    else { update({ strips, endGrain: { ...project.endGrain, rowFlips: [], rowRotations: [], rowOffsets: [] } }) }
-  }
+  const applyPattern = (pattern: BoardPatternId) => update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId))
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
@@ -124,8 +114,8 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final sanding' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
-        <FinishedBoard project={project} metrics={end} build={build} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
-        <HowItsBuilt project={project} metrics={end} pxPerMm={pxPerMm} edgeWidth={width}/>
+        <FinishedBoard project={project} woods={woods} metrics={end} build={build} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
+        <HowItsBuilt project={project} woods={woods} metrics={end} pxPerMm={pxPerMm} edgeWidth={width}/>
 
         <div className="board-stats">
           <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
@@ -150,13 +140,13 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
         {project.construction === 'end' && <><div className="waste-card"><Scissors/><div><span>{end.sliceCount} usable slices</span><b>{format(end.kerfWaste)} mm kerf + {format(end.trimWaste + end.offcutWaste)} mm trim/offcut</b></div></div><div className="wood-usage"><span className="eyebrow">STOCK BY SPECIES</span>{woodUsage.map(usage => <div key={usage.speciesId}><i style={{ background: usage.color }}/><span>{usage.name}<small>{format(usage.requiredBoardFeet)} bf stock</small></span><b>{format(usage.wasteBoardFeet)} bf waste</b></div>)}</div></>}
         <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Drum sanding (mm)" value={project.allowances.drumSanding} step={0.5} onChange={value => updateAllowance({ drumSanding: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
         <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {format(width)} mm panel width · drag to reorder</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
-          <StripList strips={project.strips} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
+          <StripList strips={project.strips} woods={woods} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
           <button className="add-strip" onClick={() => addStrip()}><Plus/>Add strip</button>
         </div>
         <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement}><Layers3/>Alternate</button><button onClick={gradientArrangement}><RotateCcw/>Gradient</button><button onClick={randomizeArrangement}><Shuffle/>Randomize</button><button onClick={mirrorPattern}><Layers3/>Mirror</button><button onClick={duplicatePattern}><Copy/>Repeat</button><button onClick={reverseStrips}><RotateCcw/>Reverse</button></div></div>
-        {project.construction === 'end' && <><div className="panel-section row-tools"><h3>End-grain pattern</h3><p>One-click classic looks (rebuilds the strip layout).</p><div><button onClick={() => applyBoardPattern('stripe')}>Stripe</button><button onClick={() => applyBoardPattern('checker')}>Checkerboard</button><button onClick={() => applyBoardPattern('brick')}>Brick</button><button onClick={() => applyBoardPattern('chevron')}>Chevron</button></div></div>
+        {project.construction === 'end' && <><div className="panel-section row-tools"><h3>End-grain pattern</h3><p>Modular recipes rebuild the strip layout and remain fully editable.</p><div>{BOARD_PATTERNS.map(pattern => <button key={pattern.id} title={pattern.description} onClick={() => applyPattern(pattern.id)}>{pattern.name}</button>)}</div></div>
         <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div></>}
-        <div className="panel-section"><h3>Wood library</h3><div className="species-grid">{species.map(wood => <button key={wood.id} onClick={() => addStrip(wood.id)}><i style={{ background: wood.color }}/><span>{wood.name}<small>${wood.pricePerBoardFoot}/bf</small></span><Plus/></button>)}</div></div>
+        <div className="panel-section"><WoodLibraryEditor woods={woods} onAdd={onAddWood} onUpdate={onUpdateWood} onDelete={onDeleteWood} onUse={addStrip}/></div>
       </aside>
       {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
       <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>
@@ -164,7 +154,7 @@ export function BoardDesigner({ projects, project, onSelect, onCreate, onChange,
   </div>
 }
 
-function FinishedBoard({ project, metrics, build, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; metrics: EndGrainMetrics; build: BuildDimensions; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
+function FinishedBoard({ project, woods, metrics, build, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; build: BuildDimensions; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
   const isEnd = project.construction === 'end'
   const lengthMm = isEnd ? Math.max(metrics.finalLength, 1) : Math.max(project.length, 1)
   const widthMm = isEnd ? Math.max(metrics.panelWidth, 1) : Math.max(edgeWidth, 1)
@@ -173,7 +163,7 @@ function FinishedBoard({ project, metrics, build, edgeWidth, pxPerMm, onToggleRo
     <header><span className="eyebrow">FINISHED BOARD</span><span className="scale-note">true to scale · {isEnd ? 'tap a slice · pinch to zoom' : 'top view · pinch to zoom'}</span></header>
     <div className="pinch-viewport" {...pinch.handlers}>
       <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})` }}>
-        <ScaledBoardFrame lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
+        <ScaledBoardFrame woods={woods} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
           {isEnd
             ? <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
             : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
@@ -186,13 +176,13 @@ function FinishedBoard({ project, metrics, build, edgeWidth, pxPerMm, onToggleRo
   </section>
 }
 
-function HowItsBuilt({ project, metrics, pxPerMm, edgeWidth }: { project: BoardProject; metrics: EndGrainMetrics; pxPerMm: number; edgeWidth: number }) {
+function HowItsBuilt({ project, woods, metrics, pxPerMm, edgeWidth }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; pxPerMm: number; edgeWidth: number }) {
   if (project.construction === 'edge') {
     return <section className="how-its-built">
       <header><span className="eyebrow">HOW IT'S BUILT</span></header>
       <div className="build-step">
         <div className="step-heading"><span>1</span><div><h3>Glue-up order</h3><p>Glue strips edge to edge in this order · grain runs along the length</p></div></div>
-        <ScaledBoardFrame lengthMm={Math.max(project.length, 1)} widthMm={Math.max(edgeWidth, 1)} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Edge-grain glue-up order">
+        <ScaledBoardFrame woods={woods} lengthMm={Math.max(project.length, 1)} widthMm={Math.max(edgeWidth, 1)} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Edge-grain glue-up order">
           <LongGrainFace strips={project.strips} lengthMm={Math.max(project.length, 1)}/>
         </ScaledBoardFrame>
       </div>
@@ -208,7 +198,7 @@ function HowItsBuilt({ project, metrics, pxPerMm, edgeWidth }: { project: BoardP
 
     <div className="build-step">
       <div className="step-heading"><span>1</span><div><h3>First glue-up</h3><p>Long boards stacked across the panel · {project.endGrain.sourceLength} × {format(metrics.panelWidth)} × {project.endGrain.stockThickness} mm</p></div></div>
-      <ScaledBoardFrame lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top', 'left']} ariaLabel="First glue-up panel">
+      <ScaledBoardFrame woods={woods} lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top', 'left']} ariaLabel="First glue-up panel">
         <LongGrainFace strips={project.strips} lengthMm={source}/>
       </ScaledBoardFrame>
       {angled && Math.abs(metrics.faceShift) > 0.1 && <FaceShiftWedge leftFaceWidth={template.leftFaceWidth} rightFaceWidth={template.rightFaceWidth} finishedWidth={template.finishedWidth} stockThickness={project.endGrain.stockThickness}/>}
@@ -216,7 +206,7 @@ function HowItsBuilt({ project, metrics, pxPerMm, edgeWidth }: { project: BoardP
 
     <div className="build-step">
       <div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices cut across the grain at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div>
-      <ScaledBoardFrame lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Crosscut plan">
+      <ScaledBoardFrame woods={woods} lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Crosscut plan">
         <LongGrainFace strips={project.strips} lengthMm={source}/>
         <CrosscutOverlay project={project} metrics={metrics} heightMm={panel} pxPerMm={pxPerMm}/>
       </ScaledBoardFrame>
@@ -224,7 +214,7 @@ function HowItsBuilt({ project, metrics, pxPerMm, edgeWidth }: { project: BoardP
 
     <div className="build-step">
       <div className="step-heading"><span>3</span><div><h3>After the 90° turn</h3><p>Slices stood on end and re-glued · edit orientation in the finished view above</p></div></div>
-      <ScaledBoardFrame lengthMm={Math.max(metrics.finalLength, 1)} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Board after the turn">
+      <ScaledBoardFrame woods={woods} lengthMm={Math.max(metrics.finalLength, 1)} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Board after the turn">
         <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm}/>
       </ScaledBoardFrame>
     </div>

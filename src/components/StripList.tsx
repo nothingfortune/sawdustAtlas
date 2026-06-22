@@ -1,11 +1,11 @@
 import { GripVertical, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { species } from '../data'
-import type { BoardStrip } from '../types'
+import type { BoardStrip, WoodSpecies } from '../types'
 
 interface Props {
   strips: BoardStrip[]
+  woods: WoodSpecies[]
   construction: 'edge' | 'end'
   onReorder: (orderedIds: string[]) => void
   onUpdateStrip: (id: string, patch: Partial<BoardStrip>) => void
@@ -15,7 +15,7 @@ interface Props {
 // First glue-up strip editor with drag-to-reorder (pointer = mouse + touch) and
 // keyboard reorder (arrow keys on the grip). Reordering is previewed live and
 // committed on drop; the canonical order stays in the parent.
-export function StripList({ strips, construction, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
+export function StripList({ strips, woods, construction, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
   const [order, setOrder] = useState<string[] | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -66,7 +66,7 @@ export function StripList({ strips, construction, onReorder, onUpdateStrip, onDe
 
   return <div className="strip-list" ref={listRef}>
     {rendered.map((strip, index) => {
-      const wood = species.find(candidate => candidate.id === strip.speciesId) ?? species[0]
+      const wood = woods.find(candidate => candidate.id === strip.speciesId) ?? woods[0]
       return <div className={`strip-row${draggingId === strip.id ? ' dragging' : ''}`} key={strip.id} data-strip-row>
         <button
           className="grip-handle"
@@ -80,8 +80,8 @@ export function StripList({ strips, construction, onReorder, onUpdateStrip, onDe
             if (event.key === 'ArrowDown') { event.preventDefault(); moveByKey(strip.id, 1) }
           }}
         ><GripVertical/></button>
-        <span className="swatch" style={{ background: wood.color }}/>
-        <select value={strip.speciesId} onChange={event => onUpdateStrip(strip.id, { speciesId: event.target.value })}>{species.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select>
+        <span className="swatch" style={{ background: wood?.color ?? '#8c6a48' }}/>
+        <select value={strip.speciesId} onChange={event => onUpdateStrip(strip.id, { speciesId: event.target.value })}>{woods.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select>
         <input aria-label={`Strip ${index + 1} width`} title="Width in mm" type="number" min="1" step="1" value={strip.width} onChange={event => onUpdateStrip(strip.id, { width: Number(event.target.value) })}/>
         <span>mm</span>
         {construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => onUpdateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}

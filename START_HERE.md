@@ -1,16 +1,16 @@
 # Start Here
 
-Sawdust Atlas helps you plan a workshop and design cutting boards. You use it in a web browser, but your projects stay on your device unless you export a backup.
+SawdustAtlas helps you plan a workshop and design cutting boards. You use it in a web browser, but your projects stay on your device unless you export a backup.
 
-## Open Sawdust Atlas
+## Open SawdustAtlas
 
-Ask the person who set it up for your Sawdust Atlas address and save that page as a bookmark.
+Ask the person who set it up for your SawdustAtlas address and save that page as a bookmark.
 
-- On the computer running Sawdust Atlas, the address is usually `http://localhost:8080`.
+- On the computer running SawdustAtlas, the address is usually `http://localhost:8080`.
 - On a tablet or another computer, use the private network address provided during setup.
-- The computer running Sawdust Atlas must be awake, and Docker Desktop must be running.
+- The computer running SawdustAtlas must be awake, and Docker Desktop must be running.
 
-If Sawdust Atlas has not been set up yet, give the technical helper the [README](README.md). The Docker section has the one-time setup instructions.
+If SawdustAtlas has not been set up yet, give the technical helper the [README](README.md). The Docker section has the one-time setup instructions.
 
 ## Your First Project
 
@@ -62,9 +62,9 @@ Use **Export backup** regularly. It downloads one backup file containing your wo
 
 To restore or move your projects:
 
-1. Open Sawdust Atlas on the destination device.
+1. Open SawdustAtlas on the destination device.
 2. Select **Import backup**.
-3. Choose the exported Sawdust Atlas file.
+3. Choose the exported SawdustAtlas file.
 
 Importing a backup replaces the projects currently stored in that browser. Export the current work first if you may need it later.
 
@@ -72,13 +72,13 @@ Importing a backup replaces the projects currently stored in that browser. Expor
 
 - **The page will not open:** Make sure the host computer is awake and Docker Desktop is running, then refresh the page.
 - **A tablet cannot connect:** Confirm the tablet and host computer are on the same private network.
-- **Projects seem to be missing:** Check whether you opened Sawdust Atlas in a different browser or on a different device.
+- **Projects seem to be missing:** Check whether you opened SawdustAtlas in a different browser or on a different device.
 - **The layout looks stale:** Refresh the page. Your locally saved projects should return.
 - **You are about to clear browser data:** Export a backup first.
 
 ## Before Building
 
-Sawdust Atlas is a planning tool, not a substitute for checking the actual material and machines.
+SawdustAtlas is a planning tool, not a substitute for checking the actual material and machines.
 
 - Measure your real blade kerf and stock.
 - Confirm every cut and angle before machining.

@@ -1,10 +1,10 @@
-# Sawdust Atlas
+# SawdustAtlas
 
 A local-first design workspace for woodworking. The first two tools are a scaled workshop planner and an edge- and end-grain cutting board designer.
 
-**New to Sawdust Atlas?** Start with the plain-language [START HERE guide](START_HERE.md).
+**New to SawdustAtlas?** Start with the plain-language [START HERE guide](START_HERE.md).
 
-**New to Sawdust Atlas?** Start with the plain-language [START HERE guide](START_HERE.md).
+**New to SawdustAtlas?** Start with the plain-language [START HERE guide](START_HERE.md).
 
 See [the product plan](docs/PRODUCT_PLAN.md) for the complete feature inventory, milestones, accuracy requirements, and ordered backlog.
 
@@ -21,12 +21,12 @@ Create a production build with `pnpm build`.
 
 ### Docker (recommended for everyday use)
 
-Docker builds Sawdust Atlas from the files in this repository. You need to download those files before running the Docker command.
+Docker builds SawdustAtlas from the files in this repository. You need to download those files before running the Docker command.
 
 #### First-time setup on Windows
 
 1. Install and open [Docker Desktop](https://www.docker.com/products/docker-desktop/). Wait until it says Docker is running.
-2. Get the Sawdust Atlas code using Option A or Option B.
+2. Get the SawdustAtlas code using Option A or Option B.
 
 #### Option A: GitHub Desktop
 
@@ -34,17 +34,17 @@ Docker builds Sawdust Atlas from the files in this repository. You need to downl
 2. Choose **File > Clone repository > URL**.
 3. Enter `https://github.com/nothingfortune/sawdustAtlas.git`.
 4. Choose where the folder should be saved, then select **Clone**.
-5. Continue with **Build and start Sawdust Atlas** below.
+5. Continue with **Build and start SawdustAtlas** below.
 
 #### Option B: Download a ZIP file
 
-1. Open the [Sawdust Atlas GitHub page](https://github.com/nothingfortune/sawdustAtlas).
+1. Open the [SawdustAtlas GitHub page](https://github.com/nothingfortune/sawdustAtlas).
 2. Select **Code**, then **Download ZIP**.
 3. Open the Downloads folder, right-click the ZIP file, and select **Extract All**.
 4. Open the extracted folder that contains `compose.yaml`.
-5. Continue with **Build and start Sawdust Atlas** below.
+5. Continue with **Build and start SawdustAtlas** below.
 
-#### Build and start Sawdust Atlas
+#### Build and start SawdustAtlas
 
 1. Open the downloaded or cloned `sawdustAtlas` folder in File Explorer.
 2. Confirm the folder contains `compose.yaml` and `Dockerfile`.
@@ -55,7 +55,7 @@ Docker builds Sawdust Atlas from the files in this repository. You need to downl
 docker compose up -d --build
 ```
 
-Docker copies the source files into a temporary build container, builds the app, and starts Sawdust Atlas. You do not need to copy files into Docker yourself.
+Docker copies the source files into a temporary build container, builds the app, and starts SawdustAtlas. You do not need to copy files into Docker yourself.
 
 The first build may take several minutes. Check it with:
 

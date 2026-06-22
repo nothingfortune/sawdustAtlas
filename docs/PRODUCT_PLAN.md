@@ -1,10 +1,10 @@
-# Sawdust Atlas Product Plan
+# SawdustAtlas Product Plan
 
 Last updated: 2026-06-20
 
 ## Purpose
 
-Sawdust Atlas is a millimeter-first, local-first workspace for planning a woodworking shop and designing woodworking projects. It should replace generic commercial tools where they fail to represent real machines, working clearances, stock, grain, kerf, process waste, and the sequence used to build an object.
+SawdustAtlas is a millimeter-first, local-first workspace for planning a woodworking shop and designing woodworking projects. It should replace generic commercial tools where they fail to represent real machines, working clearances, stock, grain, kerf, process waste, and the sequence used to build an object.
 
 The first two product areas are:
 
@@ -142,10 +142,10 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | --- | --- | --- | --- | --- |
 | NOTION-001 | Integration mapping design | Planned | Later | Define which databases represent projects, stock, tools, photos, and build logs. |
 | NOTION-002 | OAuth/server credential flow | Planned | Later | Tokens never ship in the browser bundle or exported project files. |
-| NOTION-003 | Link project metadata | Planned | Later | Sync name, status, tags, notes, dates, costs, and canonical Sawdust Atlas project ID. |
+| NOTION-003 | Link project metadata | Planned | Later | Sync name, status, tags, notes, dates, costs, and canonical SawdustAtlas project ID. |
 | NOTION-004 | Reference Notion photos | Planned | Later | Browse or attach selected images while handling expiring Notion asset URLs correctly. |
-| NOTION-005 | Stock and tool sync | Research | Research | Validate whether Notion or Sawdust Atlas should own each inventory field before implementing bidirectional sync. |
-| NOTION-006 | Geometry ownership boundary | Planned | Later | Design geometry remains in Sawdust Atlas; Notion receives summaries and links, not editable geometry blobs. |
+| NOTION-005 | Stock and tool sync | Research | Research | Validate whether Notion or SawdustAtlas should own each inventory field before implementing bidirectional sync. |
+| NOTION-006 | Geometry ownership boundary | Planned | Later | Design geometry remains in SawdustAtlas; Notion receives summaries and links, not editable geometry blobs. |
 
 ### Tablet, UX, and Accessibility
 

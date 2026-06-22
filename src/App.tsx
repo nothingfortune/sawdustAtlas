@@ -73,37 +73,37 @@ export default function App() {
       const next = JSON.parse(await file.text()) as AtlasData
       if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
       setData(normalizeData(next)); setView('home')
-    } catch { window.alert('That file is not a valid Sawdust Atlas backup.') }
+    } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
   }
 
   return <div className="app-shell">
     <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
       <div className="brand"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</div>
-      <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18}/> : <Menu size={18}/>}</button>
+      <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
       <nav>
-        <NavButton active={view === 'home'} icon={<Home/>} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
+        <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
         <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
-        <NavButton active={view === 'shop'} icon={<Grid2X2/>} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
-        <NavButton active={view === 'boards'} icon={<Boxes/>} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
+        <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
+        <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
       </nav>
       <div className="sidebar-bottom">
-        {sidebarOpen && <div className="coming-soon"><Sparkles size={16}/><div><b>Notion sync</b><span>Planned integration</span></div></div>}
+        {sidebarOpen && <div className="coming-soon"><Sparkles size={16} /><div><b>Notion sync</b><span>Planned integration</span></div></div>}
         <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
         <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
       </div>
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><span>Sawdust Atlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : 'Cutting boards'}</strong></div>
-        <div className="save-state"><Save size={15}/>Saved locally</div>
+        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : 'Cutting boards'}</strong></div>
+        <div className="save-state"><Save size={15} />Saved locally</div>
       </header>
       <section className="workspace">
-        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard}/>} 
-        {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop}/>}
-        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} onAddWood={addWood} onUpdateWood={updateWood} onDeleteWood={deleteWood}/>}
+        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
+        {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
+        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} onAddWood={addWood} onUpdateWood={updateWood} onDeleteWood={deleteWood} />}
       </section>
     </main>
-    <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])}/>
+    <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])} />
   </div>
 }
 

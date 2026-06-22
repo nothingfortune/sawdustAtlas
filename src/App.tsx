@@ -61,7 +61,7 @@ export default function App() {
   const createBoard = () => {
     const project: BoardProject = {
       id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
+      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [] },
       allowances: { ...DEFAULT_ALLOWANCES },
     }
     setData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')

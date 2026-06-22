@@ -6,8 +6,9 @@ import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeomet
 // square edges, kept separate from the kerf/offcut waste handled by the geometry engine.
 //
 // Assumptions documented for accuracy (see PRODUCT_PLAN accuracy requirements):
-// - jointing / planing / drumSanding are thickness removed reaching one finished face.
-//   Together they raise the rough thickness above the finished thickness.
+// - jointing / planing / routerTable are thickness removed reaching one finished face
+//   (routerTable = a router-table/sled surfacing pass). Together they raise the rough
+//   thickness above the finished thickness.
 // - ripAllowance is width removed per strip when ripping each strip to final width
 //   (saw kerf plus a jointed clean-up edge).
 // - lengthTrim is total length removed squaring the two ends.
@@ -15,7 +16,7 @@ import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeomet
 export const DEFAULT_ALLOWANCES: BuildAllowances = {
   jointing: 1.5,
   planing: 1.5,
-  drumSanding: 1.5,
+  routerTable: 1.5,
   ripAllowance: 3.2,
   lengthTrim: 12,
   widthTrim: 6,
@@ -29,7 +30,7 @@ export interface DimensionPair {
 export interface ThicknessBreakdown extends DimensionPair {
   jointing: number
   planing: number
-  drumSanding: number
+  routerTable: number
 }
 
 export interface BuildDimensions {
@@ -51,7 +52,7 @@ export function resolveAllowances(project: BoardProject): BuildAllowances {
 
 export function calculateBuildDimensions(project: BoardProject): BuildDimensions {
   const allowance = resolveAllowances(project)
-  const surfacing = nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.drumSanding)
+  const surfacing = nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.routerTable)
   const rip = nonNegative(allowance.ripAllowance)
   const lengthTrim = nonNegative(allowance.lengthTrim)
   const widthTrim = nonNegative(allowance.widthTrim)
@@ -68,7 +69,7 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     finished,
     jointing: nonNegative(allowance.jointing),
     planing: nonNegative(allowance.planing),
-    drumSanding: nonNegative(allowance.drumSanding),
+    routerTable: nonNegative(allowance.routerTable),
     rough: finished + surfacing,
   })
 

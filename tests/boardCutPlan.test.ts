@@ -11,7 +11,7 @@ const woods: WoodSpecies[] = [
 function makeProject(construction: 'edge' | 'end', strips: BoardStrip[]): BoardProject {
   return {
     id: 'project', name: 'Plan test', length: 450, thickness: 38, construction, strips, updatedAt: '2026-01-01T00:00:00.000Z',
-    allowances: { jointing: 2, planing: 1, drumSanding: 1, ripAllowance: 3, lengthTrim: 10, widthTrim: 6 },
+    allowances: { jointing: 2, planing: 1, routerTable: 1, ripAllowance: 3, lengthTrim: 10, widthTrim: 6 },
     endGrain: { sourceLength: 96, stockThickness: 40, sliceThickness: 30, kerf: 3, trimAllowance: 0, rowFlips: [], rowRotations: [] },
   }
 }

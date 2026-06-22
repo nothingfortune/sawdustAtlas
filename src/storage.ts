@@ -1,4 +1,4 @@
-import type { AtlasData, BoardProject, WoodSpecies } from './types'
+import type { AtlasData, BoardProject, BuildAllowances, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -26,7 +26,7 @@ export function normalizeData(data: AtlasData): AtlasData {
     boards: data.boards.map((board): BoardProject => ({
       ...board,
       construction: board.construction ?? 'edge',
-      allowances: { ...DEFAULT_ALLOWANCES, ...board.allowances },
+      allowances: normalizeAllowances(board.allowances),
       strips: board.strips.map(strip => ({ ...strip, trailingAngle: strip.trailingAngle ?? 0 })),
       endGrain: board.endGrain ? {
         ...board.endGrain,
@@ -44,6 +44,23 @@ export function normalizeData(data: AtlasData): AtlasData {
         rowOffsets: [],
       },
     })),
+  }
+}
+
+// Migrate the legacy `drumSanding` allowance to `routerTable` (same role: a
+// final thickness-surfacing pass) so saved boards keep their value after the
+// rename. Unknown/missing fields fall back to defaults.
+function normalizeAllowances(saved: (BuildAllowances & { drumSanding?: number }) | undefined): BuildAllowances {
+  const legacy = saved?.drumSanding
+  const merged = { ...DEFAULT_ALLOWANCES, ...saved }
+  if (saved?.routerTable === undefined && typeof legacy === 'number') merged.routerTable = legacy
+  return {
+    jointing: merged.jointing,
+    planing: merged.planing,
+    routerTable: merged.routerTable,
+    ripAllowance: merged.ripAllowance,
+    lengthTrim: merged.lengthTrim,
+    widthTrim: merged.widthTrim,
   }
 }
 

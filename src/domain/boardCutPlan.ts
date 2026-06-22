@@ -168,7 +168,7 @@ function endGrainCuts(project: BoardProject, roughWidths: readonly number[], cro
 
 function edgeGrainSteps(project: BoardProject): BuildStep[] {
   return [
-    { id: 'mill', order: 1, title: 'Mill stock', instruction: `Joint and plane rough stock, preserving ${format(project.allowances.jointing + project.allowances.planing + project.allowances.drumSanding)} mm thickness allowance.` },
+    { id: 'mill', order: 1, title: 'Mill stock', instruction: `Joint and plane rough stock, preserving ${format(project.allowances.jointing + project.allowances.planing + project.allowances.routerTable)} mm thickness allowance.` },
     { id: 'rip', order: 2, title: 'Rip the strip recipe', instruction: 'Keep strips numbered and oriented in the order shown in the design.' },
     { id: 'glue', order: 3, title: 'First glue-up', instruction: 'Assemble the long-grain strip pattern, keeping reference faces aligned.' },
     { id: 'finish', order: 4, title: 'Square and surface', instruction: `Trim to ${format(project.length)} mm finished length and surface to ${format(project.thickness)} mm.` },

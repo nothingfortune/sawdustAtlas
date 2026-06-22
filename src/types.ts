@@ -60,7 +60,7 @@ export interface EndGrainSettings {
 export interface BuildAllowances {
   jointing: number
   planing: number
-  drumSanding: number
+  routerTable: number
   ripAllowance: number
   lengthTrim: number
   widthTrim: number

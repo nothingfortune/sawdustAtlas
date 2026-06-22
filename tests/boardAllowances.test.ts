@@ -6,7 +6,7 @@ import type { BoardProject, BoardStrip, BuildAllowances } from '../src/types'
 const allowances: BuildAllowances = {
   jointing: 2,
   planing: 1,
-  drumSanding: 1.5,
+  routerTable: 1.5,
   ripAllowance: 3,
   lengthTrim: 10,
   widthTrim: 6,
@@ -63,7 +63,7 @@ describe('edge-grain build allowances', () => {
   })
 
   it('collapses to the finished part when every allowance is zero', () => {
-    const zero: BuildAllowances = { jointing: 0, planing: 0, drumSanding: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 }
+    const zero: BuildAllowances = { jointing: 0, planing: 0, routerTable: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 }
     const build = calculateBuildDimensions(makeProject({ allowances: zero }))
     expect(build.length.rough).toBe(build.length.finished)
     expect(build.width.rough).toBe(build.width.finished)
@@ -75,7 +75,7 @@ describe('edge-grain build allowances', () => {
     const project = makeProject()
     delete (project as { allowances?: BuildAllowances }).allowances
     const build = calculateBuildDimensions(project)
-    expect(build.thickness.rough).toBe(38 + DEFAULT_ALLOWANCES.jointing + DEFAULT_ALLOWANCES.planing + DEFAULT_ALLOWANCES.drumSanding)
+    expect(build.thickness.rough).toBe(38 + DEFAULT_ALLOWANCES.jointing + DEFAULT_ALLOWANCES.planing + DEFAULT_ALLOWANCES.routerTable)
   })
 
   it('ignores negative inputs instead of shrinking rough stock', () => {

@@ -120,6 +120,17 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .canvas-controls button { padding:11px 16px;font-size:19px; }
   .view-mode-toggle button, .feed-direction-buttons button, .rotation-buttons button { padding:12px 8px; }
   .project-switcher select { font-size:18px; }
+  .slice-chip .grip-handle { min-width:36px; }
+  .slice-chip-body { min-height:46px; padding:8px 12px; }
+  .wood-editor-row { grid-template-columns:31px minmax(70px,1fr) 28px 28px 52px 34px 34px; gap:6px; padding:7px 6px; }
+  .wood-editor-row > input { font-size:13px; }
+  .wood-use, .wood-delete { min-width:34px; min-height:40px; }
+  .wood-use svg, .wood-delete svg { width:16px; }
+  .drawer-close { padding:10px; }
+  .drawer-close svg { width:22px; }
+  .zoom-reset { min-height:42px; padding:9px 15px; }
+  .color-field input { height:42px; }
+  .panel-fab { padding:15px 22px; }
 }
 
 /* Portrait: editor panels become slide-over drawers; canvas goes full-width. */
@@ -185,6 +196,10 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   body { min-width:0; }
   .board-canvas-area { padding:26px 16px; }
   .finished-board, .how-its-built, .build-summary, .cut-plan-sheet, .slice-order-section, .build-assumptions { max-width:100%; }
+  /* Let the toolbar grow/wrap instead of clipping its buttons in the fixed row. */
+  .board-layout, .designer-layout { grid-template-rows:auto 1fr; }
+  .designer-toolbar { flex-wrap:wrap; gap:10px; }
+  .toolbar-actions { flex-wrap:wrap; }
 }
 @media (max-width: 520px) {
   .board-stats { grid-template-columns:1fr 1fr; }

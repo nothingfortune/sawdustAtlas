@@ -100,7 +100,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     <div className="board-main">
       <div className="board-canvas-area" ref={canvasRef}>
         <BuildSheetHeader project={project} build={build} boardFeet={boardFeet} estimatedCost={estimatedCost}/>
-        <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final sanding' : 'Edge-grain board · finished dimensions'}</p></div>
+        <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final surfacing' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
         <FinishedBoard project={project} woods={woods} metrics={end} build={build} template={template} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
@@ -139,7 +139,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         </div>
         <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement}><Layers3/>Alternate</button><button onClick={gradientArrangement}><RotateCcw/>Gradient</button><button onClick={randomizeArrangement}><Shuffle/>Randomize</button><button onClick={mirrorPattern}><Layers3/>Mirror</button><button onClick={duplicatePattern}><Copy/>Repeat</button><button onClick={reverseStrips}><RotateCcw/>Reverse</button></div></div>
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
-        <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Drum sanding (mm)" value={project.allowances.drumSanding} step={0.5} onChange={value => updateAllowance({ drumSanding: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
+        <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Router table (mm)" value={project.allowances.routerTable} step={0.5} onChange={value => updateAllowance({ routerTable: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
         <div className="panel-section"><WoodLibraryEditor woods={woods} onAdd={onAddWood} onUpdate={onUpdateWood} onDelete={onDeleteWood} onUse={addStrip}/></div>
       </aside>
       {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
@@ -296,7 +296,7 @@ function BuildSummary({ build }: { build: BuildDimensions }) {
   const rows: Array<{ label: string; finished: number; rough: number; note?: string }> = [
     { label: 'Length', finished: build.length.finished, rough: build.length.rough },
     { label: 'Width', finished: build.width.finished, rough: build.width.rough },
-    { label: 'Thickness', finished: build.thickness.finished, rough: build.thickness.rough, note: `joint ${format(build.thickness.jointing)} · plane ${format(build.thickness.planing)} · sand ${format(build.thickness.drumSanding)}` },
+    { label: 'Thickness', finished: build.thickness.finished, rough: build.thickness.rough, note: `joint ${format(build.thickness.jointing)} · plane ${format(build.thickness.planing)} · router ${format(build.thickness.routerTable)}` },
   ]
   return <div className="build-summary">
     <div className="build-summary-head"><span className="eyebrow">ROUGH STOCK</span><span className="eyebrow">FINISHED</span></div>
@@ -332,7 +332,7 @@ function BuildAssumptions({ project }: { project: BoardProject }) {
   const a = project.allowances
   const rows: Array<[string, string]> = [
     ['Units', 'All dimensions in millimeters; values are rounded only for display.'],
-    ['Milling — thickness', `Jointing ${format(a.jointing)} + planing ${format(a.planing)} + drum sanding ${format(a.drumSanding)} mm removed reaching the finished faces.`],
+    ['Milling — thickness', `Jointing ${format(a.jointing)} + planing ${format(a.planing)} + router table ${format(a.routerTable)} mm removed reaching the finished faces.`],
     ['Milling — width', `${format(a.ripAllowance)} mm ripped per strip; ${format(a.widthTrim)} mm trimmed squaring the edges.`],
     ['Milling — length', `${format(a.lengthTrim)} mm trimmed squaring the ends.`],
   ]

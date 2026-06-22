@@ -11,7 +11,7 @@ const project: BoardProject = {
   id: 'board', name: 'Test', length: 450, thickness: 38, construction: 'end', updatedAt: '',
   strips: [],
   endGrain: { sourceLength: 900, stockThickness: 40, sliceThickness: 40, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [] },
-  allowances: { jointing: 0, planing: 0, drumSanding: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 },
+  allowances: { jointing: 0, planing: 0, routerTable: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 },
 }
 
 describe('board pattern registry', () => {

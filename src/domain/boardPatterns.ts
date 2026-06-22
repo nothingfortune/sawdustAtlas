@@ -60,6 +60,35 @@ export function evenStripCount(project: BoardProject): number {
   return minimum % 2 ? minimum + 1 : minimum
 }
 
+// Strip-arrangement reorderings. Unlike the end-grain pattern recipes above
+// (which intentionally rebuild the strip layout), these only permute the strips
+// the user already chose — every strip keeps its wood, width, and angle — so
+// arranging never discards their sizes or species.
+
+// Interleave strips by species (round-robin over species in first-seen order),
+// turning runs like A A B B into A B A B while preserving each strip exactly.
+export function alternateStrips(strips: readonly BoardStrip[]): BoardStrip[] {
+  const groups: BoardStrip[][] = []
+  const bySpecies = new Map<string, BoardStrip[]>()
+  for (const strip of strips) {
+    let group = bySpecies.get(strip.speciesId)
+    if (!group) { group = []; bySpecies.set(strip.speciesId, group); groups.push(group) }
+    group.push(strip)
+  }
+  const longest = groups.reduce((max, group) => Math.max(max, group.length), 0)
+  const ordered: BoardStrip[] = []
+  for (let round = 0; round < longest; round += 1)
+    for (const group of groups)
+      if (round < group.length) ordered.push(group[round]!)
+  return ordered
+}
+
+// Order strips by ascending width so sizes step up across the panel, keeping the
+// same strips and woods (only the order changes).
+export function gradientStrips(strips: readonly BoardStrip[]): BoardStrip[] {
+  return [...strips].sort((a, b) => a.width - b.width)
+}
+
 export function applyBoardPattern(
   patternId: BoardPatternId,
   project: BoardProject,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applyBoardPattern, BOARD_PATTERNS } from '../src/domain/boardPatterns'
-import type { BoardProject, WoodSpecies } from '../src/types'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../src/domain/boardPatterns'
+import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: WoodSpecies[] = [
   { id: 'walnut', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12 },
@@ -32,5 +32,41 @@ describe('board pattern registry', () => {
     const changed = { ...project, endGrain: { ...project.endGrain, rowFlips: [true], rowRotations: [true], rowOffsets: [12] } }
     const result = applyBoardPattern('stripe', changed, woods, 3, () => 'id')
     expect(result.endGrain).toMatchObject({ rowFlips: [], rowRotations: [], rowOffsets: [] })
+  })
+})
+
+const strip = (id: string, speciesId: string, width: number, trailingAngle = 0): BoardStrip => ({ id, speciesId, width, trailingAngle })
+
+describe('strip arrangement reorderings', () => {
+  it('alternate interleaves species without touching any strip', () => {
+    const strips = [strip('1', 'walnut', 30), strip('2', 'walnut', 40), strip('3', 'maple', 50, 5), strip('4', 'maple', 60)]
+    const result = alternateStrips(strips)
+    expect(result.map(s => s.id)).toEqual(['1', '3', '2', '4'])
+    expect(result.map(s => s.speciesId)).toEqual(['walnut', 'maple', 'walnut', 'maple'])
+    // Same strip objects, untouched widths/angles — only the order changed.
+    expect(new Set(result)).toEqual(new Set(strips))
+    expect(result.find(s => s.id === '3')).toMatchObject({ width: 50, trailingAngle: 5 })
+  })
+
+  it('alternate handles uneven species counts and a single species', () => {
+    const uneven = [strip('1', 'a', 10), strip('2', 'a', 10), strip('3', 'a', 10), strip('4', 'b', 10)]
+    expect(alternateStrips(uneven).map(s => s.id)).toEqual(['1', '4', '2', '3'])
+    const single = [strip('1', 'a', 10), strip('2', 'a', 20)]
+    expect(alternateStrips(single).map(s => s.id)).toEqual(['1', '2'])
+    expect(alternateStrips([])).toEqual([])
+  })
+
+  it('gradient sorts by ascending width and preserves the strips', () => {
+    const strips = [strip('1', 'walnut', 50), strip('2', 'maple', 20), strip('3', 'walnut', 35)]
+    const result = gradientStrips(strips)
+    expect(result.map(s => s.width)).toEqual([20, 35, 50])
+    expect(result.map(s => s.id)).toEqual(['2', '3', '1'])
+    expect(new Set(result)).toEqual(new Set(strips))
+  })
+
+  it('gradient does not mutate its input', () => {
+    const strips = [strip('1', 'a', 30), strip('2', 'a', 10)]
+    gradientStrips(strips)
+    expect(strips.map(s => s.id)).toEqual(['1', '2'])
   })
 })

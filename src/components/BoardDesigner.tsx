@@ -19,7 +19,7 @@ import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
-import { applyBoardPattern, BOARD_PATTERNS, evenStripCount, pickSpeciesPair } from '../domain/boardPatterns'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onAddWood: () => void; onUpdateWood: (id: string, patch: Partial<WoodSpecies>) => void; onDeleteWood: (id: string) => void }
@@ -64,17 +64,8 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const reorderStrips = (orderedIds: string[]) => update({ strips: orderedIds.map(id => project.strips.find(strip => strip.id === id)).filter((strip): strip is BoardStrip => !!strip) })
   const deleteStrip = (id: string) => update({ strips: project.strips.filter(strip => strip.id !== id) })
 
-  const alternateArrangement = () => {
-    const [a, b] = pickSpeciesPair(project, woods)
-    const w = project.strips[0]?.width ?? 38
-    update({ strips: Array.from({ length: evenStripCount(project) }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: w, trailingAngle: 0 })) })
-  }
-  const gradientArrangement = () => {
-    const [a, b] = pickSpeciesPair(project, woods)
-    const base = project.strips.length ? project.strips : Array.from({ length: 6 }, (_, i) => ({ id: '', speciesId: i % 2 ? b : a, width: 0, trailingAngle: 0 }))
-    const last = Math.max(1, base.length - 1)
-    update({ strips: base.map((strip, i) => ({ id: createId(), speciesId: strip.speciesId || a, width: Math.round(14 + 46 * (i / last)), trailingAngle: 0 })) })
-  }
+  const alternateArrangement = () => update({ strips: alternateStrips(project.strips) })
+  const gradientArrangement = () => update({ strips: gradientStrips(project.strips) })
   const randomizeArrangement = () => {
     const shuffled = [...project.strips]
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }

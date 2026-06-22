@@ -13,6 +13,7 @@ export const defaultSpecies = [
 
 export const starterData: AtlasData = {
   woods: defaultSpecies.map(wood => ({ ...wood })),
+  allowances: { ...DEFAULT_ALLOWANCES },
   shops: [{
     id: createId(), name: 'My workshop', width: 7300, depth: 6100, updatedAt: new Date().toISOString(),
     items: [

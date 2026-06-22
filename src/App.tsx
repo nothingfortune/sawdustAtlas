@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Upload } from 'lucide-react'
-import type { AtlasData, BoardProject, ShopProject, View, WoodSpecies } from './types'
+import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Upload, Wrench } from 'lucide-react'
+import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData } from './storage'
-import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
+import { WoodLibrary } from './components/WoodLibrary'
+import { MillingAllowances } from './components/MillingAllowances'
 import { createId } from './id'
 
 export default function App() {
@@ -31,6 +32,12 @@ export default function App() {
     ...current,
     woods: current.woods.map(wood => wood.id === id ? { ...wood, ...patch, id: wood.id } : wood),
   }))
+  // Milling allowances are shop-wide: update the global setup and write it
+  // through to every board so each design's plan reflects the same machines.
+  const updateAllowances = (patch: Partial<BuildAllowances>) => setData(current => {
+    const allowances = { ...current.allowances, ...patch }
+    return { ...current, allowances, boards: current.boards.map(board => ({ ...board, allowances })) }
+  })
   const deleteWood = (id: string) => {
     const wood = data.woods.find(candidate => candidate.id === id)
     if (!wood) return
@@ -60,9 +67,9 @@ export default function App() {
   }
   const createBoard = () => {
     const project: BoardProject = {
-      id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
+      id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'end', strips: [], updatedAt: new Date().toISOString(),
       endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [] },
-      allowances: { ...DEFAULT_ALLOWANCES },
+      allowances: { ...data.allowances },
     }
     setData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
   }
@@ -85,6 +92,9 @@ export default function App() {
         <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
         <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
         <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
+        <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
+        <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
+        <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
       </nav>
       <div className="sidebar-bottom">
         {sidebarOpen && <div className="coming-soon"><Sparkles size={16} /><div><b>Notion sync</b><span>Planned integration</span></div></div>}
@@ -94,13 +104,15 @@ export default function App() {
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : 'Cutting boards'}</strong></div>
+        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
         <div className="save-state"><Save size={15} />Saved locally</div>
       </header>
       <section className="workspace">
         {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
         {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
-        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} onAddWood={addWood} onUpdateWood={updateWood} onDeleteWood={deleteWood} />}
+        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} />}
+        {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
+        {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])} />

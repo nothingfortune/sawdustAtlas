@@ -158,6 +158,17 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .pinch-content { transform-origin:0 0;will-change:transform; }
 .zoom-reset { position:absolute;top:8px;right:8px;z-index:5;border:1px solid var(--line);background:#fffffff2;color:var(--ink);padding:7px 11px;border-radius:999px;font-size:11px;box-shadow:0 2px 8px #0000002e; }
 
+/* Standalone library modules (Wood library, Milling allowances). */
+.module-page { max-width:900px; }
+.module-head { margin-bottom:26px; }
+.module-head h1 { font-size:clamp(30px,3vw,44px); margin:12px 0 10px; letter-spacing:-.03em; }
+.module-head p { color:#70756f; line-height:1.6; max-width:580px; font-size:14px; margin:0; }
+.module-card { background:#faf8f2; border:1px solid var(--line); border-radius:3px; padding:24px; max-width:520px; }
+.module-card.wide { max-width:780px; }
+.module-card .field-row + .field-row { margin-top:4px; }
+.wood-use.static { cursor:default; }
+.milling-hint p { color:#8a8d85; }
+
 /* Readability pass: the designer leaned on a lot of 8-10px type. Bump the
    most-read labels and values to comfortable sizes (these rules come last so
    they win over the shorthand `font:` declarations above). */

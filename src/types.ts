@@ -1,4 +1,4 @@
-export type View = 'home' | 'shop' | 'boards'
+export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances'
 
 export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
 export type FeedDirection = 0 | 90 | 180 | 270
@@ -82,4 +82,6 @@ export interface AtlasData {
   shops: ShopProject[]
   boards: BoardProject[]
   woods: WoodSpecies[]
+  /** Shop-wide milling allowances (machine setup) applied to every board. */
+  allowances: BuildAllowances
 }

@@ -19,14 +19,19 @@ export function normalizeData(data: AtlasData): AtlasData {
   const normalizedWoods = savedWoods.map(normalizeWood)
   const knownIds = new Set(normalizedWoods.map(wood => wood.id))
   const missingIds = data.boards.flatMap(board => board.strips.map(strip => strip.speciesId)).filter(id => !knownIds.has(id))
+  // Milling allowances are shop-wide. Seed the global from saved global, else a
+  // legacy board's per-board allowances (migrating drumSanding), then apply that
+  // one setup to every board so the domain (which reads board.allowances) agrees.
+  const allowances = normalizeAllowances(data.allowances ?? data.boards[0]?.allowances)
   return {
     ...data,
+    allowances,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: data.shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
     boards: data.boards.map((board): BoardProject => ({
       ...board,
       construction: board.construction ?? 'edge',
-      allowances: normalizeAllowances(board.allowances),
+      allowances,
       strips: board.strips.map(strip => ({ ...strip, trailingAngle: strip.trailingAngle ?? 0 })),
       endGrain: board.endGrain ? {
         ...board.endGrain,

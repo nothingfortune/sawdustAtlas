@@ -2,7 +2,6 @@ import { ChevronDown, Copy, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle
 import { useState } from 'react'
 import { StripList } from './StripList'
 import { SliceOrderList } from './SliceOrderList'
-import { WoodLibraryEditor } from './WoodLibraryEditor'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
 import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
@@ -17,21 +16,20 @@ import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
-import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings, WoodSpecies } from '../types'
+import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 
-interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onAddWood: () => void; onUpdateWood: (id: string, patch: Partial<WoodSpecies>) => void; onDeleteWood: (id: string) => void }
+interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void }
 
-export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete, onAddWood, onUpdateWood, onDeleteWood }: Props) {
+export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
-  const updateAllowance = (patch: Partial<BuildAllowances>) => update({ allowances: { ...project.allowances, ...patch } })
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
@@ -139,8 +137,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         </div>
         <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement}><Layers3/>Alternate</button><button onClick={gradientArrangement}><RotateCcw/>Gradient</button><button onClick={randomizeArrangement}><Shuffle/>Randomize</button><button onClick={mirrorPattern}><Layers3/>Mirror</button><button onClick={duplicatePattern}><Copy/>Repeat</button><button onClick={reverseStrips}><RotateCcw/>Reverse</button></div></div>
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
-        <div className="panel-section"><h3>Milling allowances</h3><p>Rough stock removed reaching finished faces, edges, and ends.</p><div className="field-row"><Field label="Jointing (mm)" value={project.allowances.jointing} step={0.5} onChange={value => updateAllowance({ jointing: value })}/><Field label="Planing (mm)" value={project.allowances.planing} step={0.5} onChange={value => updateAllowance({ planing: value })}/></div><div className="field-row"><Field label="Router table (mm)" value={project.allowances.routerTable} step={0.5} onChange={value => updateAllowance({ routerTable: value })}/><Field label="Rip per strip (mm)" value={project.allowances.ripAllowance} step={0.1} onChange={value => updateAllowance({ ripAllowance: value })}/></div><div className="field-row"><Field label="Length trim (mm)" value={project.allowances.lengthTrim} onChange={value => updateAllowance({ lengthTrim: value })}/><Field label="Width trim (mm)" value={project.allowances.widthTrim} onChange={value => updateAllowance({ widthTrim: value })}/></div></div>
-        <div className="panel-section"><WoodLibraryEditor woods={woods} onAdd={onAddWood} onUpdate={onUpdateWood} onDelete={onDeleteWood} onUse={addStrip}/></div>
+        <div className="panel-section milling-hint"><h3>Milling &amp; wood</h3><p>Milling allowances and the wood library are now shared workspace modules — find them in the left sidebar under Library.</p></div>
       </aside>
       {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
       <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>

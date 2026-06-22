@@ -2,8 +2,8 @@ import { ChevronDown, Copy, Layers3, Plus, RotateCcw, Scissors, Shuffle, Sliders
 import { useState } from 'react'
 import { StripList } from './StripList'
 import { WoodLibraryEditor } from './WoodLibraryEditor'
-import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
-import type { EndGrainMetrics } from '../domain/boardGeometry'
+import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
+import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
 import type { BuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
@@ -17,7 +17,7 @@ import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
-import { applyBoardPattern, BOARD_PATTERNS } from '../domain/boardPatterns'
+import { applyBoardPattern, BOARD_PATTERNS, evenStripCount, pickSpeciesPair } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onAddWood: () => void; onUpdateWood: (id: string, patch: Partial<WoodSpecies>) => void; onDeleteWood: (id: string) => void }
@@ -34,9 +34,11 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
   const build = calculateBuildDimensions(project)
+  const template = buildEndGrainTemplate(project)
   const cutPlan = generateCuttingBoardPlan(project, woods)
   const boardFeet = build.roughBoardFeet
   const woodUsage = calculateWoodUsage(project, woods, end)
+  const woodById = new Map(woods.map(wood => [wood.id, wood]))
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -45,12 +47,12 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
 
   const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
-    const wood = woods.find(candidate => candidate.id === strip.speciesId) ?? woods[0]
     const roughWidth = build.stripRoughWidths[index] ?? strip.width
-    return sum + roughWidth * build.length.rough * build.thickness.rough / 2359737.216 * (wood?.pricePerBoardFoot ?? 0)
+    const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
+    return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
   }, 0)
   const estimatedCost = project.construction === 'end'
-    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woods.find(wood => wood.id === usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
+    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
     : edgeEstimatedCost
 
   const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
@@ -60,21 +62,13 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const reorderStrips = (orderedIds: string[]) => update({ strips: orderedIds.map(id => project.strips.find(strip => strip.id === id)).filter((strip): strip is BoardStrip => !!strip) })
   const deleteStrip = (id: string) => update({ strips: project.strips.filter(strip => strip.id !== id) })
 
-  const twoSpecies = (): [string, string] => {
-    const primary = project.strips[0]?.speciesId ?? woods[0]?.id ?? 'walnut'
-    const secondary = project.strips.find(strip => strip.speciesId !== primary)?.speciesId ?? woods[1]?.id ?? primary
-    return [primary, secondary]
-  }
-  // Even count so an alternating A/B stack isn't a palindrome (needed for the
-  // vertical-mirror checkerboard and the brick offset to actually stagger).
-  const stripCount = () => { const n = Math.max(project.strips.length, 8); return n % 2 ? n + 1 : n }
   const alternateArrangement = () => {
-    const [a, b] = twoSpecies()
+    const [a, b] = pickSpeciesPair(project, woods)
     const w = project.strips[0]?.width ?? 38
-    update({ strips: Array.from({ length: stripCount() }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: w, trailingAngle: 0 })) })
+    update({ strips: Array.from({ length: evenStripCount(project) }, (_, i) => ({ id: createId(), speciesId: i % 2 ? b : a, width: w, trailingAngle: 0 })) })
   }
   const gradientArrangement = () => {
-    const [a, b] = twoSpecies()
+    const [a, b] = pickSpeciesPair(project, woods)
     const base = project.strips.length ? project.strips : Array.from({ length: 6 }, (_, i) => ({ id: '', speciesId: i % 2 ? b : a, width: 0, trailingAngle: 0 }))
     const last = Math.max(1, base.length - 1)
     update({ strips: base.map((strip, i) => ({ id: createId(), speciesId: strip.speciesId || a, width: Math.round(14 + 46 * (i / last)), trailingAngle: 0 })) })
@@ -114,8 +108,8 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final sanding' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
-        <FinishedBoard project={project} woods={woods} metrics={end} build={build} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
-        <HowItsBuilt project={project} woods={woods} metrics={end} pxPerMm={pxPerMm} edgeWidth={width}/>
+        <FinishedBoard project={project} woods={woods} metrics={end} build={build} template={template} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
+        <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 
         <div className="board-stats">
           <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
@@ -154,7 +148,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   </div>
 }
 
-function FinishedBoard({ project, woods, metrics, build, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; build: BuildDimensions; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
+function FinishedBoard({ project, woods, metrics, build, template, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; build: BuildDimensions; template: EndGrainTemplate; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
   const isEnd = project.construction === 'end'
   const lengthMm = isEnd ? Math.max(metrics.finalLength, 1) : Math.max(project.length, 1)
   const widthMm = isEnd ? Math.max(metrics.panelWidth, 1) : Math.max(edgeWidth, 1)
@@ -165,7 +159,7 @@ function FinishedBoard({ project, woods, metrics, build, edgeWidth, pxPerMm, onT
       <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})` }}>
         <ScaledBoardFrame woods={woods} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
           {isEnd
-            ? <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
+            ? <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
             : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
           }
         </ScaledBoardFrame>
@@ -176,7 +170,7 @@ function FinishedBoard({ project, woods, metrics, build, edgeWidth, pxPerMm, onT
   </section>
 }
 
-function HowItsBuilt({ project, woods, metrics, pxPerMm, edgeWidth }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; pxPerMm: number; edgeWidth: number }) {
+function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; pxPerMm: number; edgeWidth: number }) {
   if (project.construction === 'edge') {
     return <section className="how-its-built">
       <header><span className="eyebrow">HOW IT'S BUILT</span></header>
@@ -192,7 +186,6 @@ function HowItsBuilt({ project, woods, metrics, pxPerMm, edgeWidth }: { project:
   const source = Math.max(project.endGrain.sourceLength, 1)
   const panel = Math.max(metrics.panelWidth, 1)
   const angled = project.strips.some(strip => strip.trailingAngle !== 0)
-  const template = buildEndGrainTemplate(project)
   return <section className="how-its-built">
     <header><span className="eyebrow">HOW IT'S BUILT</span></header>
 
@@ -215,7 +208,7 @@ function HowItsBuilt({ project, woods, metrics, pxPerMm, edgeWidth }: { project:
     <div className="build-step">
       <div className="step-heading"><span>3</span><div><h3>After the 90° turn</h3><p>Slices stood on end and re-glued · edit orientation in the finished view above</p></div></div>
       <ScaledBoardFrame woods={woods} lengthMm={Math.max(metrics.finalLength, 1)} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Board after the turn">
-        <AssembledBoard project={project} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm}/>
+        <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm}/>
       </ScaledBoardFrame>
     </div>
   </section>
@@ -224,8 +217,7 @@ function HowItsBuilt({ project, woods, metrics, pxPerMm, edgeWidth }: { project:
 // The assembled end-grain board: one column per slice, each showing the strip
 // cross-section, with the per-slice rotate/flip transform. Interactive when
 // onToggleRow is supplied (the finished hero); static otherwise (process step).
-function AssembledBoard({ project, sliceCount, pxPerMm, onToggleRow }: { project: BoardProject; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void }) {
-  const template = buildEndGrainTemplate(project)
+function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow }: { project: BoardProject; template: EndGrainTemplate; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void }) {
   const thickness = Math.max(project.endGrain.stockThickness, 0.001)
   const height = Math.max(template.height, 0.001)
   const k = 1 / pxPerMm

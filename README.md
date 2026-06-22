@@ -126,5 +126,3 @@ Every TypeScript target extends `tsconfig.base.json`. The shared policy enables 
 ## Data and privacy
 
 Projects currently live in each browser's local storage. The computer and tablet therefore have separate project copies. Use JSON export/import to move projects between them, and export a backup before clearing browser data.
-
-Notion sync is intentionally deferred until an authenticated backend or OAuth flow is added. The future integration should map project metadata and reference images without making Notion the source of truth for design geometry.

@@ -45,6 +45,21 @@ export const BOARD_PATTERNS = [
 
 export type BoardPatternId = (typeof BOARD_PATTERNS)[number]['id']
 
+// The two species an alternating pattern/arrangement uses: the first strip's
+// wood and the next distinct one, falling back to the library's first two.
+export function pickSpeciesPair(project: BoardProject, woods: readonly WoodSpecies[]): [string, string] {
+  const primaryId = project.strips[0]?.speciesId ?? woods[0]?.id ?? 'wood-1'
+  const secondaryId = project.strips.find(strip => strip.speciesId !== primaryId)?.speciesId ?? woods[1]?.id ?? primaryId
+  return [primaryId, secondaryId]
+}
+
+// Strip count rounded up to an even number so an alternating A/B stack isn't a
+// palindrome (needed for the vertical-mirror checkerboard and brick offsets).
+export function evenStripCount(project: BoardProject): number {
+  const minimum = Math.max(project.strips.length, 8)
+  return minimum % 2 ? minimum + 1 : minimum
+}
+
 export function applyBoardPattern(
   patternId: BoardPatternId,
   project: BoardProject,
@@ -52,13 +67,10 @@ export function applyBoardPattern(
   sliceCount: number,
   createId: () => string,
 ): PatternResult {
-  const primaryId = project.strips[0]?.speciesId ?? woods[0]?.id ?? 'wood-1'
-  const secondaryId = project.strips.find(strip => strip.speciesId !== primaryId)?.speciesId ?? woods[1]?.id ?? primaryId
-  const minimumCount = Math.max(project.strips.length, 8)
-  const stripCount = minimumCount % 2 ? minimumCount + 1 : minimumCount
+  const [primaryId, secondaryId] = pickSpeciesPair(project, woods)
   const pattern = BOARD_PATTERNS.find(candidate => candidate.id === patternId)
   if (!pattern) throw new Error(`Unknown cutting board pattern: ${patternId}`)
-  return pattern.apply({ project, primaryId, secondaryId, stripCount, sliceCount, createId })
+  return pattern.apply({ project, primaryId, secondaryId, stripCount: evenStripCount(project), sliceCount, createId })
 }
 
 function define<const Id extends string>(id: Id, name: string, description: string, apply: BoardPatternDefinition['apply']): BoardPatternDefinition<Id> {

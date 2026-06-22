@@ -17,25 +17,30 @@ interface Props {
 // committed on drop; the canonical order stays in the parent.
 export function StripList({ strips, woods, construction, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
+  const slotMidsRef = useRef<number[]>([])
   const [order, setOrder] = useState<string[] | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
+  const stripById = new Map(strips.map(strip => [strip.id, strip]))
   const rendered = order
-    ? order.map(id => strips.find(strip => strip.id === id)).filter((strip): strip is BoardStrip => !!strip)
+    ? order.map(id => stripById.get(id)).filter((strip): strip is BoardStrip => !!strip)
     : strips
 
+  // Fixed slot mid-lines captured once at drag start, so pointermove maps to a
+  // target index without reading layout (getBoundingClientRect) on every move.
   const targetIndexFromY = (clientY: number) => {
-    const rows = Array.from(listRef.current?.querySelectorAll('[data-strip-row]') ?? []) as HTMLElement[]
-    for (let index = 0; index < rows.length; index += 1) {
-      const rect = rows[index]!.getBoundingClientRect()
-      if (clientY < rect.top + rect.height / 2) return index
+    const mids = slotMidsRef.current
+    for (let index = 0; index < mids.length; index += 1) {
+      if (clientY < mids[index]!) return index
     }
-    return Math.max(0, rows.length - 1)
+    return Math.max(0, mids.length - 1)
   }
 
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>, id: string) => {
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
+    const rows = Array.from(listRef.current?.querySelectorAll('[data-strip-row]') ?? []) as HTMLElement[]
+    slotMidsRef.current = rows.map(row => { const rect = row.getBoundingClientRect(); return rect.top + rect.height / 2 })
     setOrder(strips.map(strip => strip.id))
     setDraggingId(id)
   }

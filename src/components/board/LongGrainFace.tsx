@@ -3,15 +3,22 @@ import type { BoardStrip } from '../../types'
 // A long-grain top face drawn in mm: strips stacked across the width, each
 // running the full length. Grain texture runs along the length, parallel to the
 // glue lines between strips. Draw inside a ScaledBoardFrame at (0,0).
+// Running offsets for stacked bands: tops[i] is the sum of all prior heights,
+// and the final entry is the total. O(n); kept module-level so the prefix-sum
+// accumulator isn't a component-body reassignment.
+function stackTops(heights: number[]): number[] {
+  const tops: number[] = []
+  let sum = 0
+  for (const height of heights) { tops.push(sum); sum += height }
+  tops.push(sum)
+  return tops
+}
+
 export function LongGrainFace({ strips, lengthMm }: { strips: BoardStrip[]; lengthMm: number }) {
-  const bandHeight = (strip: BoardStrip) => Math.max(0, strip.width)
-  const bands = strips.map((strip, index) => ({
-    id: strip.id,
-    speciesId: strip.speciesId,
-    top: strips.slice(0, index).reduce((sum, prev) => sum + bandHeight(prev), 0),
-    height: bandHeight(strip),
-  }))
-  const totalWidth = strips.reduce((sum, strip) => sum + bandHeight(strip), 0)
+  const heights = strips.map(strip => Math.max(0, strip.width))
+  const tops = stackTops(heights)
+  const bands = strips.map((strip, index) => ({ id: strip.id, speciesId: strip.speciesId, top: tops[index] ?? 0, height: heights[index] ?? 0 }))
+  const totalWidth = tops[tops.length - 1] ?? 0
 
   return <g>
     {bands.map(band => <rect key={band.id} x={0} y={band.top} width={lengthMm} height={band.height} fill={`url(#long-${band.speciesId})`}/>)}

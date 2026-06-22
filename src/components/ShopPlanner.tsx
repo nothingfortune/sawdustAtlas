@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ShopProject } from '../types'
 import { createId } from '../id'
@@ -45,6 +45,26 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
   }
 
+  // Two-finger pinch on the room scales the existing zoom state (so item-drag
+  // coordinate math, which divides by SCALE*zoom, stays correct). Single-finger
+  // gestures fall through to selection/drag.
+  const pinchPointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinchStart = useRef<{ dist: number; zoom: number } | null>(null)
+  const pinchDist = () => { const [a, b] = [...pinchPointers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0 }
+  const onStagePointerDown = (event: React.PointerEvent) => {
+    pinchPointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pinchPointers.current.size === 2) pinchStart.current = { dist: pinchDist() || 1, zoom }
+  }
+  const onStagePointerMove = (event: React.PointerEvent) => {
+    if (!pinchPointers.current.has(event.pointerId)) return
+    pinchPointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pinchPointers.current.size === 2 && pinchStart.current) setZoom(clamp(pinchStart.current.zoom * (pinchDist() / pinchStart.current.dist), .35, 1.25))
+  }
+  const onStagePointerEnd = (event: React.PointerEvent) => {
+    pinchPointers.current.delete(event.pointerId)
+    if (pinchPointers.current.size < 2) pinchStart.current = null
+  }
+
   if (!project) return <Empty title="No workshop plans yet" action={onCreate}/>
   return <div className="designer-layout">
     <div className="designer-toolbar">
@@ -71,7 +91,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       <div className="view-mode-toggle"><button className={viewMode === 'top' ? 'active' : ''} onClick={() => setViewMode('top')}>Top</button><button className={viewMode === 'angled' ? 'active' : ''} onClick={() => setViewMode('angled')}>Angled</button></div>
       {viewMode === 'top' ? <>
         <div className="canvas-controls"><button onClick={() => setZoom(z => Math.max(.35, z - .1))}>−</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(z => Math.min(1.25, z + .1))}>+</button></div>
-        <div className="room-stage" style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80 }}>
+        <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
           <div className="room-canvas" onPointerDown={() => setSelected('')} style={{ width: project.width * SCALE, height: project.depth * SCALE, transform: `scale(${zoom})` }}>
             <FeedClearanceLayer project={project}/>
             {project.items.map(i => <div key={i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>

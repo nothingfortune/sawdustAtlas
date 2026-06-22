@@ -92,7 +92,7 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 | BOARD-006 | Material and waste conservation | Complete | Now | Rip wedges, end trim, kerf, offcut, and side squaring reconcile to source volume. |
 | BOARD-007 | Invalid-geometry reporting | Complete | Now | Self-crossing strips and invalid dimensions produce visible errors rather than trusted output. |
 | BOARD-008 | Multiple source glue-up panels | Planned | Next | Create multiple panel recipes, generate slices from each, and combine them in any final order. |
-| BOARD-009 | Drag-to-reorder slices | Planned | Next | Final slices can be reordered with touch, mouse, and keyboard while retaining source identity. |
+| BOARD-009 | Drag-to-reorder slices | Complete | Now | Final slices reorder via pointer drag, arrow keys, and tap-to-cycle, each carrying its rotate/flip/offset (its identity in the single-panel model). Pure `boardSlices` domain layer with boundary tests. Full value lands with multi-panel `BOARD-008`. |
 | BOARD-010 | Custom wood library | Planned | Next | Add/edit species, price, color, texture, density, notes, and inventory references. |
 | BOARD-011 | Improved wood appearance | Partial | Next | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
 | BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, drum sanding, and final trimming; rough-stock board feet and cost reflect purchased stock. |
@@ -189,7 +189,7 @@ The following are release requirements for any feature that reports dimensions, 
 
 ### M1: Trustworthy Cutting Board Workshop — Now
 
-- Finish multiple-panel and slice-reordering model (`BOARD-008`, `BOARD-009`).
+- Finish multiple-panel and slice-reordering model (`BOARD-008`, `BOARD-009`). _Slice reorder done; multi-panel pending._
 - Add rough/finished allowances (`BOARD-012`). _Done._
 - Generate cut list and BOM (`BOARD-013`). _Done._
 - Generate a printable build sheet (`BOARD-014`). _Done._
@@ -240,12 +240,11 @@ Exit criteria: Notion improves discovery and documentation without becoming requ
 ## Near-Term Ordered Backlog
 
 1. `BOARD-008`: support multiple first glue-up panels.
-2. `BOARD-009`: reorder and transform generated slices.
-3. `CUT-001`: establish the shared cut-plan types and validation contract.
-4. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
-5. `DATA-005`: add shared LAN persistence before relying on tablet edits.
-6. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
-7. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
+2. `CUT-001`: establish the shared cut-plan types and validation contract.
+3. `CUT-003` and `CUT-005`: exact 1D optimizer plus independent validator.
+4. `DATA-005`: add shared LAN persistence before relying on tablet edits.
+5. `SHOP-005` through `SHOP-009`: deepen the workshop planner.
+6. `NOTION-001`: map databases and ownership boundaries before OAuth implementation.
 
 ## Open Decisions
 

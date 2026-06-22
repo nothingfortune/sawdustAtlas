@@ -1,7 +1,9 @@
 import { ChevronDown, Copy, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { StripList } from './StripList'
+import { SliceOrderList } from './SliceOrderList'
 import { WoodLibraryEditor } from './WoodLibraryEditor'
+import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
 import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
@@ -88,6 +90,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
       rowOffsets: [],
     })
   }
+  const reorderSlices = (order: number[]) => updateEnd(applySliceOrder(project.endGrain, end.sliceCount, order))
   const cycleRow = (index: number) => {
     const flips = Array.from({ length: end.sliceCount }, (_, row) => project.endGrain.rowFlips[row] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, row) => project.endGrain.rowRotations[row] ?? false)
@@ -110,6 +113,10 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
         <FinishedBoard project={project} woods={woods} metrics={end} build={build} template={template} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
+        {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
+          <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
+          <SliceOrderList states={readSliceStates(project.endGrain, end.sliceCount)} onReorder={reorderSlices} onCycle={cycleRow}/>
+        </section>}
         <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 
         <div className="board-stats">

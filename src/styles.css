@@ -49,6 +49,18 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .finished-board header,.how-its-built header { display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px; }
 .finished-board .scale-note { font:9px 'DM Mono';color:#8a8d85;text-transform:uppercase;letter-spacing:.08em; }
 .board-dims { margin:10px 0 0;font:11px 'DM Mono';color:#6c756d; }
+.slice-order-section { max-width:880px;margin:20px auto 0; }
+.slice-order-section header { display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px; }
+.slice-order-section .scale-note { font:9px 'DM Mono';color:#8a8d85;text-transform:uppercase;letter-spacing:.08em; }
+.slice-order { display:flex;flex-wrap:wrap;gap:6px; }
+.slice-chip { display:flex;align-items:stretch;background:white;border:1px solid #dedbd2;overflow:hidden; }
+.slice-chip.dragging { opacity:.65;box-shadow:0 5px 16px #00000033;position:relative;z-index:2; }
+.slice-chip .grip-handle { display:grid;place-items:center;color:#9a9f97;cursor:grab;touch-action:none;border:0;background:#f1efe8;padding:0 3px;border-right:1px solid #e4e1d8; }
+.slice-chip .grip-handle:active { cursor:grabbing; }
+.slice-chip .grip-handle svg { width:13px; }
+.slice-chip-body { border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 9px;min-width:34px; }
+.slice-chip-body b { font:11px 'DM Mono';color:#3a4439; }
+.slice-chip-body span { font:8px 'DM Mono';letter-spacing:.06em;color:#9a6242; }
 .how-its-built { max-width:880px;margin:34px auto 0;display:flex;flex-direction:column;gap:16px; }
 .build-step { background:#f3f1ea;border:1px solid #c9c8c0;padding:16px; }
 .build-step .step-heading { margin-bottom:12px; }
@@ -157,7 +169,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   @page { margin:14mm; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body { min-width:0;background:#fff; }
-  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .finished-board .scale-note { display:none !important; }
+  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .finished-board .scale-note, .slice-order-section { display:none !important; }
   main { margin:0 !important;width:100% !important; }
   .workspace { min-height:0; }
   .board-layout { height:auto;display:block;overflow:visible; }

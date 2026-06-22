@@ -84,4 +84,3 @@ Sawdust Atlas is a planning tool, not a substitute for checking the actual mater
 - Confirm every cut and angle before machining.
 - Allow for defects, wood movement, flattening, and final sanding.
 - Follow the safety instructions for your tools.
-

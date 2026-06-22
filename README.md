@@ -4,6 +4,8 @@ A local-first design workspace for woodworking. The first two tools are a scaled
 
 **New to Sawdust Atlas?** Start with the plain-language [START HERE guide](START_HERE.md).
 
+**New to Sawdust Atlas?** Start with the plain-language [START HERE guide](START_HERE.md).
+
 See [the product plan](docs/PRODUCT_PLAN.md) for the complete feature inventory, milestones, accuracy requirements, and ordered backlog.
 
 ## Run locally
@@ -19,13 +21,53 @@ Create a production build with `pnpm build`.
 
 ### Docker (recommended for everyday use)
 
-Install Docker Desktop, then run this once from the project directory:
+Docker builds Sawdust Atlas from the files in this repository. You need to download those files before running the Docker command.
 
-```bash
+#### First-time setup on Windows
+
+1. Install and open [Docker Desktop](https://www.docker.com/products/docker-desktop/). Wait until it says Docker is running.
+2. Get the Sawdust Atlas code using Option A or Option B.
+
+#### Option A: GitHub Desktop
+
+1. Install [GitHub Desktop](https://desktop.github.com/).
+2. Choose **File > Clone repository > URL**.
+3. Enter `https://github.com/nothingfortune/sawdustAtlas.git`.
+4. Choose where the folder should be saved, then select **Clone**.
+5. Continue with **Build and start Sawdust Atlas** below.
+
+#### Option B: Download a ZIP file
+
+1. Open the [Sawdust Atlas GitHub page](https://github.com/nothingfortune/sawdustAtlas).
+2. Select **Code**, then **Download ZIP**.
+3. Open the Downloads folder, right-click the ZIP file, and select **Extract All**.
+4. Open the extracted folder that contains `compose.yaml`.
+5. Continue with **Build and start Sawdust Atlas** below.
+
+#### Build and start Sawdust Atlas
+
+1. Open the downloaded or cloned `sawdustAtlas` folder in File Explorer.
+2. Confirm the folder contains `compose.yaml` and `Dockerfile`.
+3. Click the File Explorer address bar, type `powershell`, and press Enter. This opens PowerShell in the correct folder.
+4. Run:
+
+```powershell
 docker compose up -d --build
 ```
 
-Open `http://<computer-ip>:8080` on the tablet. This computer currently answers at both `http://10.0.0.36:8080` (Ethernet) and `http://10.0.0.49:8080` (Wi-Fi). Use the address for the network shared with the tablet. The address can change when the router assigns a new lease; reserving it in the router keeps the bookmark stable.
+Docker copies the source files into a temporary build container, builds the app, and starts Sawdust Atlas. You do not need to copy files into Docker yourself.
+
+The first build may take several minutes. Check it with:
+
+```powershell
+docker compose ps
+```
+
+A working container reports `Up` and then `healthy`. If the browser cannot connect yet, wait a few seconds and refresh.
+
+Open [http://localhost:8080](http://localhost:8080) on the same computer. On a tablet, open `http://<computer-ip>:8080`, replacing `<computer-ip>` with the host computer's private network address. The computer and tablet must be on the same trusted network.
+
+To find the computer's address, run `ipconfig` in PowerShell. Look under the active Wi-Fi or Ethernet connection for **IPv4 Address**, usually something like `192.168.1.25`. In that example, the tablet address would be `http://192.168.1.25:8080`.
 
 The container restarts with Docker Desktop. Update it after code changes with the same command, inspect it with `docker compose ps`, and stop it with `docker compose down`. A healthy deployment reports `Up ... (healthy)`.
 

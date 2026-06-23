@@ -3,6 +3,11 @@ import { normalizeData } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
 describe('workspace storage migration', () => {
+  it('stamps normalized data with the current schema version', () => {
+    const legacy = { shops: [], boards: [] } as unknown as AtlasData
+    expect(normalizeData(legacy).schemaVersion).toBe(1)
+  })
+
   it('adds the default wood library to legacy saves', () => {
     const legacy = { shops: [], boards: [] } as unknown as AtlasData
     const normalized = normalizeData(legacy)

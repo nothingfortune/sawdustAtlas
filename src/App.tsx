@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Upload, Wrench } from 'lucide-react'
+import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -16,25 +16,43 @@ export default function App() {
   const [activeShop, setActiveShop] = useState(data.shops[0]?.id ?? '')
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
+  const [undoData, setUndoData] = useState<AtlasData | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
+  const dataRef = useRef(data)
 
   useEffect(() => {
     saveData(data)
+    dataRef.current = data
   }, [data])
 
-  const updateShop = (project: ShopProject) => setData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
-  const updateBoard = (project: BoardProject) => setData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
+  const commitData = (updater: (current: AtlasData) => AtlasData) => {
+    const current = dataRef.current
+    const next = updater(current)
+    if (next === current) return
+    setUndoData(current)
+    dataRef.current = next
+    setData(next)
+  }
+  const undoLastChange = () => {
+    if (!undoData) return
+    dataRef.current = undoData
+    setData(undoData)
+    setUndoData(null)
+  }
+
+  const updateShop = (project: ShopProject) => commitData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
+  const updateBoard = (project: BoardProject) => commitData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
   const addWood = () => {
     const wood: WoodSpecies = { id: createId(), name: 'Custom wood', color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 8 }
-    setData(current => ({ ...current, woods: [...current.woods, wood] }))
+    commitData(current => ({ ...current, woods: [...current.woods, wood] }))
   }
-  const updateWood = (id: string, patch: Partial<WoodSpecies>) => setData(current => ({
+  const updateWood = (id: string, patch: Partial<WoodSpecies>) => commitData(current => ({
     ...current,
     woods: current.woods.map(wood => wood.id === id ? { ...wood, ...patch, id: wood.id } : wood),
   }))
   // Milling allowances are shop-wide: update the global setup and write it
   // through to every board so each design's plan reflects the same machines.
-  const updateAllowances = (patch: Partial<BuildAllowances>) => setData(current => {
+  const updateAllowances = (patch: Partial<BuildAllowances>) => commitData(current => {
     const allowances = { ...current.allowances, ...patch }
     return { ...current, allowances, boards: current.boards.map(board => ({ ...board, allowances })) }
   })
@@ -43,35 +61,35 @@ export default function App() {
     if (!wood) return
     if (data.boards.some(board => board.strips.some(strip => strip.speciesId === id))) { window.alert(`${wood.name} is used by a cutting board and cannot be deleted.`); return }
     if (data.woods.length === 1) { window.alert('Keep at least one wood in the library.'); return }
-    if (window.confirm(`Delete ${wood.name} from the wood library?`)) setData(current => ({ ...current, woods: current.woods.filter(candidate => candidate.id !== id) }))
+    if (window.confirm(`Delete ${wood.name} from the wood library?`)) commitData(current => ({ ...current, woods: current.woods.filter(candidate => candidate.id !== id) }))
   }
 
   const deleteShop = (id: string) => {
     const project = data.shops.find(p => p.id === id)
-    if (!project || !window.confirm(`Delete workshop "${project.name}"? This can't be undone.`)) return
+    if (!project || !window.confirm(`Delete workshop "${project.name}"?`)) return
     const remaining = data.shops.filter(p => p.id !== id)
-    setData(current => ({ ...current, shops: current.shops.filter(p => p.id !== id) }))
+    commitData(current => ({ ...current, shops: current.shops.filter(p => p.id !== id) }))
     if (activeShop === id) setActiveShop(remaining[0]?.id ?? '')
   }
   const deleteBoard = (id: string) => {
     const project = data.boards.find(p => p.id === id)
-    if (!project || !window.confirm(`Delete board "${project.name}"? This can't be undone.`)) return
+    if (!project || !window.confirm(`Delete board "${project.name}"?`)) return
     const remaining = data.boards.filter(p => p.id !== id)
-    setData(current => ({ ...current, boards: current.boards.filter(p => p.id !== id) }))
+    commitData(current => ({ ...current, boards: current.boards.filter(p => p.id !== id) }))
     if (activeBoard === id) setActiveBoard(remaining[0]?.id ?? '')
   }
 
   const createShop = () => {
     const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, items: [], updatedAt: new Date().toISOString() }
-    setData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
+    commitData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
   }
   const createBoard = () => {
     const project: BoardProject = {
       id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'end', strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [] },
+      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
       allowances: { ...data.allowances },
     }
-    setData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
+    commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
   }
 
   async function importFile(file?: File) {
@@ -79,7 +97,7 @@ export default function App() {
     try {
       const next = JSON.parse(await file.text()) as AtlasData
       if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
-      setData(normalizeData(next)); setView('home')
+      commitData(() => normalizeData(next)); setView('home')
     } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
   }
 
@@ -105,7 +123,11 @@ export default function App() {
     <main>
       <header className="topbar">
         <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
-        <div className="save-state"><Save size={15} />Saved locally</div>
+        <div className="topbar-actions">
+          <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+          <button className="backup-button" disabled={!undoData} onClick={undoLastChange} title={undoData ? 'Undo last change' : 'No change to undo'}><Undo2 size={15} />Undo</button>
+          <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
+        </div>
       </header>
       <section className="workspace">
         {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}

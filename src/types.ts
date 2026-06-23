@@ -55,6 +55,8 @@ export interface EndGrainSettings {
   rowRotations: boolean[]
   /** Per-slice vertical offset in mm for running-bond/brick patterns; wraps within the slice. */
   rowOffsets?: number[]
+  /** Physical slice identity order after crosscutting; used so identical wafers can still be reordered visibly. */
+  rowOrder?: number[]
 }
 
 export interface BuildAllowances {
@@ -79,6 +81,7 @@ export interface BoardProject {
 }
 
 export interface AtlasData {
+  schemaVersion: number
   shops: ShopProject[]
   boards: BoardProject[]
   woods: WoodSpecies[]

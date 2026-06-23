@@ -11,10 +11,18 @@ describe('readSliceStates', () => {
   it('produces a dense state list defaulting uncovered positions', () => {
     const states = readSliceStates(settings({ rowRotations: [true], rowFlips: [], rowOffsets: [5] }), 3)
     expect(states).toEqual([
-      { rotated: true, flipped: false, offset: 5 },
-      { rotated: false, flipped: false, offset: 0 },
-      { rotated: false, flipped: false, offset: 0 },
+      { rotated: true, flipped: false, offset: 5, sourceIndex: 0 },
+      { rotated: false, flipped: false, offset: 0, sourceIndex: 1 },
+      { rotated: false, flipped: false, offset: 0, sourceIndex: 2 },
     ])
+  })
+
+  it('preserves a valid saved physical slice order', () => {
+    expect(readSliceStates(settings({ rowOrder: [2, 0, 1] }), 3).map(state => state.sourceIndex)).toEqual([2, 0, 1])
+  })
+
+  it('repairs missing, duplicate, and out-of-range physical slice order entries', () => {
+    expect(readSliceStates(settings({ rowOrder: [2, 2, 9] }), 4).map(state => state.sourceIndex)).toEqual([2, 0, 1, 3])
   })
 
   it('treats a missing rowOffsets array as all zeros', () => {
@@ -30,24 +38,24 @@ describe('readSliceStates', () => {
 
 describe('moveSlice', () => {
   const states = [
-    { rotated: true, flipped: false, offset: 1 },
-    { rotated: false, flipped: true, offset: 2 },
-    { rotated: false, flipped: false, offset: 3 },
+    { rotated: true, flipped: false, offset: 1, sourceIndex: 0 },
+    { rotated: false, flipped: true, offset: 2, sourceIndex: 1 },
+    { rotated: false, flipped: false, offset: 3, sourceIndex: 2 },
   ]
 
   it('carries the moved slice transform to its new index', () => {
     expect(moveSlice(states, 0, 2)).toEqual([
-      { rotated: false, flipped: true, offset: 2 },
-      { rotated: false, flipped: false, offset: 3 },
-      { rotated: true, flipped: false, offset: 1 },
+      { rotated: false, flipped: true, offset: 2, sourceIndex: 1 },
+      { rotated: false, flipped: false, offset: 3, sourceIndex: 2 },
+      { rotated: true, flipped: false, offset: 1, sourceIndex: 0 },
     ])
   })
 
   it('clamps out-of-range indices instead of dropping slices', () => {
     expect(moveSlice(states, -5, 99)).toEqual([
-      { rotated: false, flipped: true, offset: 2 },
-      { rotated: false, flipped: false, offset: 3 },
-      { rotated: true, flipped: false, offset: 1 },
+      { rotated: false, flipped: true, offset: 2, sourceIndex: 1 },
+      { rotated: false, flipped: false, offset: 3, sourceIndex: 2 },
+      { rotated: true, flipped: false, offset: 1, sourceIndex: 0 },
     ])
   })
 
@@ -70,12 +78,14 @@ describe('applySliceOrder', () => {
       rowRotations: [false, true, false],
       rowFlips: [false, false, true],
       rowOffsets: [3, 1, 2],
+      rowOrder: [2, 0, 1],
     })
   })
 
   it('drops unknown or out-of-range indices rather than trusting them', () => {
     const result = applySliceOrder(settings({ rowRotations: [true, false], rowFlips: [], rowOffsets: [] }), 2, [1, 9, -1, 0])
     expect(result.rowRotations).toEqual([false, true])
+    expect(result.rowOrder).toEqual([1, 0])
   })
 
   it('round-trips through read/write when the order is identity', () => {

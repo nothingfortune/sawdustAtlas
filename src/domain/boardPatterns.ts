@@ -127,6 +127,7 @@ function result(context: PatternContext, strips: BoardStrip[], patch: Partial<En
       rowFlips: [],
       rowRotations: [],
       rowOffsets: [],
+      rowOrder: [],
       ...patch,
     },
   }

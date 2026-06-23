@@ -1,8 +1,9 @@
-import { ChevronDown, Copy, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { Check, ChevronDown, Copy, Eye, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { StripList } from './StripList'
 import { SliceOrderList } from './SliceOrderList'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
+import type { SliceState } from '../domain/boardSlices'
 import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
@@ -26,6 +27,8 @@ interface Props { projects: BoardProject[]; project: BoardProject | undefined; w
 export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [selectedSlice, setSelectedSlice] = useState(0)
+  const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
@@ -33,7 +36,10 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
+  const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
+  const selectedSliceIndex = Math.min(Math.max(selectedSlice, 0), Math.max(sliceStates.length - 1, 0))
   const build = calculateBuildDimensions(project)
+  const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
   const template = buildEndGrainTemplate(project)
   const cutPlan = generateCuttingBoardPlan(project, woods)
   const boardFeet = build.roughBoardFeet
@@ -69,7 +75,11 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
     update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
   }
-  const applyPattern = (pattern: BoardPatternId) => update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId))
+  const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null); setSelectedSlice(0) }
+  const previewPattern = (pattern: BoardPatternId) => {
+    let nextId = 0
+    return applyBoardPattern(pattern, project, woods, end.sliceCount, () => `preview-${pattern}-${nextId++}`)
+  }
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
@@ -92,7 +102,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
 
   return <div className="board-layout">
     <div className="designer-toolbar">
-      <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div></div>
+      <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div><div className="toolbar-finished-size"><span>Finished</span><b>{finishedSize}</b></div></div>
       <div className="toolbar-actions"><button className="button secondary" onClick={() => window.print()} aria-label="Print build sheet"><Printer/>Print build sheet</button><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
     </div>
     <div className="board-main">
@@ -104,7 +114,8 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         <FinishedBoard project={project} woods={woods} metrics={end} build={build} template={template} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
         {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
           <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
-          <SliceOrderList states={readSliceStates(project.endGrain, end.sliceCount)} onReorder={reorderSlices} onCycle={cycleRow}/>
+          <SliceOrderList states={sliceStates} onReorder={reorderSlices} onCycle={cycleRow} onSelect={setSelectedSlice}/>
+          <SlicePreview project={project} woods={woods} template={template} state={sliceStates[selectedSliceIndex]} index={selectedSliceIndex} pxPerMm={pxPerMm}/>
         </section>}
         <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 
@@ -129,7 +140,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
             : <EndGrainFields settings={project.endGrain} onChange={updateEnd}/>
           }
         </div>
-        {project.construction === 'end' && <div className="panel-section row-tools"><h3>End-grain pattern</h3><p>Start here: pick a recipe, then fine-tune below. Recipes rebuild the strip layout and remain fully editable.</p><div>{BOARD_PATTERNS.map(pattern => <button key={pattern.id} title={pattern.description} onClick={() => applyPattern(pattern.id)}>{pattern.name}</button>)}</div></div>}
+        {project.construction === 'end' && <div className="panel-section row-tools"><h3>End-grain pattern</h3><p>Preview a recipe before replacing the strip layout. Recipes remain fully editable after applying.</p><div>{BOARD_PATTERNS.map(pattern => <button key={pattern.id} title={pattern.description} onClick={() => setPendingPattern(pattern.id)}><Eye/>{pattern.name}</button>)}</div></div>}
         {project.construction === 'end' && <><div className="waste-card"><Scissors/><div><span>{end.sliceCount} usable slices</span><b>{format(end.kerfWaste)} mm kerf + {format(end.trimWaste + end.offcutWaste)} mm trim/offcut</b></div></div><div className="wood-usage"><span className="eyebrow">STOCK BY SPECIES</span>{woodUsage.map(usage => <div key={usage.speciesId}><i style={{ background: usage.color }}/><span>{usage.name}<small>{format(usage.requiredBoardFeet)} bf stock</small></span><b>{format(usage.wasteBoardFeet)} bf waste</b></div>)}</div></>}
         <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {format(width)} mm panel width · drag to reorder</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
           <StripList strips={project.strips} woods={woods} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
@@ -142,6 +153,14 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
       {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
       <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>
     </div>
+    {pendingPattern && <PatternPreviewDialog
+      pattern={BOARD_PATTERNS.find(candidate => candidate.id === pendingPattern)}
+      current={project}
+      preview={{ ...project, ...previewPattern(pendingPattern) }}
+      woods={woods}
+      onApply={() => applyPattern(pendingPattern)}
+      onDismiss={() => setPendingPattern(null)}
+    />}
   </div>
 }
 
@@ -164,6 +183,52 @@ function FinishedBoard({ project, woods, metrics, build, template, edgeWidth, px
       {pinch.active && <button className="zoom-reset" onClick={pinch.reset}>Reset zoom</button>}
     </div>
     <p className="board-dims">{format(build.length.finished)} × {format(build.width.finished)} × {format(build.thickness.finished)} mm finished{isEnd && Math.abs(metrics.faceShift) > 0.1 ? ` · square width ${format(metrics.finishedWidth)} mm after trimming` : ''}</p>
+  </section>
+}
+
+function SlicePreview({ project, woods, template, state, index, pxPerMm }: { project: BoardProject; woods: WoodSpecies[]; template: EndGrainTemplate; state: SliceState | undefined; index: number; pxPerMm: number }) {
+  if (!state) return null
+  const thickness = Math.max(project.endGrain.stockThickness, 1)
+  const height = Math.max(template.height, 1)
+  return <div className="single-slice-preview">
+    <div><span className="eyebrow">SINGLE WAFER</span><h3>Slice {state.sourceIndex + 1}</h3><p>Currently in slot {index + 1}. Looking down at one crosscut slice before it joins the final end-grain panel.</p></div>
+    <ScaledBoardFrame woods={woods} lengthMm={thickness} widthMm={height} pxPerMm={Math.min(pxPerMm * 2.4, 5)} rulers={['top', 'left']} ariaLabel={`Single end-grain slice ${index + 1}`}>
+      <SliceFace project={project} template={template} state={state} clipId={`single-slice-${index}`}/>
+    </ScaledBoardFrame>
+  </div>
+}
+
+function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {
+  if (!pattern) return null
+  const currentMetrics = calculateEndGrainMetrics(current)
+  const previewMetrics = calculateEndGrainMetrics(preview)
+  const currentTemplate = buildEndGrainTemplate(current)
+  const previewTemplate = buildEndGrainTemplate(preview)
+  const lengthMm = Math.max(currentMetrics.finalLength, previewMetrics.finalLength, 1)
+  const widthMm = Math.max(currentMetrics.panelWidth, previewMetrics.panelWidth, 1)
+  const { pxPerMm } = resolveScale(lengthMm, 420)
+  return <div className="modal-scrim" role="presentation" onClick={onDismiss}>
+    <div className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`} onClick={event => event.stopPropagation()}>
+      <header>
+        <div><span className="eyebrow">PATTERN PREVIEW</span><h2>{pattern.name}</h2><p>{pattern.description}</p></div>
+        <button className="icon-button" onClick={onDismiss} aria-label="Dismiss pattern preview"><X/></button>
+      </header>
+      <div className="pattern-preview-grid">
+        <PatternPreviewPanel title="Current" project={current} woods={woods} metrics={currentMetrics} template={currentTemplate} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm}/>
+        <PatternPreviewPanel title="Preview" project={preview} woods={woods} metrics={previewMetrics} template={previewTemplate} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm}/>
+      </div>
+      <footer><button className="button secondary" onClick={onDismiss}><X/>Dismiss</button><button className="button" onClick={onApply}><Check/>Apply pattern</button></footer>
+    </div>
+  </div>
+}
+
+function PatternPreviewPanel({ title, project, woods, metrics, template, lengthMm, widthMm, pxPerMm }: { title: string; project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; lengthMm: number; widthMm: number; pxPerMm: number }) {
+  return <section>
+    <h3>{title}</h3>
+    <ScaledBoardFrame woods={woods} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} ariaLabel={`${title} ${project.name} pattern preview`}>
+      <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} clipIdPrefix={`pattern-${title.toLowerCase()}`}/>
+    </ScaledBoardFrame>
+    <p>{project.strips.length} strips · {metrics.sliceCount} slices</p>
   </section>
 }
 
@@ -196,7 +261,7 @@ function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: 
 
     <div className="build-step">
       <div className="step-heading"><span>2</span><div><h3>Crosscut plan</h3><p>{metrics.sliceCount} slices cut across the grain at {project.endGrain.sliceThickness} mm · {project.endGrain.kerf} mm kerf</p></div></div>
-      <ScaledBoardFrame woods={woods} lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top']} ariaLabel="Crosscut plan">
+      <ScaledBoardFrame woods={woods} lengthMm={source} widthMm={panel} pxPerMm={pxPerMm} rulers={['top', 'left']} ariaLabel="Crosscut plan">
         <LongGrainFace strips={project.strips} lengthMm={source}/>
         <CrosscutOverlay project={project} metrics={metrics} heightMm={panel} pxPerMm={pxPerMm}/>
       </ScaledBoardFrame>
@@ -214,24 +279,17 @@ function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: 
 // The assembled end-grain board: one column per slice, each showing the strip
 // cross-section, with the per-slice rotate/flip transform. Interactive when
 // onToggleRow is supplied (the finished hero); static otherwise (process step).
-function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow }: { project: BoardProject; template: EndGrainTemplate; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void }) {
+function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow, clipIdPrefix = 'assembled-slice' }: { project: BoardProject; template: EndGrainTemplate; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void; clipIdPrefix?: string }) {
   const thickness = Math.max(project.endGrain.stockThickness, 0.001)
-  const height = Math.max(template.height, 0.001)
   const k = 1 / pxPerMm
   return <g>{Array.from({ length: sliceCount }, (_, index) => {
-    const rotated = project.endGrain.rowRotations[index] ?? false
-    const flipped = project.endGrain.rowFlips[index] ?? false
-    const transform = rotated && flipped ? `translate(0 ${template.height}) scale(1 -1)` : rotated ? `translate(${thickness} ${template.height}) rotate(180)` : flipped ? `translate(${thickness} 0) scale(-1 1)` : undefined
-    const state = `${rotated ? 'R' : ''}${flipped ? 'F' : ''}` || 'N'
-    const offset = ((((project.endGrain.rowOffsets?.[index] ?? 0) % height) + height) % height)
-    const face = <g transform={transform}><EndGrainFace polygons={template.polygons}/></g>
-    const body = offset > 0.01
-      ? <g clipPath={`url(#sliceclip-${index})`}>
-          <clipPath id={`sliceclip-${index}`}><rect width={thickness} height={height}/></clipPath>
-          <g transform={`translate(0 ${-offset})`}>{face}</g>
-          <g transform={`translate(0 ${height - offset})`}>{face}</g>
-        </g>
-      : face
+    const state = {
+      rotated: project.endGrain.rowRotations[index] ?? false,
+      flipped: project.endGrain.rowFlips[index] ?? false,
+      offset: project.endGrain.rowOffsets?.[index] ?? 0,
+      sourceIndex: project.endGrain.rowOrder?.[index] ?? index,
+    }
+    const stateTag = `${state.rotated ? 'R' : ''}${state.flipped ? 'F' : ''}` || 'N'
     const interactive = !!onToggleRow
     return <g
       key={index}
@@ -239,15 +297,35 @@ function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow }:
       className="slice"
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Slice ${index + 1}: ${state}` : undefined}
+      aria-label={interactive ? `Slice ${index + 1}: ${stateTag}` : undefined}
       onClick={interactive ? () => onToggleRow(index) : undefined}
       onKeyDown={interactive ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggleRow(index) } } : undefined}
     >
-      {body}
+      <SliceFace project={project} template={template} state={state} clipId={`${clipIdPrefix}-${index}`}/>
       <rect className="slice-hit" width={thickness} height={template.height} fill="transparent"/>
-      <g transform={`translate(${thickness / 2} ${template.height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{state}</text></g>
+      <g transform={`translate(${thickness / 2} ${template.height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{stateTag}</text></g>
     </g>
   })}</g>
+}
+
+function SliceFace({ project, template, state, clipId }: { project: BoardProject; template: EndGrainTemplate; state: SliceState; clipId: string }) {
+  const thickness = Math.max(project.endGrain.stockThickness, 0.001)
+  const height = Math.max(template.height, 0.001)
+  const transform = state.rotated && state.flipped
+    ? `translate(0 ${template.height}) scale(1 -1)`
+    : state.rotated
+      ? `translate(${thickness} ${template.height}) rotate(180)`
+      : state.flipped
+        ? `translate(${thickness} 0) scale(-1 1)`
+        : undefined
+  const offset = (((state.offset % height) + height) % height)
+  const face = <g transform={transform}><EndGrainFace polygons={template.polygons}/></g>
+  if (offset <= 0.01) return face
+  return <g clipPath={`url(#${clipId})`}>
+    <clipPath id={clipId}><rect width={thickness} height={height}/></clipPath>
+    <g transform={`translate(0 ${-offset})`}>{face}</g>
+    <g transform={`translate(0 ${height - offset})`}>{face}</g>
+  </g>
 }
 
 // Crosscut markers drawn in mm over the glue-up: trim, slice cut lines, kerf

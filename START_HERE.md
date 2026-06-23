@@ -10,7 +10,7 @@ Ask the person who set it up for your SawdustAtlas address and save that page as
 - On a tablet or another computer, use the private network address provided during setup.
 - The computer running SawdustAtlas must be awake, and Docker Desktop must be running.
 
-If SawdustAtlas has not been set up yet, give the technical helper the [README](README.md). The Docker section has the one-time setup instructions.
+If SawdustAtlas has not been set up yet, the [Install and run guide](docs/howTo/install.md) explains how to download and run the public Docker image from [Docker Hub](https://hub.docker.com/r/headlock0253/sawdust-atlas) on Windows or Mac. You do not need to download the source code for everyday use.
 
 ## Your First Project
 
@@ -70,7 +70,9 @@ Importing a backup replaces the projects currently stored in that browser. Expor
 
 ## If Something Is Wrong
 
-- **The page will not open:** Make sure the host computer is awake and Docker Desktop is running, then refresh the page.
+For setup problems, see the full [Troubleshooting guide](docs/howTo/troubleshooting.md). Quick checks:
+
+- **The page will not open:** Make sure the host computer is awake and Docker Desktop is running, then refresh the page. If it still will not open, the [Troubleshooting guide](docs/howTo/troubleshooting.md) covers the most common cause.
 - **A tablet cannot connect:** Confirm the tablet and host computer are on the same private network.
 - **Projects seem to be missing:** Check whether you opened SawdustAtlas in a different browser or on a different device.
 - **The layout looks stale:** Refresh the page. Your locally saved projects should return.

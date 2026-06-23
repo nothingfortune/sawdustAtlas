@@ -4,6 +4,7 @@ import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
 
 const KEY = 'sawdust-atlas:v1'
+export const CURRENT_SCHEMA_VERSION = 1
 
 export function loadData(): AtlasData {
   try {
@@ -14,21 +15,24 @@ export function loadData(): AtlasData {
   }
 }
 
-export function normalizeData(data: AtlasData): AtlasData {
+export function normalizeData(data: Partial<AtlasData>): AtlasData {
+  const shops = Array.isArray(data.shops) ? data.shops : []
+  const boards = Array.isArray(data.boards) ? data.boards : []
   const savedWoods = Array.isArray(data.woods) && data.woods.length > 0 ? data.woods : defaultSpecies
   const normalizedWoods = savedWoods.map(normalizeWood)
   const knownIds = new Set(normalizedWoods.map(wood => wood.id))
-  const missingIds = data.boards.flatMap(board => board.strips.map(strip => strip.speciesId)).filter(id => !knownIds.has(id))
+  const missingIds = boards.flatMap(board => board.strips.map(strip => strip.speciesId)).filter(id => !knownIds.has(id))
   // Milling allowances are shop-wide. Seed the global from saved global, else a
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
-  const allowances = normalizeAllowances(data.allowances ?? data.boards[0]?.allowances)
+  const allowances = normalizeAllowances(data.allowances ?? boards[0]?.allowances)
   return {
     ...data,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
-    shops: data.shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
-    boards: data.boards.map((board): BoardProject => ({
+    shops: shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
+    boards: boards.map((board): BoardProject => ({
       ...board,
       construction: board.construction ?? 'edge',
       allowances,
@@ -38,6 +42,7 @@ export function normalizeData(data: AtlasData): AtlasData {
         rowFlips: board.endGrain.rowFlips ?? [],
         rowRotations: board.endGrain.rowRotations ?? [],
         rowOffsets: board.endGrain.rowOffsets ?? [],
+        rowOrder: board.endGrain.rowOrder ?? [],
       } : {
         sourceLength: 900,
         stockThickness: board.thickness,
@@ -47,6 +52,7 @@ export function normalizeData(data: AtlasData): AtlasData {
         rowFlips: [],
         rowRotations: [],
         rowOffsets: [],
+        rowOrder: [],
       },
     })),
   }
@@ -86,7 +92,7 @@ export function saveData(data: AtlasData) {
 }
 
 export function downloadData(data: AtlasData) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(normalizeData(data), null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

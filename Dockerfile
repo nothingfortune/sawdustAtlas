@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/nothingfortune/sawdustAtlas" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"

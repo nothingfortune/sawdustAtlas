@@ -1,41 +1,30 @@
 # Install and run SawdustAtlas
 
-This guide is for a first-time setup on a Windows or Mac computer. You do not
-need to be technical, and you do not need to download any source code. Take it
-one step at a time — the whole thing takes about ten minutes, most of which is
-waiting for a download.
+This guide is for a first-time setup on a Windows or Mac computer. You do not need to be technical, and you do not need to download any source code. Take it one step at a time — the whole thing takes about ten minutes, most of which is waiting for a download.
 
-When you are done, SawdustAtlas will open in your web browser at
-**http://localhost:8080**.
+When you are done, SawdustAtlas will open in your web browser at **http://localhost:8080**.
 
 ---
 
 ## What you are about to do, in plain words
 
-SawdustAtlas comes as a ready-to-run package on a free website called Docker
-Hub. A free program called **Docker Desktop** downloads that package and runs it
-on your computer for you. You will:
+SawdustAtlas comes as a ready-to-run package on a free website called Docker Hub. A free program called **Docker Desktop** downloads that package and runs it on your computer for you. You will:
 
 1. Install Docker Desktop.
 2. Paste **one command** to download and start SawdustAtlas.
 3. Open SawdustAtlas in your browser.
 
-That command only needs to be done once. After that, SawdustAtlas starts on its
-own whenever your computer is on.
+That command only needs to be done once. After that, SawdustAtlas starts on its own whenever your computer is on.
 
 ---
 
 ## Step 1 — Install Docker Desktop
 
 1. Go to **https://www.docker.com/products/docker-desktop/**.
-2. Download the version for your computer (Windows or Mac). If you have a newer
-   Mac and are unsure, choose the **Apple Silicon** version; if that does not
-   work, the **Intel** version will.
+2. Download the version for your computer (Windows or Mac). If you have a newer Mac and are unsure, choose the **Apple Silicon** version; if that does not work, the **Intel** version will.
 3. Open the downloaded file and follow the installer like any other program.
-4. Start **Docker Desktop**. The first time, it may ask you to accept an
-   agreement and may take a minute to start.
-5. **Wait until Docker Desktop says it is running** (you will see a green
-   "running" indicator). Do not continue until it does.
+4. Start **Docker Desktop**. The first time, it may ask you to accept an agreement and may take a minute to start.
+5. **Wait until Docker Desktop says it is running** (you will see a green "running" indicator). Do not continue until it does.
 
 > You only ever install Docker Desktop once.
 
@@ -43,13 +32,10 @@ own whenever your computer is on.
 
 ## Step 2 — Open a place to type a command
 
-You need a window where you can paste a command. It has a different name on each
-system, but it works the same way.
+You need a window where you can paste a command. It has a different name on each system, but it works the same way.
 
-- **On Windows:** open the Start menu, type `PowerShell`, and open **Windows
-  PowerShell**.
-- **On a Mac:** open **Terminal** (find it with Spotlight — press `Cmd` and the
-  space bar, then type `Terminal`).
+- **On Windows:** open the Start menu, type `PowerShell`, and open **Windows PowerShell**.
+- **On a Mac:** open **Terminal** (find it with Spotlight — press `Cmd` and the space bar, then type `Terminal`).
 
 A window with a blinking cursor will appear. This is where the command goes.
 
@@ -57,24 +43,17 @@ A window with a blinking cursor will appear. This is where the command goes.
 
 ## Step 3 — Download and start SawdustAtlas
 
-Copy the line below exactly, paste it into the window from Step 2, and press
-**Enter**.
+Copy the line below exactly, paste it into the window from Step 2, and press **Enter**.
 
 ```text
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 
-The first time, Docker downloads SawdustAtlas. This can take a few minutes
-depending on your internet — that is normal. When it finishes and you get your
-cursor back, SawdustAtlas is running.
+The first time, Docker downloads SawdustAtlas. This can take a few minutes depending on your internet — that is normal. When it finishes and you get your cursor back, SawdustAtlas is running.
 
 > [!IMPORTANT]
-> **Use the command above. Do not start SawdustAtlas by clicking the Run (play)
-> button inside Docker Desktop.**
-> The `-p 8080:80` piece of this command is what lets your browser reach
-> SawdustAtlas. The Run button leaves that piece out, so the app will look like
-> it is running but the page will never open. If that has already happened, see
-> [Troubleshooting](troubleshooting.md).
+> **Use the command above. Do not start SawdustAtlas by clicking the Run (play) button inside Docker Desktop.**
+> The `-p 8080:80` piece of this command is what lets your browser reach SawdustAtlas. The Run button leaves that piece out, so the app will look like it is running but the page will never open. If that has already happened, see [Troubleshooting](troubleshooting.md).
 
 ---
 
@@ -86,16 +65,13 @@ On the same computer, open your web browser and go to:
 
 That is it. You may want to bookmark that address.
 
-To use SawdustAtlas from a tablet or another device on your home network, see
-[Use SawdustAtlas on a tablet](use-on-a-tablet.md).
+To use SawdustAtlas from a tablet or another device on your home network, see [Use SawdustAtlas on a tablet](use-on-a-tablet.md).
 
 ---
 
 ## Everyday use — stop, start, and check
 
-You do not need to repeat the install. SawdustAtlas restarts with your computer.
-But if you ever want to check on it or turn it off, use these in the same kind of
-window from Step 2.
+You do not need to repeat the install. SawdustAtlas restarts with your computer. But if you ever want to check on it or turn it off, use these in the same kind of window from Step 2.
 
 **Check whether it is running:**
 
@@ -119,8 +95,7 @@ docker start sawdust-atlas
 
 ## Update to the newest version
 
-When a new version of SawdustAtlas is published, update with these three lines,
-one after another:
+When a new version of SawdustAtlas is published, update with these three lines, one after another:
 
 ```text
 docker pull headlock0253/sawdust-atlas:latest
@@ -128,13 +103,10 @@ docker rm -f sawdust-atlas
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 
-Your saved projects live in your browser, not in the package, so updating does
-not erase them. Even so, it is wise to use **Export backup** inside SawdustAtlas
-now and then. See [Start Here](../../START_HERE.md) for how backups work.
+Your saved projects live in your browser, not in the package, so updating does not erase them. Even so, it is wise to use **Export backup** inside SawdustAtlas now and then. See [Start Here](../../START_HERE.md) for how backups work.
 
 ---
 
 ## Something not working?
 
-Almost every first-time problem is the same one, and it has a simple fix. See
-**[Troubleshooting](troubleshooting.md)**.
+Almost every first-time problem is the same one, and it has a simple fix. See **[Troubleshooting](troubleshooting.md)**.

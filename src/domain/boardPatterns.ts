@@ -27,7 +27,7 @@ export const BOARD_PATTERNS = [
     const alternate = slices(context, index => index % 2 === 1)
     return result(context, stripes(context), { rowFlips: alternate, rowRotations: alternate })
   }),
-  define('brick', 'Brick', 'Running bond with every other slice offset half a cell.', context => result(context, stripes(context), {
+  define('brick', 'Running bond', 'Single-panel brick-bond approximation with every other slice offset half a cell.', context => result(context, stripes(context), {
     rowOffsets: slices(context, index => index % 2 === 1 ? 20 : 0),
   })),
   define('third-bond', 'Third bond', 'Three-step running bond offset.', context => result(context, stripes(context), {

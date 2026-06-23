@@ -10,24 +10,29 @@ export interface SliceState {
   rotated: boolean
   flipped: boolean
   offset: number
+  sourceIndex: number
 }
 
 // Read the dense per-slice state for `count` slices, defaulting any positions
 // the (possibly sparse) settings arrays don't cover.
 export function readSliceStates(settings: EndGrainSettings, count: number): SliceState[] {
-  return Array.from({ length: Math.max(0, Math.trunc(count)) }, (_, index) => ({
+  const length = Math.max(0, Math.trunc(count))
+  const order = normalizeOrder(settings.rowOrder, length)
+  return Array.from({ length }, (_, index) => ({
     rotated: settings.rowRotations[index] ?? false,
     flipped: settings.rowFlips[index] ?? false,
     offset: settings.rowOffsets?.[index] ?? 0,
+    sourceIndex: order[index] ?? index,
   }))
 }
 
 // Project slice state back onto the parallel arrays the project stores.
-export function writeSliceStates(states: readonly SliceState[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets'> {
+export function writeSliceStates(states: readonly SliceState[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets' | 'rowOrder'> {
   return {
     rowRotations: states.map(state => state.rotated),
     rowFlips: states.map(state => state.flipped),
     rowOffsets: states.map(state => state.offset),
+    rowOrder: states.map(state => state.sourceIndex),
   }
 }
 
@@ -48,7 +53,7 @@ export function moveSlice(states: readonly SliceState[], from: number, to: numbe
 
 // Apply an explicit ordering of original slice indices (the order the UI drags
 // into). Unknown or out-of-range indices are dropped rather than trusted.
-export function applySliceOrder(settings: EndGrainSettings, count: number, order: readonly number[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets'> {
+export function applySliceOrder(settings: EndGrainSettings, count: number, order: readonly number[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets' | 'rowOrder'> {
   const states = readSliceStates(settings, count)
   const reordered = order
     .map(index => states[index])
@@ -59,4 +64,18 @@ export function applySliceOrder(settings: EndGrainSettings, count: number, order
 function clampIndex(value: number, length: number) {
   if (!Number.isFinite(value)) return 0
   return Math.min(Math.max(Math.trunc(value), 0), length - 1)
+}
+
+function normalizeOrder(saved: readonly number[] | undefined, length: number) {
+  const seen = new Set<number>()
+  const order: number[] = []
+  for (const value of saved ?? []) {
+    const index = Math.trunc(value)
+    if (Number.isFinite(index) && index >= 0 && index < length && !seen.has(index)) {
+      seen.add(index)
+      order.push(index)
+    }
+  }
+  for (let index = 0; index < length; index += 1) if (!seen.has(index)) order.push(index)
+  return order
 }

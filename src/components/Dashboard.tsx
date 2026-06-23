@@ -10,12 +10,21 @@ interface Props {
 }
 
 export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreateBoard }: Props) {
+  const starterShop = data.shops[0]
+  const starterBoard = data.boards[0]
   return <div className="page dashboard-page">
     <div className="hero-copy"><span className="eyebrow">YOUR DIGITAL WORKSHOP</span><h1>Plan the space.<br/><em>Build the thing.</em></h1><p>A practical home for the projects your shop deserves. Start with the room, then work all the way down to the grain.</p></div>
     <div className="action-grid">
       <button className="action-card shop-action" onClick={onCreateShop}><span className="action-icon"><Grid2X2/></span><div><small>NEW PLAN</small><h2>Lay out a workshop</h2><p>Map machines, benches, storage, and the room needed to work safely.</p></div><ArrowRight/></button>
       <button className="action-card board-action" onClick={onCreateBoard}><span className="action-icon"><Boxes/></span><div><small>NEW DESIGN</small><h2>Design a cutting board</h2><p>Explore wood species, strip widths, dimensions, and material estimates.</p></div><ArrowRight/></button>
     </div>
+    {(starterShop || starterBoard) && <div className="starter-strip">
+      <span className="eyebrow">STARTER PROJECTS</span>
+      <div>
+        {starterShop && <button onClick={() => onOpenShop(starterShop.id)}><Grid2X2/>Open workshop sample</button>}
+        {starterBoard && <button onClick={() => onOpenBoard(starterBoard.id)}><Boxes/>Open board sample</button>}
+      </div>
+    </div>}
     <div className="section-heading"><div><span className="eyebrow">PICK UP WHERE YOU LEFT OFF</span><h2>Recent work</h2></div></div>
     <div className="project-grid">
       {data.shops.map(project => <button className="project-card" key={project.id} onClick={() => onOpenShop(project.id)}>

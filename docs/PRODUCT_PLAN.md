@@ -95,19 +95,19 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | 🟢 | BOARD-005 | Angled strip geometry | Complete | Now | Trailing angles affect cross-sections, stock requirements, final squaring, and visible patterns. |
 | 🟢 | BOARD-006 | Material and waste conservation | Complete | Now | Rip wedges, end trim, kerf, offcut, and side squaring reconcile to source volume. |
 | 🟢 | BOARD-007 | Invalid-geometry reporting | Complete | Now | Self-crossing strips and invalid dimensions produce visible errors rather than trusted output. |
-| ⚪ | BOARD-008 | Multiple source glue-up panels | Planned | Next | Create multiple panel recipes, generate slices from each, and combine them in any final order. |
-| 🟢 | BOARD-009 | Drag-to-reorder slices | Complete | Now | Final slices reorder via pointer drag, arrow keys, and tap-to-cycle, each carrying its rotate/flip/offset (its identity in the single-panel model). Pure `boardSlices` domain layer with boundary tests. Full value lands with multi-panel `BOARD-008`. |
+| ⚪ | BOARD-008 | Composable board assemblies | Planned | Next | Create multiple source panel recipes, generate reusable wafers/separators from each, and combine them into a final board assembly. This unlocks true brick-and-mortar, basket weave, borders, and user-built wafer workflows. See `BRICK_PATTERN_CORRECTION.md`. |
+| 🟢 | BOARD-009 | Drag-to-reorder slices | Complete | Now | Final slices reorder via pointer drag, arrow keys, and tap-to-cycle, each carrying its rotate/flip/offset (its identity in the single-panel model). Pure `boardSlices` domain layer with boundary tests. Full value lands with composable board assemblies in `BOARD-008`. |
 | 🟡 | BOARD-010 | Custom wood library | Partial | Next | Shared wood-library module (own sidebar section) supports add/edit species, base color, grain accent, and price per board foot; texture, density, notes, and inventory references remain. |
 | 🟡 | BOARD-011 | Improved wood appearance | Partial | Later | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
 | 🟢 | BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, router-table surfacing, and final trimming; rough-stock board feet and cost reflect purchased stock. Allowances are now a shop-wide module (machine setup) shared by every board. |
 | 🟢 | BOARD-013 | Cut list and bill of materials | Complete | Now | Generate rough stock, rip widths, crosscut and saw-pass counts, sequence, warnings, and per-species totals from one typed domain plan. |
 | 🟢 | BOARD-014 | Printable build sheet | Complete | Now | Browser print path renders previews, finished/rough dimensions, numbered build steps, cut list, BOM, warnings, and an assumptions block; app chrome is stripped via `@media print`. |
-| 🟡 | BOARD-015 | Pattern presets | Partial | Next | Stripe, checkerboard, brick, and chevron exist. Add third-bond, stepped-wave, seeded-mosaic, and distinct zig-zag recipes next; presets remain editable and dimensionally validated. Basket weave and 3D blocks require BOARD-008/composite blanks, while herringbone, pinwheel, and spiral require block-level 2D assembly. See `END_GRAIN_PATTERN_RESEARCH.md`. |
+| 🟡 | BOARD-015 | Pattern presets | Partial | Next | Stripe, checkerboard, running-bond approximation, and chevron exist. True brick-and-mortar requires BOARD-008 because it combines brick-course wafers with separate mortar strips. Add third-bond, stepped-wave, seeded-mosaic, and distinct zig-zag recipes next; presets remain editable and dimensionally validated. Basket weave and 3D blocks require BOARD-008/composite blanks, while herringbone, pinwheel, and spiral require block-level 2D assembly. See `END_GRAIN_PATTERN_RESEARCH.md` and `BRICK_PATTERN_CORRECTION.md`. |
 | ⚪ | BOARD-016 | Board features | Planned | Later | Juice grooves, handles, finger slots, feet, chamfers, edge profiles, and corner radii affect dimensions and steps. |
 | ⚪ | BOARD-017 | Variant comparison | Planned | Later | Compare pattern, cost, waste, and finished-size alternatives side by side. |
 | ⚪ | BOARD-018 | Shareable design links | Planned | Later | Encode or host versioned read-only designs without exposing private project data. |
 | 🔵 | BOARD-019 | CNC/toolpath export | Research | Research | Export only after geometry, tool diameter, origin, and safety semantics are defined. |
-| 🔵 | BOARD-020 | Composite glue-up workflow | Research | Research | Decide whether user-created multiple glue-ups should be independent recipes, references to other board projects, or an alternate direct-slice workflow. This should converge with `BOARD-008`. |
+| 🔵 | BOARD-020 | Reusable wafer workflow | Research | Research | Decide whether user-created wafers/source panels should be independent recipes, references to other board projects, or an alternate direct-slice workflow. This should converge with `BOARD-008`. |
 | 🔵 | BOARD-021 | Direct slice creation | Research | Research | Explore an alternate entry point where users create slices directly, including custom cut angles and shapes, then generate the final preview and build plan from those slices. |
 | ⚪ | BOARD-022 | Interactive build instructions | Planned | Later | Provide step-by-step instructions derived from the current design, cuts, wood choices, allowances, and warnings; printable output remains covered by `BOARD-014`. |
 
@@ -206,7 +206,7 @@ Exit criteria: a non-developer friend can install from Docker Hub, open the app,
 
 ### M2: Trustworthy Cutting Board Workshop - Next
 
-- Finish multiple-panel and slice-reordering model (`BOARD-008`, `BOARD-009`). _Slice reorder done; multi-panel pending._
+- Finish composable board assemblies and slice-reordering model (`BOARD-008`, `BOARD-009`). _Slice reorder done; source-panel/wafer assembly pending._
 - Add rough/finished allowances (`BOARD-012`). _Done._
 - Generate cut list and BOM (`BOARD-013`). _Done._
 - Generate a printable build sheet (`BOARD-014`). _Done._
@@ -261,7 +261,7 @@ Exit criteria: Notion improves discovery and documentation without becoming requ
 3. `UX-002`, `PLAT-008`: touch and keyboard pass for board editing, slice controls, shop object movement, and visible focus.
 4. `UX-004`, `UX-005`: first-run guidance for units, browser-local saving, backups, kerf, and allowances.
 5. `UX-006`: basic warning center for geometry, import, storage, and backup issues.
-6. `BOARD-008`: support multiple first glue-up panels.
+6. `BOARD-008`: support composable board assemblies with source panels, reusable wafers, separators, and final glue-up recipes.
 7. `CUT-001`, `CUT-002`: establish shared cut-plan types and move cutting-board operations toward that contract.
 8. `CUT-003`, `CUT-005`: exact 1D optimizer plus independent validator.
 9. `DATA-005`, `DATA-007`, `DATA-008`: shared LAN persistence, private HTTPS, and automated backups.
@@ -271,7 +271,7 @@ Exit criteria: Notion improves discovery and documentation without becoming requ
 
 - Should shared LAN persistence use SQLite behind a small API or versioned JSON files with atomic replacement?
 - Is friend beta explicitly browser-local, or should any tablet editing wait for shared LAN persistence?
-- Should multiple end-grain source panels be independent recipes or reusable references to other board projects?
+- Should source panels/wafers be independent recipes, reusable references to other board projects, or both?
 - Which rough-stock allowances should have defaults, and which must always be explicitly entered?
 - Should stock inventory track individual physical boards, pooled quantities, or both?
 - Which cut method constraints are required first: table-saw rip/crosscut, miter saw, bandsaw, or sheet-goods breakdown?

@@ -262,11 +262,47 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .build-assumptions dt { font:9px 'DM Mono';text-transform:uppercase;letter-spacing:.06em;color:#8a6a3d; }
 .build-assumptions dd { margin:0;font-size:11px;line-height:1.45;color:#333; }
 
+/* Floating preview studio: a sticky, tabbed mirror of the build steps that
+   stays put while you edit. Sticky top bar by default (tablet/phone); promoted
+   to a right-hand side rail on wide screens. fitPxPerMm sizes each tab to fill
+   .studio-stage, so narrow pieces (a wafer, a thin glue-up) stop rendering as
+   slivers. The inline "How it's built" narrative below stays for learning. */
+.designer-stage { margin-top:24px; display:flex; flex-direction:column; gap:22px; }
+.designer-narrative { display:flex; flex-direction:column; }
+.preview-studio { position:sticky; top:0; z-index:6; background:#efece4; border:1px solid #cbc8bd; border-radius:4px; display:flex; flex-direction:column; box-shadow:0 6px 20px #00000014; }
+.studio-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px 8px; }
+.studio-popout { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:#fff; color:#4f564e; padding:7px 13px; border-radius:999px; font-size:11px; }
+.studio-popout svg { width:14px; }
+.studio-tabs { display:flex; flex-wrap:wrap; gap:5px; padding:0 14px 10px; }
+.studio-tabs button { border:1px solid #d6d2c7; background:#fff; color:#5b625a; padding:7px 12px; border-radius:999px; font-size:11px; }
+.studio-tabs button.active { background:var(--green); color:#fff; border-color:var(--green); }
+.studio-stage { height:clamp(250px,40vh,440px); margin:0 8px; background:#cfd2cb; display:grid; place-items:center; overflow:hidden; }
+.studio-stage .scaled-board-scroll { overflow:hidden; background:transparent; padding:0; }
+.studio-stage .scaled-board { max-width:100%; height:auto; }
+.studio-note { margin:0; padding:10px 14px 13px; font:10px 'DM Mono'; color:#7a8079; line-height:1.4; }
+
+@media (min-width:1180px) {
+  .designer-stage { display:grid; grid-template-columns:minmax(0,1fr) 384px; align-items:start; gap:26px; }
+  .designer-stage > .designer-narrative { order:1; min-width:0; }
+  .designer-stage > .preview-studio { order:2; top:8px; max-height:calc(100vh - 96px); }
+  .preview-studio .studio-stage { height:clamp(300px,52vh,560px); }
+}
+
+/* Pop-out: full-size studio with pinch-zoom/pan for inspecting on a tablet. */
+.preview-popout { width:min(1180px,96vw); height:min(88vh,900px); background:#f8f6f0; border:1px solid #d2cec2; box-shadow:0 24px 70px #00000061; display:flex; flex-direction:column; padding:14px 16px 16px; }
+.preview-popout header { display:flex; align-items:center; justify-content:space-between; gap:14px; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:12px; }
+.preview-popout .studio-tabs { padding:0; }
+.popout-body { flex:1; position:relative; background:#cfd2cb; overflow:hidden; }
+.popout-body .studio-stage { height:100%; width:100%; margin:0; }
+.popout-body .pinch-content { width:100%; height:100%; }
+.preview-popout .studio-note { padding:10px 2px 0; }
+
 @media print {
   @page { margin:14mm; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body { min-width:0;background:#fff; }
-  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .finished-board .scale-note, .slice-order-section { display:none !important; }
+  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio, .slice-order-section { display:none !important; }
+  .designer-stage { display:block !important; margin:0; }
   main { margin:0 !important;width:100% !important; }
   .workspace { min-height:0; }
   .board-layout { height:auto;display:block;overflow:visible; }
@@ -278,5 +314,5 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .pinch-content { transform:none !important; }
   .scaled-board-scroll { overflow:visible;background:none;padding:0; }
   .scaled-board { max-width:100%;height:auto; }
-  .finished-board, .build-step, .build-summary, .cut-plan-sheet, .build-sequence li, .plan-table > div, .build-assumptions div { break-inside:avoid; }
+  .build-step, .build-summary, .cut-plan-sheet, .build-sequence li, .plan-table > div, .build-assumptions div { break-inside:avoid; }
 }

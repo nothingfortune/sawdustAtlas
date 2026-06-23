@@ -14,7 +14,7 @@ This distinction matters because many boards marketed as a single pattern use se
 | --- | --- | --- | --- |
 | Stripe | Repeat an end-grain strip sequence without changing slice orientation. | Supported | Keep as the simplest preset. |
 | Checkerboard | Use equal-width alternating species and reverse every other slice. Crosscut width should equal cell width for square checks. | Supported | Keep, but make the preset set or validate square-cell dimensions. |
-| Running bond / brick | Use equal-width alternating species and shift every other slice by half a cell. | Supported | Keep and label the half-cell offset in the UI. |
+| Running bond / brick | Simple running bond can shift every other slice by half a cell. True brick-and-mortar builds combine brick-course wafers with separate mortar strips. | Partially supported | Keep only as a running-bond approximation in the current single-panel model. True brick-and-mortar needs composable board assemblies (`BOARD-008`). See `BRICK_PATTERN_CORRECTION.md`. |
 | Third bond | Shift successive slices by 0, one-third, and two-thirds of a cell. | Supported | Add next; it exercises existing `rowOffsets` without new geometry. |
 | Chevron / zig-zag | Alternate positive and negative strip angles; alternate slice orientation when a continuous zig-zag is wanted. | Supported with trimming | Split the current Chevron preset into Chevron and Zig-zag variants, and surface side-trim waste. |
 | Stepped wave | Apply a repeating ascending and descending slice offset, such as 0, 1/4, 1/2, 3/4, 1/2, 1/4 cell. | Supported | Add as an editable offset preset. Call it stepped, since the geometry is not a true curve. |
@@ -30,7 +30,7 @@ This distinction matters because many boards marketed as a single pattern use se
 2. Separate Chevron and Zig-zag, with validation for angled-strip trimming and closed/crossing strips.
 3. Make Random mosaic seeded and persist the seed with the preset parameters.
 4. Add preset metadata: name, description, difficulty, minimum species count, dimensional constraints, and required construction capabilities.
-5. Implement multiple source panels and composite blanks before offering Basket weave or 3D cube presets.
+5. Implement composable board assemblies: multiple source panels, reusable wafers, separators, borders, and final assembly recipes. Use true brick-and-mortar as the first validation pattern before Basket weave or 3D cube presets.
 6. Add a 2D part/tile assembly model before Herringbone, Pinwheel, or Spiral.
 
 ## UX and validation notes

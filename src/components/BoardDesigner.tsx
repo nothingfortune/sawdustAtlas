@@ -1,5 +1,6 @@
-import { Check, ChevronDown, Copy, Eye, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { StripList } from './StripList'
 import { SliceOrderList } from './SliceOrderList'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
@@ -10,8 +11,9 @@ import { calculateBuildDimensions } from '../domain/boardAllowances'
 import type { BuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
 import type { CuttingBoardPlan } from '../domain/boardCutPlan'
-import { resolveScale } from '../domain/boardScale'
+import { resolveScale, fitPxPerMm } from '../domain/boardScale'
 import { useContainerWidth } from './useContainerWidth'
+import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
@@ -111,23 +113,27 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final surfacing' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
-        <FinishedBoard project={project} woods={woods} metrics={end} build={build} template={template} edgeWidth={width} pxPerMm={pxPerMm} onToggleRow={cycleRow}/>
-        {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
-          <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
-          <SliceOrderList states={sliceStates} onReorder={reorderSlices} onCycle={cycleRow} onSelect={setSelectedSlice}/>
-          <SlicePreview project={project} woods={woods} template={template} state={sliceStates[selectedSliceIndex]} index={selectedSliceIndex} pxPerMm={pxPerMm}/>
-        </section>}
-        <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
+        <div className="designer-stage">
+          <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow}/>
+          <div className="designer-narrative">
+            {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
+              <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
+              <SliceOrderList states={sliceStates} onReorder={reorderSlices} onCycle={cycleRow} onSelect={setSelectedSlice}/>
+              <SlicePreview project={project} woods={woods} template={template} state={sliceStates[selectedSliceIndex]} index={selectedSliceIndex} pxPerMm={pxPerMm}/>
+            </section>}
+            <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 
-        <div className="board-stats">
-          <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
-          <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
-          <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
-          <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
+            <div className="board-stats">
+              <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
+              <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
+              <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
+              <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
+            </div>
+            <BuildSummary build={build}/>
+            <CutPlanView plan={cutPlan}/>
+            <BuildAssumptions project={project}/>
+          </div>
         </div>
-        <BuildSummary build={build}/>
-        <CutPlanView plan={cutPlan}/>
-        <BuildAssumptions project={project}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
@@ -164,26 +170,110 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   </div>
 }
 
-function FinishedBoard({ project, woods, metrics, build, template, edgeWidth, pxPerMm, onToggleRow }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; build: BuildDimensions; template: EndGrainTemplate; edgeWidth: number; pxPerMm: number; onToggleRow: (index: number) => void }) {
-  const isEnd = project.construction === 'end'
-  const lengthMm = isEnd ? Math.max(metrics.finalLength, 1) : Math.max(project.length, 1)
-  const widthMm = isEnd ? Math.max(metrics.panelWidth, 1) : Math.max(edgeWidth, 1)
-  const pinch = usePinchPan()
-  return <section className="finished-board">
-    <header><span className="eyebrow">FINISHED BOARD</span><span className="scale-note">true to scale · {isEnd ? 'tap a slice · pinch to zoom' : 'top view · pinch to zoom'}</span></header>
-    <div className="pinch-viewport" {...pinch.handlers}>
-      <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})` }}>
-        <ScaledBoardFrame woods={woods} lengthMm={lengthMm} widthMm={widthMm} pxPerMm={pxPerMm} rulers={['top', 'left']} scaleBar ariaLabel="Finished board, drawn to scale">
-          {isEnd
-            ? <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={pxPerMm} onToggleRow={onToggleRow}/>
-            : <LongGrainFace strips={project.strips} lengthMm={lengthMm}/>
-          }
-        </ScaledBoardFrame>
-      </div>
-      {pinch.active && <button className="zoom-reset" onClick={pinch.reset}>Reset zoom</button>}
+// One entry in the floating studio's tab strip. wMm/hMm are the piece's true
+// dimensions (used only for aspect-ratio fitting); render() draws it at whatever
+// fitted scale the stage resolves. idPrefix keeps SVG clip ids unique between the
+// docked rail and the pop-out, which mount the same tab simultaneously.
+interface StudioTab {
+  id: string
+  label: string
+  wMm: number
+  hMm: number
+  note: string
+  scaleBar?: boolean
+  render: (pxPerMm: number, idPrefix: string) => ReactNode
+}
+
+function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sliceIndex, onToggleRow }: { project: BoardProject; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void }): StudioTab[] {
+  if (project.construction === 'edge') {
+    const len = Math.max(project.length, 1)
+    const wid = Math.max(edgeWidth, 1)
+    const face = () => <LongGrainFace strips={project.strips} lengthMm={len}/>
+    return [
+      { id: 'finished', label: 'Finished board', wMm: len, hMm: wid, scaleBar: true, note: 'Top view, true to scale · pop out to zoom', render: face },
+      { id: 'glueup', label: 'Glue-up order', wMm: len, hMm: wid, note: 'Strips glued edge to edge · grain runs along the length', render: face },
+    ]
+  }
+  const source = Math.max(project.endGrain.sourceLength, 1)
+  const panel = Math.max(metrics.panelWidth, 1)
+  const finalLen = Math.max(metrics.finalLength, 1)
+  const tabs: StudioTab[] = [
+    { id: 'finished', label: 'Finished board', wMm: finalLen, hMm: panel, scaleBar: true, note: 'Tap a slice to rotate/flip it · pop out to zoom',
+      render: (px, idp) => <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} onToggleRow={onToggleRow} clipIdPrefix={`${idp}-fin`}/> },
+    { id: 'glueup', label: 'Glue-up', wMm: source, hMm: panel, note: `Long boards stacked across the panel · ${project.endGrain.sourceLength} × ${format(metrics.panelWidth)} mm`,
+      render: () => <LongGrainFace strips={project.strips} lengthMm={source}/> },
+    { id: 'crosscut', label: 'Crosscut', wMm: source, hMm: panel, note: `${metrics.sliceCount} slices cut across the grain at ${project.endGrain.sliceThickness} mm`,
+      render: px => <><LongGrainFace strips={project.strips} lengthMm={source}/><CrosscutOverlay project={project} metrics={metrics} heightMm={panel} pxPerMm={px}/></> },
+    { id: 'turn', label: '90° turn', wMm: finalLen, hMm: panel, note: 'Slices stood on end and re-glued into the end-grain panel',
+      render: (px, idp) => <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} clipIdPrefix={`${idp}-turn`}/> },
+  ]
+  if (sliceState) {
+    tabs.push({ id: 'wafer', label: 'Single wafer', wMm: Math.max(project.endGrain.stockThickness, 1), hMm: Math.max(template.height, 1),
+      note: `Slice ${sliceState.sourceIndex + 1}, currently in slot ${sliceIndex + 1} · one crosscut wafer before assembly`,
+      render: (_px, idp) => <SliceFace project={project} template={template} state={sliceState} clipId={`${idp}-wafer`}/> })
+  }
+  return tabs
+}
+
+// Draws one studio tab fitted to fill its measured box (aspect ratio preserved),
+// so narrow pieces use the whole frame instead of rendering as a sliver.
+function StudioStage({ tab, woods, idPrefix, big = false }: { tab: StudioTab; woods: WoodSpecies[]; idPrefix: string; big?: boolean }) {
+  const [ref, size] = useElementSize()
+  const pxPerMm = fitPxPerMm(tab.wMm, tab.hMm, size.width, size.height, { maxPxPerMm: big ? 14 : 7, padX: 24, padY: tab.scaleBar ? 48 : 22 })
+  return <div className="studio-stage" ref={ref}>
+    <ScaledBoardFrame woods={woods} lengthMm={tab.wMm} widthMm={tab.hMm} pxPerMm={pxPerMm} scaleBar={!!tab.scaleBar} ariaLabel={tab.label}>
+      {tab.render(pxPerMm, idPrefix)}
+    </ScaledBoardFrame>
+  </div>
+}
+
+// The floating "current render": a sticky, tabbed mirror of the build steps that
+// stays put while you edit (side rail on desktop, sticky top on tablet). The
+// inline "How it's built" narrative below stays for first-time learning.
+function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void }) {
+  const tabs = buildStudioTabs(props)
+  const [activeId, setActiveId] = useState('finished')
+  const [popout, setPopout] = useState(false)
+  const active = tabs.find(tab => tab.id === activeId) ?? tabs[0]
+  if (!active) return null
+  return <section className="preview-studio" aria-label="Live preview">
+    <div className="studio-head">
+      <span className="eyebrow">CURRENT RENDER</span>
+      <button className="studio-popout" onClick={() => setPopout(true)} aria-label="Pop out preview at full size"><Maximize2/>Pop out</button>
     </div>
-    <p className="board-dims">{format(build.length.finished)} × {format(build.width.finished)} × {format(build.thickness.finished)} mm finished{isEnd && Math.abs(metrics.faceShift) > 0.1 ? ` · square width ${format(metrics.finishedWidth)} mm after trimming` : ''}</p>
+    <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => setActiveId(tab.id)}>{tab.label}</button>)}</div>
+    <StudioStage tab={active} woods={props.woods} idPrefix="studio"/>
+    <p className="studio-note">{active.note}</p>
+    {popout && <PreviewPopout tabs={tabs} activeId={active.id} woods={props.woods} onSelect={setActiveId} onClose={() => setPopout(false)}/>}
   </section>
+}
+
+// Full-size pop-out of the studio, with the same tab strip plus pinch-zoom/pan —
+// for inspecting the render large on a tablet. Escape or backdrop tap closes it.
+function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: StudioTab[]; activeId: string; woods: WoodSpecies[]; onSelect: (id: string) => void; onClose: () => void }) {
+  const pinch = usePinchPan()
+  const active = tabs.find(tab => tab.id === activeId) ?? tabs[0]
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  if (!active) return null
+  return <div className="modal-scrim" role="presentation" onClick={onClose}>
+    <div className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`} onClick={event => event.stopPropagation()}>
+      <header>
+        <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => onSelect(tab.id)}>{tab.label}</button>)}</div>
+        <button className="icon-button" onClick={onClose} aria-label="Close preview"><X/></button>
+      </header>
+      <div className="popout-body pinch-viewport" {...pinch.handlers}>
+        <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})` }}>
+          <StudioStage tab={active} woods={woods} idPrefix="studio-pop" big/>
+        </div>
+        {pinch.active && <button className="zoom-reset" onClick={pinch.reset}>Reset zoom</button>}
+      </div>
+      <p className="studio-note">{active.note}</p>
+    </div>
+  </div>
 }
 
 function SlicePreview({ project, woods, template, state, index, pxPerMm }: { project: BoardProject; woods: WoodSpecies[]; template: EndGrainTemplate; state: SliceState | undefined; index: number; pxPerMm: number }) {

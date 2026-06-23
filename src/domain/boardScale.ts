@@ -46,6 +46,39 @@ export function resolveScale(boardLengthMm: number, containerWidthPx: number, op
   return { pxPerMm, fitToWidth: contentWidthPx > containerWidthPx + 0.5, contentWidthPx }
 }
 
+export interface FitOptions {
+  /** Ceiling scale so tiny pieces don't render absurdly large. */
+  maxPxPerMm?: number
+  /** Floor scale. */
+  minPxPerMm?: number
+  /** Horizontal chrome (gutters + padding) to reserve, in px. */
+  padX?: number
+  /** Vertical chrome (gutters + scale bar + padding) to reserve, in px. */
+  padY?: number
+  /** Fallback scale when the box hasn't been measured yet. */
+  fallbackPxPerMm?: number
+}
+
+/**
+ * Pick a px-per-mm that makes a piece FILL its box on both axes, preserving
+ * aspect ratio. Unlike resolveScale (which keeps every preview at one shared
+ * true-to-scale factor), this is for the floating studio / pop-out where the
+ * goal is "see the design as large as it fits", so long-narrow pieces (a single
+ * wafer, a thin glue-up) stop rendering as slivers.
+ */
+export function fitPxPerMm(contentWidthMm: number, contentHeightMm: number, boxWidthPx: number, boxHeightPx: number, opts: FitOptions = {}): number {
+  const max = opts.maxPxPerMm ?? 6
+  const min = opts.minPxPerMm ?? 0.02
+  const padX = opts.padX ?? 24
+  const padY = opts.padY ?? 24
+  if (!(contentWidthMm > 0) || !(contentHeightMm > 0) || !(boxWidthPx > 0) || !(boxHeightPx > 0)) {
+    return clamp(opts.fallbackPxPerMm ?? DEFAULT_TARGET, min, max)
+  }
+  const availW = Math.max(boxWidthPx - padX, 16)
+  const availH = Math.max(boxHeightPx - padY, 16)
+  return clamp(Math.min(availW / contentWidthMm, availH / contentHeightMm), min, max)
+}
+
 /** Smallest nice mm step whose on-screen spacing is at least minLabelSpacingPx. */
 export function niceTickStep(pxPerMm: number, minLabelSpacingPx = 64): number {
   if (!(pxPerMm > 0)) return 10

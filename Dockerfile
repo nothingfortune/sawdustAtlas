@@ -1,4 +1,4 @@
-FROM node:26-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.5.3 --activate
@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM nginx:1.31-alpine
+FROM nginx:1.27-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/nothingfortune/sawdustAtlas" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"

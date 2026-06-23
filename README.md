@@ -17,6 +17,23 @@ pnpm dev
 
 Create a production build with `pnpm build`.
 
+## CI and Docker Hub releases
+
+GitHub Actions runs linting, tests, the production build, and a Docker image build on pull requests. Pushes to `main` and tags beginning with `v` also publish the image to Docker Hub as:
+
+```text
+<DOCKERHUB_USERNAME>/sawdust-atlas
+```
+
+Add these repository secrets in GitHub before relying on the publish step:
+
+- `DOCKERHUB_USERNAME`: the Docker Hub account or organization that owns the repository.
+- `DOCKERHUB_TOKEN`: a Docker Hub access token with permission to push `sawdust-atlas`.
+
+The default branch is tagged `latest`, version tags such as `v0.1.0` keep their tag name, and every published build also receives a `sha-...` tag. Published images include SBOM and provenance attestations, and CI runs Docker Scout vulnerability and recommendation checks as advisory output. GitHub Actions are pinned to full commit SHAs, with Dependabot checking action, npm, and Docker updates weekly.
+
+In Docker Hub, enable immutable tags for release tags after creating the repository: open the repository, go to **Settings > General > Tag mutability settings**, choose **Specific tags are immutable**, and use a pattern for version tags such as `^v.*`. Keep `latest` mutable so the default branch can continue to update it.
+
 ## Use it from a tablet
 
 ### Docker (recommended for everyday use)

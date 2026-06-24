@@ -451,15 +451,17 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
     // rather than being read as a drag that just lifts the wafer and does nothing.
     setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 10, target: targetFromX(clientX) })
   }
-  const endDrag = () => setDrag(current => {
-    if (current) {
+  const endDrag = () => {
+    // Read drag from state and fire the parent update OUTSIDE setDrag's updater —
+    // calling onReorder/onToggleRow inside it would setState during render.
+    if (drag) {
       // Only reorder if the column actually lands on a different slot; otherwise
       // (a tap, or a drag returned to origin) cycle this wafer's rotate/flip.
-      if (current.moved && current.target !== current.key) onReorder(orderWithKeyAt(current.key, current.target))
-      else onToggleRow(current.key)
+      if (drag.moved && drag.target !== drag.key) onReorder(orderWithKeyAt(drag.key, drag.target))
+      else onToggleRow(drag.key)
     }
-    return null
-  })
+    setDrag(null)
+  }
 
   const column = (slot: number, position: number, dragging = false) => {
     const state: SliceState = { rotated: project.endGrain.rowRotations[slot] ?? false, flipped: project.endGrain.rowFlips[slot] ?? false, offset: project.endGrain.rowOffsets?.[slot] ?? 0, sourceIndex: project.endGrain.rowOrder?.[slot] ?? slot }

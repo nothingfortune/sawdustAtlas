@@ -269,48 +269,44 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .build-assumptions dt { font:9px 'DM Mono';text-transform:uppercase;letter-spacing:.06em;color:#8a6a3d; }
 .build-assumptions dd { margin:0;font-size:11px;line-height:1.45;color:#333; }
 
-/* Floating preview studio: a sticky, tabbed mirror of the build steps that
-   stays put while you edit. Sticky top bar by default (tablet/phone); promoted
-   to a right-hand side rail on wide screens. fitPxPerMm sizes each tab to fill
-   .studio-stage, so narrow pieces (a wafer, a thin glue-up) stop rendering as
-   slivers. The inline "How it's built" narrative below stays for learning. */
-.designer-stage { margin-top:24px; display:flex; flex-direction:column; gap:22px; }
-.designer-narrative { display:flex; flex-direction:column; min-width:0; }
-.preview-studio { position:sticky; top:0; z-index:6; background:#efece4; border:1px solid #cbc8bd; border-radius:4px; display:flex; flex-direction:column; box-shadow:0 6px 20px #0000001f; }
-.studio-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px 6px; }
+/* Preview studio: a compact thumbnail pinned to the top of the editor panel,
+   co-located with the controls so it updates live as you edit. Tapping it pops
+   out the full interactive view; the minimize button collapses it to a slim bar.
+   fitPxPerMm sizes each tab to fill .studio-stage so narrow pieces don't sliver. */
+.board-panel > .preview-studio { position:sticky; top:0; z-index:3; margin:0 0 18px; background:#efece4; border:1px solid #cbc8bd; border-radius:4px; display:flex; flex-direction:column; box-shadow:0 4px 14px #0000001a; }
+.studio-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px 6px; }
 .studio-head-actions { display:flex; gap:5px; }
-.studio-icon { width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--line); background:#fff; color:#5b625a; border-radius:6px; }
+.studio-icon { width:32px; height:32px; display:grid; place-items:center; border:1px solid var(--line); background:#fff; color:#5b625a; border-radius:6px; }
 .studio-icon svg { width:15px; }
-.studio-tabs { display:flex; flex-wrap:wrap; gap:4px; padding:0 11px 8px; }
+.studio-tabs { display:flex; flex-wrap:wrap; gap:4px; padding:0 13px 8px; }
 .studio-tabs button { border:1px solid #d6d2c7; background:#fff; color:#5b625a; padding:5px 10px; border-radius:999px; font-size:10px; }
 .studio-tabs button.active { background:var(--green); color:#fff; border-color:var(--green); }
 .studio-tap { position:relative; display:block; width:100%; padding:0; border:0; background:transparent; cursor:zoom-in; }
-.studio-stage { height:clamp(150px,22vh,220px); margin:0 8px; background:#cfd2cb; display:grid; place-items:center; overflow:hidden; }
+.studio-stage { height:clamp(150px,21vh,230px); margin:0 8px; background:#cfd2cb; display:grid; place-items:center; overflow:hidden; }
 .studio-stage .scaled-board-scroll { overflow:hidden; background:transparent; padding:0; }
 .studio-stage .scaled-board { max-width:100%; height:auto; }
 .studio-tap-hint { position:absolute; right:14px; bottom:9px; display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px; background:#1f25208c; color:#fff; font:9px 'DM Mono'; text-transform:uppercase; letter-spacing:.06em; pointer-events:none; opacity:0; transition:opacity .15s; }
 .studio-tap-hint svg { width:12px; }
 .studio-tap:hover .studio-tap-hint, .studio-tap:focus-visible .studio-tap-hint { opacity:1; }
-.studio-note { margin:0; padding:8px 11px 11px; font:10px 'DM Mono'; color:#7a8079; line-height:1.4; }
+.studio-note { margin:0; padding:8px 13px 11px; font:10px 'DM Mono'; color:#7a8079; line-height:1.4; }
 
-/* Minimized: collapse to a small pinned handle so the narrative reclaims the
-   full width. Higher specificity than the desktop grid rule below, so it wins. */
-.studio-restore { position:sticky; top:8px; z-index:6; align-self:flex-end; display:inline-flex; align-items:center; gap:8px; border:1px solid #cbc8bd; background:#efece4; color:#4f564e; padding:8px 14px; border-radius:999px; box-shadow:0 4px 14px #0000001f; }
+/* Minimized: a slim bar at the top of the panel that restores the preview. */
+.board-panel > .studio-restore { position:sticky; top:0; z-index:3; margin:0 0 18px; display:flex; align-items:center; gap:9px; border:1px solid #cbc8bd; background:#efece4; color:#4f564e; padding:11px 14px; border-radius:4px; box-shadow:0 4px 14px #0000001a; }
 .studio-restore svg { width:15px; }
 .studio-restore span { font-size:12px; font-weight:600; }
-.studio-restore small { font:9px 'DM Mono'; color:#8a8d85; text-transform:uppercase; letter-spacing:.05em; }
-.designer-stage.studio-collapsed { display:flex; flex-direction:column; gap:10px; }
-
-@media (min-width:1180px) {
-  .designer-stage { display:grid; grid-template-columns:minmax(0,1fr) 352px; align-items:start; gap:26px; }
-  .designer-stage > .designer-narrative { order:1; }
-  .designer-stage > .preview-studio { order:2; top:8px; }
-  .preview-studio .studio-stage { height:clamp(180px,24vh,280px); }
-}
+.studio-restore small { font:9px 'DM Mono'; color:#8a8d85; text-transform:uppercase; letter-spacing:.05em; margin-left:auto; }
 
 @media (pointer: coarse) {
   .studio-tap-hint { opacity:1; }
   .studio-icon { width:40px; height:40px; }
+}
+
+/* On the slide-over drawer the panel scrolls full-screen and the close X owns
+   the top-right corner, so don't pin the preview and clear room for the X. */
+@media (orientation: portrait), (max-width: 820px) {
+  .board-panel > .preview-studio, .board-panel > .studio-restore { position:static; }
+  .board-panel > .preview-studio .studio-head { padding-right:48px; }
+  .board-panel > .studio-restore { padding-right:48px; }
 }
 
 /* Pop-out: full-size studio with pinch-zoom/pan for inspecting on a tablet. */
@@ -326,8 +322,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   @page { margin:14mm; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body { min-width:0;background:#fff; }
-  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio, .slice-order-section { display:none !important; }
-  .designer-stage { display:block !important; margin:0; }
+  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio { display:none !important; }
   main { margin:0 !important;width:100% !important; }
   .workspace { min-height:0; }
   .board-layout { height:auto;display:block;overflow:visible; }

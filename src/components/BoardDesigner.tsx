@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
-import { SliceOrderList } from './SliceOrderList'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
 import type { SliceState } from '../domain/boardSlices'
 import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
@@ -30,9 +29,9 @@ interface Props { projects: BoardProject[]; project: BoardProject | undefined; w
 export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
-  // Start minimized on touch devices (tablets/phones), where the sticky preview
-  // eats scarce screen height; desktops have room so they start expanded.
-  const [studioMinimized, setStudioMinimized] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches)
+  // Preview lives at the top of the editor panel; collapsible to reclaim panel
+  // height when focusing on strip edits.
+  const [studioMinimized, setStudioMinimized] = useState(false)
   const [selectedSlice, setSelectedSlice] = useState(0)
   const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
@@ -117,30 +116,21 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final surfacing' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
-        <div className={`designer-stage${studioMinimized ? ' studio-collapsed' : ''}`}>
-          <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
-          <div className="designer-narrative">
-            {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
-              <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
-              <SliceOrderList states={sliceStates} onReorder={reorderSlices} onCycle={cycleRow} onSelect={setSelectedSlice}/>
-              <SlicePreview project={project} woods={woods} template={template} state={sliceStates[selectedSliceIndex]} index={selectedSliceIndex} pxPerMm={pxPerMm}/>
-            </section>}
-            <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
+        <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 
-            <div className="board-stats">
-              <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
-              <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
-              <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
-              <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
-            </div>
-            <BuildSummary build={build}/>
-            <CutPlanView plan={cutPlan}/>
-            <BuildAssumptions project={project}/>
-          </div>
+        <div className="board-stats">
+          <Stat label="Finished size" value={`${format(build.length.finished)} × ${format(build.width.finished)} × ${format(build.thickness.finished)} mm`}/>
+          <Stat label="Rough stock" value={`${format(boardFeet)} bf`}/>
+          <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
+          <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${format(end.totalWasteBoardFeet)} bf · ${format(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
+        <BuildSummary build={build}/>
+        <CutPlanView plan={cutPlan}/>
+        <BuildAssumptions project={project}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
+        <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
         <div className="panel-section first">
           <h3>Construction</h3>
           <div className="construction-toggle"><button className={project.construction === 'edge' ? 'active' : ''} onClick={() => update({ construction: 'edge' })}>Edge grain</button><button className={project.construction === 'end' ? 'active' : ''} onClick={() => update({ construction: 'end' })}>End grain</button></div>
@@ -237,11 +227,10 @@ function StudioStage({ tab, woods, idPrefix, big = false, interactive = false }:
   </div>
 }
 
-// The floating "current render": a COMPACT sticky thumbnail that stays put while
-// you edit (side rail on desktop, sticky top on tablet). It's deliberately small
-// to save real estate — tapping it pops out the full interactive view, and the
-// minimize button collapses it to a tiny handle. The inline "How it's built"
-// narrative below stays for first-time learning.
+// The "current render": a compact thumbnail pinned to the top of the editor
+// panel, co-located with the controls so it updates as you edit. Tapping it pops
+// out the full interactive view (rulers, drag-reorder, rotate/flip, pinch); the
+// minimize button collapses it to a slim bar to reclaim panel height.
 function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void; onReorder: (order: number[]) => void; minimized: boolean; onMinimize: () => void; onExpand: () => void }) {
   const tabs = buildStudioTabs(props)
   const [activeId, setActiveId] = useState('finished')
@@ -299,18 +288,6 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
       <p className="studio-note">{active.note}</p>
     </div>
   </div>, document.body)
-}
-
-function SlicePreview({ project, woods, template, state, index, pxPerMm }: { project: BoardProject; woods: WoodSpecies[]; template: EndGrainTemplate; state: SliceState | undefined; index: number; pxPerMm: number }) {
-  if (!state) return null
-  const thickness = Math.max(project.endGrain.stockThickness, 1)
-  const height = Math.max(template.height, 1)
-  return <div className="single-slice-preview">
-    <div><span className="eyebrow">SINGLE WAFER</span><h3>Slice {state.sourceIndex + 1}</h3><p>Currently in slot {index + 1}. Looking down at one crosscut slice before it joins the final end-grain panel.</p></div>
-    <ScaledBoardFrame woods={woods} lengthMm={thickness} widthMm={height} pxPerMm={Math.min(pxPerMm * 2.4, 5)} rulers={['top', 'left']} ariaLabel={`Single end-grain slice ${index + 1}`}>
-      <SliceFace project={project} template={template} state={state} clipId={`single-slice-${index}`}/>
-    </ScaledBoardFrame>
-  </div>
 }
 
 function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {

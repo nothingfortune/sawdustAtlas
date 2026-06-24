@@ -94,10 +94,15 @@ export default function App() {
 
   async function importFile(file?: File) {
     if (!file) return
+    if (!window.confirm('Import this backup and replace the projects currently saved in this browser? Export a backup first if you may need the current work.')) return
     try {
       const next = JSON.parse(await file.text()) as AtlasData
       if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
-      commitData(() => normalizeData(next)); setView('home')
+      const normalized = normalizeData(next)
+      commitData(() => normalized)
+      setActiveShop(normalized.shops[0]?.id ?? '')
+      setActiveBoard(normalized.boards[0]?.id ?? '')
+      setView('home')
     } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
   }
 
@@ -137,7 +142,7 @@ export default function App() {
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
       </section>
     </main>
-    <input ref={importRef} type="file" accept="application/json" hidden onChange={e => importFile(e.target.files?.[0])} />
+    <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
   </div>
 }
 

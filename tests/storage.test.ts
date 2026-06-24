@@ -41,4 +41,25 @@ describe('workspace storage migration', () => {
     const normalized = normalizeData(legacy)
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
   })
+
+  it('repairs malformed nested import records instead of throwing away the backup', () => {
+    const legacy = {
+      woods: [null, { id: 'walnut', name: 'Walnut', color: 'brown', accent: '#87614a', pricePerBoardFoot: -5 }],
+      shops: [{ id: 'shop', name: '', width: Number.NaN }],
+      boards: [{
+        id: 'board',
+        name: '',
+        construction: 'end',
+        strips: [null, { id: 'strip', speciesId: 'mystery', width: 40 }],
+        endGrain: { stockThickness: 38 },
+      }],
+    } as unknown as AtlasData
+
+    const normalized = normalizeData(legacy)
+    expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, items: [] })
+    expect(normalized.boards[0]).toMatchObject({ id: 'board', name: 'Imported cutting board', construction: 'end' })
+    expect(normalized.boards[0]?.strips).toHaveLength(1)
+    expect(normalized.woods.find(wood => wood.id === 'mystery')).toBeDefined()
+    expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
+  })
 })

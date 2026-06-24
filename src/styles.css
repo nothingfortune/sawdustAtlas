@@ -82,6 +82,13 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .scaled-board .slice[role=button] { cursor:pointer;outline:none; }
 .scaled-board .slice[role=button]:hover .slice-hit,.scaled-board .slice[role=button]:focus .slice-hit { fill:#ffffff33;stroke:#fff;stroke-width:1; }
 .slice-label { fill:#fff;font-size:9px;font-weight:bold;font-family:'DM Mono';paint-order:stroke;stroke:#20261f;stroke-width:1.4;pointer-events:none; }
+/* Drag-to-reorder on the assembled board (pop-out). */
+.assembled-editable { touch-action:none; }
+.assembled-editable .slice { cursor:grab; }
+.assembled-editable.is-dragging .slice:not(.dragging) { opacity:.7;transition:opacity .12s; }
+.assembled-editable .slice.dragging { cursor:grabbing;filter:drop-shadow(0 7px 12px #00000055); }
+.assembled-editable .slice.dragging .slice-hit { stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke; }
+.assembled-editable .drop-target { fill:#ffffff26;stroke:#fff;stroke-width:1.5;stroke-dasharray:5 4;vector-effect:non-scaling-stroke; }
 .crosscut-overlay .cut-line { stroke:#772f22;stroke-width:1;stroke-dasharray:4 3;opacity:.7; }
 .crosscut-overlay .kerf-band { fill:#7a302b55; }
 .waste-band rect { fill:#cf6b5159; }

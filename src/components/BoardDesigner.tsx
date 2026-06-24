@@ -1,6 +1,6 @@
 import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { StripList } from './StripList'
 import { SliceOrderList } from './SliceOrderList'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
@@ -117,7 +117,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
         <div className={`designer-stage${studioMinimized ? ' studio-collapsed' : ''}`}>
-          <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
+          <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
           <div className="designer-narrative">
             {project.construction === 'end' && end.sliceCount > 0 && <section className="slice-order-section">
               <header><span className="eyebrow">SLICE ORDER</span><span className="scale-note">drag · arrow keys · tap to rotate/flip</span></header>
@@ -187,7 +187,7 @@ interface StudioTab {
   render: (pxPerMm: number, idPrefix: string, interactive: boolean) => ReactNode
 }
 
-function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sliceIndex, onToggleRow }: { project: BoardProject; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void }): StudioTab[] {
+function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sliceIndex, onToggleRow, onReorder }: { project: BoardProject; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void; onReorder: (order: number[]) => void }): StudioTab[] {
   if (project.construction === 'edge') {
     const len = Math.max(project.length, 1)
     const wid = Math.max(edgeWidth, 1)
@@ -201,8 +201,10 @@ function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sl
   const panel = Math.max(metrics.panelWidth, 1)
   const finalLen = Math.max(metrics.finalLength, 1)
   const tabs: StudioTab[] = [
-    { id: 'finished', label: 'Finished board', wMm: finalLen, hMm: panel, scaleBar: true, note: 'Tap a slice to rotate/flip it',
-      render: (px, idp, interactive) => <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} {...(interactive ? { onToggleRow } : {})} clipIdPrefix={`${idp}-fin`}/> },
+    { id: 'finished', label: 'Finished board', wMm: finalLen, hMm: panel, scaleBar: true, note: 'Tap a slice to rotate/flip · drag to reorder',
+      render: (px, idp, interactive) => interactive
+        ? <DraggableAssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} onToggleRow={onToggleRow} onReorder={onReorder} clipIdPrefix={`${idp}-fin`}/>
+        : <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} clipIdPrefix={`${idp}-fin`}/> },
     { id: 'glueup', label: 'Glue-up', wMm: source, hMm: panel, note: `Long boards stacked across the panel · ${project.endGrain.sourceLength} × ${format(metrics.panelWidth)} mm`,
       render: () => <LongGrainFace strips={project.strips} lengthMm={source}/> },
     { id: 'crosscut', label: 'Crosscut', wMm: source, hMm: panel, note: `${metrics.sliceCount} slices cut across the grain at ${project.endGrain.sliceThickness} mm`,
@@ -235,7 +237,7 @@ function StudioStage({ tab, woods, idPrefix, big = false, interactive = false }:
 // to save real estate — tapping it pops out the full interactive view, and the
 // minimize button collapses it to a tiny handle. The inline "How it's built"
 // narrative below stays for first-time learning.
-function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void; minimized: boolean; onMinimize: () => void; onExpand: () => void }) {
+function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; edgeWidth: number; sliceState: SliceState | undefined; sliceIndex: number; onToggleRow: (index: number) => void; onReorder: (order: number[]) => void; minimized: boolean; onMinimize: () => void; onExpand: () => void }) {
   const tabs = buildStudioTabs(props)
   const [activeId, setActiveId] = useState('finished')
   const [popout, setPopout] = useState(false)
@@ -414,6 +416,88 @@ function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow, c
       <g transform={`translate(${thickness / 2} ${template.height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{stateTag}</text></g>
     </g>
   })}</g>
+}
+
+// Drag-to-reorder assembled board for the pop-out. One pointer per column: a
+// press without movement cycles rotate/flip (as AssembledBoard does); a press
+// that moves past a small threshold lifts the column, opens a dashed gap at the
+// drop slot, and commits a new slot order on release. Two-finger pinch is left
+// to the pop-out viewport, so single-finger gestures are unambiguously a drag.
+function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow, onReorder, clipIdPrefix = 'edit-slice' }: { project: BoardProject; template: EndGrainTemplate; sliceCount: number; pxPerMm: number; onToggleRow: (index: number) => void; onReorder: (order: number[]) => void; clipIdPrefix?: string }) {
+  const groupRef = useRef<SVGGElement>(null)
+  const rectsRef = useRef<Array<{ slot: number; mid: number; width: number }>>([])
+  const [drag, setDrag] = useState<{ key: number; startX: number; dx: number; moved: boolean; effPx: number; target: number } | null>(null)
+  const thickness = Math.max(project.endGrain.stockThickness, 0.001)
+  const height = Math.max(template.height, 0.001)
+  const k = 1 / pxPerMm
+  const slots = Array.from({ length: sliceCount }, (_, index) => index)
+
+  // Slot centres in screen px, captured at drag start (robust to pinch zoom).
+  const captureRects = () => {
+    const groups = Array.from(groupRef.current?.querySelectorAll('[data-slot]') ?? []) as SVGGElement[]
+    rectsRef.current = groups.map(group => {
+      const rect = group.getBoundingClientRect()
+      return { slot: Number(group.getAttribute('data-slot')), mid: rect.left + rect.width / 2, width: rect.width }
+    })
+  }
+  const targetFromX = (clientX: number) => {
+    let target = 0
+    for (const rect of [...rectsRef.current].sort((a, b) => a.mid - b.mid)) { if (clientX < rect.mid) break; target += 1 }
+    return Math.min(Math.max(target, 0), sliceCount - 1)
+  }
+  const orderWithKeyAt = (key: number, target: number) => {
+    const others = slots.filter(slot => slot !== key)
+    const order: number[] = []
+    let next = 0
+    for (let position = 0; position < sliceCount; position += 1) order.push(position === target ? key : others[next++]!)
+    return order
+  }
+
+  const onPointerDown = (event: ReactPointerEvent<SVGGElement>) => {
+    const cell = (event.target as Element).closest('[data-slot]')
+    if (!cell) return
+    const slot = Number(cell.getAttribute('data-slot'))
+    if (sliceCount < 2) { onToggleRow(slot); return }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    captureRects()
+    const self = rectsRef.current.find(rect => rect.slot === slot)
+    setDrag({ key: slot, startX: event.clientX, dx: 0, moved: false, effPx: self && self.width > 0 ? self.width / thickness : pxPerMm, target: slot })
+  }
+  const onPointerMove = (event: ReactPointerEvent<SVGGElement>) => {
+    const clientX = event.clientX
+    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 4, target: targetFromX(clientX) })
+  }
+  const endDrag = () => setDrag(current => {
+    if (current) { if (current.moved) onReorder(orderWithKeyAt(current.key, current.target)); else onToggleRow(current.key) }
+    return null
+  })
+
+  const column = (slot: number, position: number, dragging = false) => {
+    const state: SliceState = { rotated: project.endGrain.rowRotations[slot] ?? false, flipped: project.endGrain.rowFlips[slot] ?? false, offset: project.endGrain.rowOffsets?.[slot] ?? 0, sourceIndex: project.endGrain.rowOrder?.[slot] ?? slot }
+    const tag = `${state.rotated ? 'R' : ''}${state.flipped ? 'F' : ''}` || 'N'
+    const x = dragging ? slot * thickness + drag!.dx / drag!.effPx : position * thickness
+    return <g key={dragging ? 'dragged' : `slot-${slot}`} {...(dragging ? {} : { 'data-slot': slot })} transform={`translate(${x} 0)`} className={`slice${dragging ? ' dragging' : ''}`} aria-label={`Slice ${slot + 1}: ${tag}`}>
+      <SliceFace project={project} template={template} state={state} clipId={`${clipIdPrefix}-${slot}`}/>
+      <rect className="slice-hit" width={thickness} height={height} fill="transparent"/>
+      <g transform={`translate(${thickness / 2} ${height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{tag}</text></g>
+    </g>
+  }
+
+  let body: ReactNode
+  if (drag && drag.moved) {
+    const others = slots.filter(slot => slot !== drag.key)
+    let next = 0
+    const placed = slots.filter(position => position !== drag.target).map(position => column(others[next++]!, position))
+    body = <>
+      <rect className="drop-target" x={drag.target * thickness} y={0} width={thickness} height={height}/>
+      {placed}
+      {column(drag.key, drag.target, true)}
+    </>
+  } else {
+    body = slots.map(slot => column(slot, slot))
+  }
+
+  return <g ref={groupRef} className={`assembled-editable${drag && drag.moved ? ' is-dragging' : ''}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}>{body}</g>
 }
 
 function SliceFace({ project, template, state, clipId }: { project: BoardProject; template: EndGrainTemplate; state: SliceState; clipId: string }) {

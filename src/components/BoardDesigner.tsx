@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
 import { SliceOrderList } from './SliceOrderList'
 import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
@@ -201,7 +202,7 @@ function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sl
   const panel = Math.max(metrics.panelWidth, 1)
   const finalLen = Math.max(metrics.finalLength, 1)
   const tabs: StudioTab[] = [
-    { id: 'finished', label: 'Finished board', wMm: finalLen, hMm: panel, scaleBar: true, note: 'Tap a slice to rotate/flip · drag to reorder',
+    { id: 'finished', label: 'Finished board', wMm: finalLen, hMm: panel, scaleBar: true, note: `Tap a slice to rotate/flip · drag to reorder · slice ${format(project.endGrain.stockThickness)} mm · board ${format(finalLen)} × ${format(panel)} mm`,
       render: (px, idp, interactive) => interactive
         ? <DraggableAssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} onToggleRow={onToggleRow} onReorder={onReorder} clipIdPrefix={`${idp}-fin`}/>
         : <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} clipIdPrefix={`${idp}-fin`}/> },
@@ -224,9 +225,13 @@ function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sl
 // so narrow pieces use the whole frame instead of rendering as a sliver.
 function StudioStage({ tab, woods, idPrefix, big = false, interactive = false }: { tab: StudioTab; woods: WoodSpecies[]; idPrefix: string; big?: boolean; interactive?: boolean }) {
   const [ref, size] = useElementSize()
-  const pxPerMm = fitPxPerMm(tab.wMm, tab.hMm, size.width, size.height, { maxPxPerMm: big ? 14 : 7, padX: 24, padY: tab.scaleBar ? 48 : 22 })
+  // Big (pop-out) carries dimensioned rulers — the top one spans and labels the
+  // full board length, the left one the full width — instead of a generic scale
+  // bar. Reserve the ruler gutters in the fit so nothing clips.
+  const rulers: ('top' | 'left')[] = big ? ['top', 'left'] : []
+  const pxPerMm = fitPxPerMm(tab.wMm, tab.hMm, size.width, size.height, { maxPxPerMm: big ? 14 : 7, padX: big ? 56 : 24, padY: big ? 52 : (tab.scaleBar ? 48 : 22) })
   return <div className="studio-stage" ref={ref}>
-    <ScaledBoardFrame woods={woods} lengthMm={tab.wMm} widthMm={tab.hMm} pxPerMm={pxPerMm} scaleBar={!!tab.scaleBar} ariaLabel={tab.label}>
+    <ScaledBoardFrame woods={woods} lengthMm={tab.wMm} widthMm={tab.hMm} pxPerMm={pxPerMm} rulers={rulers} scaleBar={!big && !!tab.scaleBar} ariaLabel={tab.label}>
       {tab.render(pxPerMm, idPrefix, interactive)}
     </ScaledBoardFrame>
   </div>
@@ -279,7 +284,7 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   if (!active) return null
-  return <div className="modal-scrim" role="presentation" onClick={onClose}>
+  return createPortal(<div className="modal-scrim" role="presentation" onClick={onClose}>
     <div className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`} onClick={event => event.stopPropagation()}>
       <header>
         <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => onSelect(tab.id)}>{tab.label}</button>)}</div>
@@ -293,7 +298,7 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
       </div>
       <p className="studio-note">{active.note}</p>
     </div>
-  </div>
+  </div>, document.body)
 }
 
 function SlicePreview({ project, woods, template, state, index, pxPerMm }: { project: BoardProject; woods: WoodSpecies[]; template: EndGrainTemplate; state: SliceState | undefined; index: number; pxPerMm: number }) {

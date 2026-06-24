@@ -34,9 +34,9 @@ All step-by-step guides live in **[docs/howTo](docs/howTo/)**. For the full feat
 GitHub Actions uses two long-lived branches:
 
 - `develop`: integration branch for day-to-day work. Pull requests and pushes run linting, tests, the production build, and a local Docker image build/scan. Nothing is pushed to Docker Hub from this branch.
-- `production`: release branch. Pull requests run the same checks, and pushes to `production` publish the image to Docker Hub.
+- `main`: release branch. Pull requests run the same checks, and pushes to `main` publish the image to Docker Hub.
 
-Docker Hub publishes only from `production` as:
+Docker Hub publishes only from `main` as:
 
 ```text
 headlock0253/sawdust-atlas
@@ -49,15 +49,15 @@ Add these repository secrets in GitHub before relying on the publish step:
 - `DOCKERHUB_USERNAME`: the Docker Hub account or organization that owns the repository.
 - `DOCKERHUB_TOKEN`: a Docker Hub access token with permission to push `sawdust-atlas`.
 
-The `production` branch is tagged `latest` and `production`, and every published build also receives a `sha-...` tag. Published images include SBOM and provenance attestations, and CI runs Docker Scout vulnerability and recommendation checks as advisory output. GitHub Actions are pinned to full commit SHAs, with Dependabot checking action, npm, and Docker updates weekly.
+The `main` branch is tagged `latest` and `main`, and every published build also receives a `sha-...` tag. Published images include SBOM and provenance attestations, and CI runs Docker Scout vulnerability and recommendation checks as advisory output. GitHub Actions are pinned to full commit SHAs, with Dependabot checking action, npm, and Docker updates weekly.
 
-In Docker Hub, keep `latest` and `production` mutable so the release branch can continue to update them. If you later add versioned release tags such as `v0.1.0`, enable immutable tags for those version tags after creating the repository: open the repository, go to **Settings > General > Tag mutability settings**, choose **Specific tags are immutable**, and use a pattern such as `^v.*`.
+In Docker Hub, keep `latest` and `main` mutable so the release branch can continue to update them. If you later add versioned release tags such as `v0.1.0`, enable immutable tags for those version tags after creating the repository: open the repository, go to **Settings > General > Tag mutability settings**, choose **Specific tags are immutable**, and use a pattern such as `^v.*`.
 
 Recommended GitHub repository settings:
 
 - Make `develop` the default branch for day-to-day pull requests.
 - Protect `develop` and require the `Validate` and `Docker verify` checks before merge.
-- Protect `production`, require pull requests, require the `Validate` check, and restrict who can push directly.
+- Protect `main`, require pull requests, require the `Validate` check, and restrict who can push directly.
 - Create a GitHub environment named `production`; add required reviewers there if Docker Hub releases should need a manual approval.
 - Keep `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` as repository secrets, not environment variables committed to the repo.
 

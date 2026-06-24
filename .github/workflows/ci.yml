@@ -4,15 +4,15 @@ on:
   pull_request:
     branches:
       - develop
-      - production
+      - main
   push:
     branches:
       - develop
-      - production
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/production' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -96,7 +96,7 @@ jobs:
     name: Docker publish
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 25
     environment: production
     permissions:
@@ -126,7 +126,7 @@ jobs:
           images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=raw,value=production
+            type=raw,value=main
             type=sha,prefix=sha-
 
       - name: Log in to Docker Hub

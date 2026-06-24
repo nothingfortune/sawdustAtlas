@@ -292,7 +292,7 @@ These items came from the 2026-06-24 comparison pass against cutting-board apps,
 - Should stock inventory track individual physical boards, pooled quantities, or both?
 - Which cut method constraints are required first: table-saw rip/crosscut, miter saw, bandsaw, or sheet-goods breakdown?
 - Is a Tailscale-based private HTTPS setup acceptable for tablet installation, or is fully local certificate management required?
-- Docker Hub release cadence is branch-gated: `develop` runs validation and local Docker builds only; `production` pushes publish `latest`, `production`, and `sha-...` tags. Decide later whether named immutable version tags should be added on top of this.
+- Docker Hub release cadence is branch-gated: `develop` runs validation and local Docker builds only; `main` pushes publish `latest`, `main`, and `sha-...` tags. Decide later whether named immutable version tags should be added on top of this.
 - Which Notion database currently holds projects, wood inventory, tools, and photos, and which fields are authoritative?
 
 ## Definition of Done

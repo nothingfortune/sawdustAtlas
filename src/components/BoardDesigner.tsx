@@ -29,7 +29,9 @@ interface Props { projects: BoardProject[]; project: BoardProject | undefined; w
 export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete }: Props) {
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
-  const [studioMinimized, setStudioMinimized] = useState(false)
+  // Start minimized on touch devices (tablets/phones), where the sticky preview
+  // eats scarce screen height; desktops have room so they start expanded.
+  const [studioMinimized, setStudioMinimized] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches)
   const [selectedSlice, setSelectedSlice] = useState(0)
   const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>

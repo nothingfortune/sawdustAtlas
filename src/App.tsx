@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
@@ -17,26 +17,28 @@ export default function App() {
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [undoData, setUndoData] = useState<AtlasData | null>(null)
+  const [saveOk, setSaveOk] = useState(true)
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
-  useEffect(() => {
-    saveData(data)
-    dataRef.current = data
-  }, [data])
-
+  // Persist on every committed change (the single mutation funnel) and reflect
+  // whether the write actually succeeded, so the topbar can't claim "Saved" when
+  // localStorage is full/unavailable.
+  const persist = (next: AtlasData) => {
+    dataRef.current = next
+    setData(next)
+    setSaveOk(saveData(next))
+  }
   const commitData = (updater: (current: AtlasData) => AtlasData) => {
     const current = dataRef.current
     const next = updater(current)
     if (next === current) return
     setUndoData(current)
-    dataRef.current = next
-    setData(next)
+    persist(next)
   }
   const undoLastChange = () => {
     if (!undoData) return
-    dataRef.current = undoData
-    setData(undoData)
+    persist(undoData)
     setUndoData(null)
   }
 
@@ -129,7 +131,9 @@ export default function App() {
       <header className="topbar">
         <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
-          <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+          {saveOk
+            ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+            : <div className="save-state error" title="Storage is full or unavailable — your changes are NOT being saved. Export a backup now."><Save size={15} />Not saved — storage full</div>}
           <button className="backup-button" disabled={!undoData} onClick={undoLastChange} title={undoData ? 'Undo last change' : 'No change to undo'}><Undo2 size={15} />Undo</button>
           <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
         </div>

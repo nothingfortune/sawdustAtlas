@@ -30,7 +30,6 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
   return {
-    ...data,
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
@@ -47,7 +46,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
         id: stringValue(strip['id'], createId()),
         speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
         width: finiteNumber(strip['width'], 38),
-        trailingAngle: finiteNumber(strip['trailingAngle'], 0),
+        trailingAngle: clampedAngle(strip['trailingAngle'], 0),
       })),
       endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
     })),
@@ -123,10 +122,25 @@ function finiteNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
 }
 
+// Trailing bevel angle keeps its sign (negative angles drive chevron/herringbone
+// layouts) — only clamp to the geometry's ±89° limit. finiteNumber would floor
+// it to 0 and silently destroy angled designs on every load/export.
+function clampedAngle(value: unknown, fallback: number): number {
+  const angle = typeof value === 'number' && Number.isFinite(value) ? value : fallback
+  return Math.min(89, Math.max(-89, angle))
+}
+
 function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
 
-export function saveData(data: AtlasData) {
-  localStorage.setItem(KEY, JSON.stringify(data))
+// Returns false when the write fails (quota exceeded, private-mode, etc.) so the
+// UI can tell the user their work isn't being saved instead of silently lying.
+export function saveData(data: AtlasData): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function downloadData(data: AtlasData) {

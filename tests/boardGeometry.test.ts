@@ -129,4 +129,12 @@ describe('material accounting', () => {
       expect(consumed).toBeLessThanOrEqual(project.endGrain.sourceLength - project.endGrain.trimAllowance + 1e-8)
     }
   })
+
+  it('reports the closing-strip error without a spurious conservation error', () => {
+    const project = makeProject({}, [{ id: 'a', speciesId: 'walnut', width: 10, trailingAngle: -45 }])
+    project.endGrain.stockThickness = 20 // rightWidth = 10 + 20*tan(-45) = -10 -> strip closes
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.errors.some(error => /closes or crosses/.test(error))).toBe(true)
+    expect(metrics.errors.some(error => /conservation/.test(error))).toBe(false)
+  })
 })

@@ -136,8 +136,12 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
   const finishedVolume = sliceCount * stockThickness * template.finishedWidth * sliceThickness
   const totalWasteVolume = ripWasteVolume + crosscutWasteVolume + sideTrimVolume
 
+  // Only assert volume conservation on valid geometry. When a strip's angled
+  // face closes/crosses, buildEndGrainTemplate's unclamped edge legitimately
+  // diverges from the clamped strip volumes, so skip the check (the user already
+  // sees the "strip closes" error) rather than firing a spurious second error.
   const conservationDifference = Math.abs(sourceVolume - finishedVolume - totalWasteVolume)
-  if (conservationDifference > Math.max(1, sourceVolume) * 1e-8) errors.push('Material-volume conservation failed; check the design inputs.')
+  if (template.errors.length === 0 && conservationDifference > Math.max(1, sourceVolume) * 1e-8) errors.push('Material-volume conservation failed; check the design inputs.')
 
   return {
     panelWidth: template.height,

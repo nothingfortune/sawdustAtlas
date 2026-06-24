@@ -22,9 +22,12 @@ export function StripList({ strips, woods, construction, onReorder, onUpdateStri
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const stripById = new Map(strips.map(strip => [strip.id, strip]))
-  const rendered = order
-    ? order.map(id => stripById.get(id)).filter((strip): strip is BoardStrip => !!strip)
-    : strips
+  // Use the in-progress drag order only while it still exactly matches the
+  // current strips; if it's stale (a drag that didn't clean up, or strips
+  // regenerated with new ids), fall back to the real strips so the list can
+  // never render empty and "lose" the user's strips.
+  const orderValid = !!order && order.length === strips.length && order.every(id => stripById.has(id))
+  const rendered = order && orderValid ? order.map(id => stripById.get(id)!) : strips
 
   // Fixed slot mid-lines captured once at drag start, so pointermove maps to a
   // target index without reading layout (getBoundingClientRect) on every move.

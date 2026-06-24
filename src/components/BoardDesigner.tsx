@@ -447,10 +447,17 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
   }
   const onPointerMove = (event: ReactPointerEvent<SVGGElement>) => {
     const clientX = event.clientX
-    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 4, target: targetFromX(clientX) })
+    // 10px slop so a tap (which jitters on touch) stays a tap and rotates,
+    // rather than being read as a drag that just lifts the wafer and does nothing.
+    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 10, target: targetFromX(clientX) })
   }
   const endDrag = () => setDrag(current => {
-    if (current) { if (current.moved) onReorder(orderWithKeyAt(current.key, current.target)); else onToggleRow(current.key) }
+    if (current) {
+      // Only reorder if the column actually lands on a different slot; otherwise
+      // (a tap, or a drag returned to origin) cycle this wafer's rotate/flip.
+      if (current.moved && current.target !== current.key) onReorder(orderWithKeyAt(current.key, current.target))
+      else onToggleRow(current.key)
+    }
     return null
   })
 

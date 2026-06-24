@@ -37,7 +37,7 @@ You need a window where you can paste a command. It has a different name on each
 - **On Windows:** open the Start menu, type `PowerShell`, and open **Windows PowerShell**.
 - **On a Mac:** open **Terminal** (find it with Spotlight — press `Cmd` and the space bar, then type `Terminal`).
 
-A window with a blinking cursor will appear. This is where the command goes.
+A window with a blinking cursor will appear. This is where the following command goes.
 
 ---
 
@@ -52,7 +52,7 @@ docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0
 The first time, Docker downloads SawdustAtlas. This can take a few minutes depending on your internet — that is normal. When it finishes and you get your cursor back, SawdustAtlas is running.
 
 > [!IMPORTANT]
-> **Use the command above. Do not start SawdustAtlas by clicking the Run (play) button inside Docker Desktop.**
+> **Use the command above. Do not start SawdustAtlas by clicking the Run (play) button inside Docker Desktop. Please just follow the instructions **
 > The `-p 8080:80` piece of this command is what lets your browser reach SawdustAtlas. The Run button leaves that piece out, so the app will look like it is running but the page will never open. If that has already happened, see [Troubleshooting](troubleshooting.md).
 
 ---
@@ -63,7 +63,7 @@ On the same computer, open your web browser and go to:
 
 **http://localhost:8080**
 
-That is it. You may want to bookmark that address.
+That's it. You may want to bookmark this for later use. The address will not change. The Docker App is required to be running to use it.
 
 To use SawdustAtlas from a tablet or another device on your home network, see [Use SawdustAtlas on a tablet](use-on-a-tablet.md).
 

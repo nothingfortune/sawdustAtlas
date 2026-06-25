@@ -74,6 +74,7 @@ interface RipPanel {
   name: string
   kind: 'rip'
   construction: 'edge' | 'end'      // 'end' = pieces turned so end grain shows
+  thicknessMm: number               // panel thickness (drives piece volume/size)
   strips: BoardStrip[]              // reuses the existing strip model
   crosscut: { stripWidthMm: number; kerfMm: number; count: number }
 }

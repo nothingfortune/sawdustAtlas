@@ -10,7 +10,9 @@ export const CURRENT_SCHEMA_VERSION = 1
 export function loadData(): AtlasData {
   try {
     const saved = localStorage.getItem(KEY)
-    return saved ? normalizeData(JSON.parse(saved) as AtlasData) : starterData
+    if (!saved) return starterData
+    const parsed: unknown = JSON.parse(saved)
+    return isRecord(parsed) ? normalizeData(parsed) : starterData
   } catch {
     return starterData
   }
@@ -30,7 +32,6 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
   return {
-    ...data,
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],

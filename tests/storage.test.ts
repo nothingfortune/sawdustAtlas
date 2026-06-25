@@ -54,6 +54,11 @@ describe('workspace storage migration', () => {
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
   })
 
+  it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
+    const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
+    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'schemaVersion', 'shops', 'woods'])
+  })
+
   it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
     const data = {
       shops: [],

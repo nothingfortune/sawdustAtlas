@@ -16,6 +16,7 @@ import { useContainerWidth } from './useContainerWidth'
 import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
 import { useModalDialog } from './useModalDialog'
+import { dropTargetFromX, orderWithKeyAt } from './sliceDrag'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
@@ -433,19 +434,6 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
       return { slot: Number(group.getAttribute('data-slot')), mid: rect.left + rect.width / 2, width: rect.width }
     })
   }
-  const targetFromX = (clientX: number) => {
-    let target = 0
-    for (const rect of [...rectsRef.current].sort((a, b) => a.mid - b.mid)) { if (clientX < rect.mid) break; target += 1 }
-    return Math.min(Math.max(target, 0), sliceCount - 1)
-  }
-  const orderWithKeyAt = (key: number, target: number) => {
-    const others = slots.filter(slot => slot !== key)
-    const order: number[] = []
-    let next = 0
-    for (let position = 0; position < sliceCount; position += 1) order.push(position === target ? key : others[next++]!)
-    return order
-  }
-
   const onPointerDown = (event: ReactPointerEvent<SVGGElement>) => {
     const cell = (event.target as Element).closest('[data-slot]')
     if (!cell) return
@@ -458,10 +446,10 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
   }
   const onPointerMove = (event: ReactPointerEvent<SVGGElement>) => {
     const clientX = event.clientX
-    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 4, target: targetFromX(clientX) })
+    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 4, target: dropTargetFromX(rectsRef.current.map(rect => rect.mid), clientX) })
   }
   const endDrag = () => setDrag(current => {
-    if (current) { if (current.moved) onReorder(orderWithKeyAt(current.key, current.target)); else onToggleRow(current.key) }
+    if (current) { if (current.moved) onReorder(orderWithKeyAt(sliceCount, current.key, current.target)); else onToggleRow(current.key) }
     return null
   })
 

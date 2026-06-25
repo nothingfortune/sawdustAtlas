@@ -6,5 +6,5 @@
     "jsx": "react-jsx",
     "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["tests", "src/domain", "src/types.ts", "src/storage.ts", "src/data.ts", "src/id.ts", "src/history.ts"]
+  "include": ["tests", "src/domain", "src/types.ts", "src/storage.ts", "src/data.ts", "src/id.ts", "src/history.ts", "src/components/usePinchPan.ts", "src/components/sliceDrag.ts"]
 }

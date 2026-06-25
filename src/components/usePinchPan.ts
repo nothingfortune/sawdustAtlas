@@ -51,8 +51,7 @@ export function usePinchPan(min = 1, max = 4): PinchPan {
     const dist = Math.hypot(a.x - b.x, a.y - b.y)
     const cx = (a.x + b.x) / 2
     const cy = (a.y + b.y) / 2
-    const scale = clamp(start.scale * (dist / start.dist), min, max)
-    setTransform({ scale, x: start.x + (cx - start.cx), y: start.y + (cy - start.cy) })
+    setTransform(pinchTransform(start, { dist, cx, cy }, min, max))
   }
   const release = (event: ReactPointerEvent) => {
     pointers.current.delete(event.pointerId)
@@ -64,6 +63,18 @@ export function usePinchPan(min = 1, max = 4): PinchPan {
     active: transform.scale !== 1 || transform.x !== 0 || transform.y !== 0,
     reset: () => setTransform({ scale: 1, x: 0, y: 0 }),
     handlers: { onPointerDown, onPointerMove, onPointerUp: release, onPointerCancel: release },
+  }
+}
+
+export interface PinchGesture { dist: number; cx: number; cy: number; scale: number; x: number; y: number }
+
+// Pure pinch transform: scale by the two-pointer distance ratio (clamped) and pan
+// by how far the gesture's midpoint moved since it began.
+export function pinchTransform(start: PinchGesture, current: { dist: number; cx: number; cy: number }, min: number, max: number): { scale: number; x: number; y: number } {
+  return {
+    scale: clamp(start.scale * (current.dist / start.dist), min, max),
+    x: start.x + (current.cx - start.cx),
+    y: start.y + (current.cy - start.cy),
   }
 }
 

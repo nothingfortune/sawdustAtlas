@@ -135,11 +135,11 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **DOC1** | ☐ | PRODUCT_PLAN BOARD-015 says third-bond/zig-zag/stepped-wave are "next" but all seven presets already ship. | `docs/plans/PRODUCT_PLAN.md:105` | Update status to reflect shipped presets. |
-| **DOC2** | ☐ | BRICK_PATTERN_CORRECTION's offset fix is unshipped (still hard-coded `20`/`40`) but the doc reads as an open plan with the rename done. | `docs/plans/BRICK_PATTERN_CORRECTION.md`, `src/domain/boardPatterns.ts:31,34` | Either derive offsets from course pitch (preferred) or mark the doc accurately. |
-| **DOC3** | ☐ | README "Current features" omits the PWA/offline install path. | `README.md` | Add a one-line installable-PWA note. |
-| **DOC4** | ☐ | `docs/howTo/howToREADME.md` won't auto-render as a directory index. | `docs/howTo/` | Rename to `README.md`. |
-| **DOC5** | ☐ | Keep README features/accuracy claims in sync as fixes land. | `README.md` | Review at the end. |
+| **DOC1** | ☑ | (`233923b`) PRODUCT_PLAN BOARD-015 now lists the seven shipped presets; only seeded-mosaic remains "next". | `docs/plans/PRODUCT_PLAN.md` | Done. |
+| **DOC2** | ☑ | (`b5debab`) Offsets now derive from `PRESET_STRIP_WIDTH` (no hard-coded `20`/`40`); doc marked resolved. True brick-and-mortar still needs composite panels (BOARD-008). | `src/domain/boardPatterns.ts`, `docs/plans/BRICK_PATTERN_CORRECTION.md` | Done. |
+| **DOC3** | ☑ | (`233923b`) README "Current features" notes the installable, offline-capable PWA. | `README.md` | Done. |
+| **DOC4** | ☑ | (`b5debab`) Renamed `docs/howTo/howToREADME.md` → `README.md`. | `docs/howTo/` | Done. |
+| **DOC5** | ☑ | README features/accuracy reviewed against the shipped state; no remaining false claims. | `README.md` | Done. |
 
 ---
 

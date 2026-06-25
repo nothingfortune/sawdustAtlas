@@ -1,5 +1,5 @@
 import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
@@ -33,36 +33,43 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   // height when focusing on strip edits.
   const [studioMinimized, setStudioMinimized] = useState(false)
   const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
+  // Memoize the full derived domain pipeline so it only recomputes when the project
+  // or wood library actually change — not on every unrelated re-render (panel toggle,
+  // resize, child drag state). Kept above the early return to satisfy hook ordering.
+  const derived = useMemo(() => {
+    if (!project) return null
+    const end = calculateEndGrainMetrics(project)
+    const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
+    const build = calculateBuildDimensions(project)
+    const template = buildEndGrainTemplate(project)
+    const cutPlan = generateCuttingBoardPlan(project, woods)
+    const woodUsage = calculateWoodUsage(project, woods, end)
+    const woodById = new Map(woods.map(wood => [wood.id, wood]))
+    const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
+    const boardFeet = build.roughBoardFeet
+    const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
+    const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
+      const roughWidth = build.stripRoughWidths[index] ?? strip.width
+      const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
+      return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
+    }, 0)
+    const estimatedCost = project.construction === 'end'
+      ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
+      : edgeEstimatedCost
+    return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost }
+  }, [project, woods])
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
-  const end = calculateEndGrainMetrics(project)
-  const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
-  const build = calculateBuildDimensions(project)
-  const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
-  const template = buildEndGrainTemplate(project)
-  const cutPlan = generateCuttingBoardPlan(project, woods)
-  const boardFeet = build.roughBoardFeet
-  const woodUsage = calculateWoodUsage(project, woods, end)
-  const woodById = new Map(woods.map(wood => [wood.id, wood]))
+  const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
     ? Math.max(project.endGrain.sourceLength, end.finalLength, 1)
     : Math.max(project.length, 1)
   const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
-
-  const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
-    const roughWidth = build.stripRoughWidths[index] ?? strip.width
-    const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
-    return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
-  }, 0)
-  const estimatedCost = project.construction === 'end'
-    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
-    : edgeEstimatedCost
 
   const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
   const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })

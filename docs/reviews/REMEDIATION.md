@@ -95,7 +95,7 @@
 | **SEC2** | ☑ | (`c21604a`) Enabled gzip for text/JS/CSS/SVG/manifest. | `nginx.conf` | Done. |
 | **SEC3** | ⊘ | Container runs as root. **Deferred:** `nginx-unprivileged` listens on 8080, rippling to `nginx.conf` listen, Dockerfile `EXPOSE`/healthcheck, `compose.yaml`, and the install docs' `-p` mapping; wants its own change so the port story stays consistent. | `Dockerfile` | Deferred (port ripple). |
 | **SEC4** | ⊘ | Base images pinned by tag, not digest. **Deferred:** low value here — Dependabot's docker ecosystem already bumps tags weekly; digest pinning adds churn without a clear threat-model win for this project. | `Dockerfile` | Deferred. |
-| **SEC5** | ☐ | Import path under-validates: `JSON.parse(...) as AtlasData` + `normalizeData` spreads `...data`, preserving arbitrary keys from untrusted localStorage/import. | `src/App.tsx`, `src/storage.ts:19,32` | Return an explicit known-key object; guard `isRecord(parsed)` before normalizing. |
+| **SEC5** | ☑ | (`551dbce`) `normalizeData` now returns only the known `AtlasData` keys (no `...data` spread), and `loadData` falls back to starter data when the stored JSON is not an object. Junk keys can no longer survive a load/import. Test asserts the exact key set. | `src/storage.ts` | Done. |
 
 ---
 
@@ -122,9 +122,9 @@
 | **HYG5** | ☑ | `test-results/.last-run.json` tracked + not gitignored (churns every run; committed "passed" artifact). | `test-results/`, `.gitignore` | `git rm --cached`; add `test-results/` to `.gitignore`. |
 | **HYG6** | ☑ | `.gitignore` `claude/*` matches nothing (dir is `.claude/`); dead `agents/*`. | `.gitignore` | Fix to `.claude/settings.local.json`; drop dead pattern. |
 | **HYG7** | ☑ | `.dockerignore` lists both `.ds_store` and `.DS_Store`. | `.dockerignore` | Drop the lowercase dup. |
-| **HYG8** | ☐ | Duplicated domain helpers (`toBoardFeet`, `clampAngle`, `nonNegative`, `sum`) across three files. | `src/domain/*` | Extract `src/domain/units.ts`. |
-| **HYG9** | ☐ | Duplicated UI `Field`/`format` helpers across three components. | `src/components/*` | Extract a shared `ui` module. |
-| **HYG10** | ☐ | Near-duplicate hooks `useContainerWidth`/`useElementSize` with divergent deps. | `src/components/*` | Unify. |
+| **HYG8** | ☑ | (`f9aa322`) Extracted `toBoardFeet`/`nonNegative`/`sum`/`clampAngle` (+ the angle-only generic `clamp`) into `src/domain/units.ts`; three modules now import them. | `src/domain/units.ts` | Done. |
+| **HYG9** | ⊘ | Duplicated UI `Field`/`format` helpers. **Deferred:** the three `Field`s have subtly different props (number vs text, min handling); a shared component is a UI refactor better verified in the running app than by build alone. Lower value than the domain dedup. | `src/components/*` | Deferred. |
+| **HYG10** | ⊘ | Near-duplicate `useContainerWidth`/`useElementSize` hooks. **Deferred:** small polish; both work, and unifying touches live ResizeObserver wiring best checked at runtime. | `src/components/*` | Deferred. |
 | **HYG11** | ☑ | Stale dated review committed as a tracked doc. | `docs/reviews/REVIEW-2026-06-24-develop.md` | Replaced by this living tracker. |
 | **HYG12** | ☐ | Pervasive over-commenting (generated-code tell). | `src/components/BoardDesigner.tsx`, `src/components/board/*` | Trim self-evident comments opportunistically. |
 | **HYG13** | ☑ | `.claude/settings.local.json` tracked (per-developer local file). | `.claude/` | Untrack + gitignore. |
@@ -150,7 +150,7 @@
 | **TEST1** | ☐ | Live slice drag-reorder math (`DraggableAssembledBoard`: `targetFromX`/`orderWithKeyAt`/tap-vs-drag threshold) untested — largest untested logic. | Extract the pure math and unit-test it. |
 | **TEST2** | ☐ | `usePinchPan` transform math untested. | Extract + test scale clamp / pan offset / single-pointer pass-through. |
 | **TEST3** | ◐ | `storage.ts` branches: C1 regression + `saveData`/`loadData` round-trip + quota-error path now covered (`8bc115f`, `9c798de`). Still open: `downloadData`, `validColor` rejection, bad-JSON → `starterData` fallback. | Add remaining cases. |
-| **TEST4** | ☐ | `calculateWoodUsage` internals, `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm`, `projectPolygon` uncovered. | Add targeted tests. |
+| **TEST4** | ◐ | (`b110241`) `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm` now covered (incl. fallback/clamp branches); domain branch coverage ~72%→~78%. Remaining: `calculateWoodUsage` per-species internals, `projectPolygon`/`pointsAttribute`. | Add the rest. |
 | **TEST5** | ☐ | No CI container smoke test. | Covered by CI3. |
 | **TEST6** | ☑ | Conservation fuzz loop only covered `trailingAngle: 0`. **Fixed:** added a 120-case angled fuzz alongside C2. `6b3df17` | Done. |
 | **TEST7** | ☐ | Weak/tautological assertions. | `tests/storage.test.ts:62` (`toBeDefined`), `tests/boardGeometry.test.ts:47-48` (literal-vs-literal). |
@@ -167,3 +167,4 @@
 | 2026-06-24 | Perf: memoized BoardDesigner pipeline (`13b583b`) and de-duped cut-plan recomputation (`ec699e5`); P3/P4 deferred with rationale. |
 | 2026-06-24 | nginx security headers + gzip (`c21604a`); CI type-check, coverage gate, container smoke test, corepack cleanup (`60abe3b`); CI5/CI6/SEC3/SEC4 deferred/decided. |
 | 2026-06-24 | a11y: jsx-a11y enforced + dialog focus/Escape + keyboard shop objects + reduced-motion (`8b0537a`); A2 partial, A4/A5/A7 deferred. |
+| 2026-06-24 | Storage sanitize/guard (`551dbce`); domain helpers → units.ts (`f9aa322`); domain tests added, branch coverage ~72%→~78% (`b110241`); HYG9/HYG10 deferred. Suite 76→87 green. |

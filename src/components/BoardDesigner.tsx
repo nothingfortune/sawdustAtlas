@@ -1,5 +1,5 @@
 import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
@@ -15,6 +15,7 @@ import { resolveScale, fitPxPerMm } from '../domain/boardScale'
 import { useContainerWidth } from './useContainerWidth'
 import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
+import { useModalDialog } from './useModalDialog'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
@@ -274,14 +275,7 @@ function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; met
 function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: StudioTab[]; activeId: string; woods: WoodSpecies[]; onSelect: (id: string) => void; onClose: () => void }) {
   const pinch = usePinchPan()
   const active = tabs.find(tab => tab.id === activeId) ?? tabs[0]
-  const dialogRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null
-    dialogRef.current?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('keydown', onKey); previouslyFocused?.focus?.() }
-  }, [onClose])
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
   if (!active) return null
   return createPortal(<div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <div ref={dialogRef} tabIndex={-1} className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`}>
@@ -301,14 +295,7 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
 }
 
 function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {
-  const dialogRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null
-    dialogRef.current?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onDismiss() }
-    window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('keydown', onKey); previouslyFocused?.focus?.() }
-  }, [onDismiss])
+  const dialogRef = useModalDialog<HTMLDivElement>(onDismiss)
   if (!pattern) return null
   const currentMetrics = calculateEndGrainMetrics(current)
   const previewMetrics = calculateEndGrainMetrics(preview)

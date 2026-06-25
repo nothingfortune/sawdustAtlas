@@ -12,9 +12,11 @@ made from **reusable intermediate pieces drawn from more than one panel**. The u
 wants to:
 
 1. design **any number** of rip glue-ups ("source panels"),
-2. **crosscut** each into pieces, and
+2. **crosscut** each into pieces,
 3. **combine pieces from any panel** into one final cutting board, **flipping and
-   rotating each piece independently**.
+   rotating each piece independently**, and
+4. **re-cut a finished board as new stock** — crosscut a completed glue-up and
+   flip/rotate those pieces too (recursive composition).
 
 This is the general form of the "composable board assemblies" concept already named
 in `docs/plans/BRICK_PATTERN_CORRECTION.md` (BOARD-008). The brick domain foundation
@@ -56,11 +58,26 @@ Stored under a new `AtlasData.composites: CompositeBoard[]` (parallel to `shops`
 `boards`), with schema migration leaving existing data untouched.
 
 ```ts
-interface SourcePanel {
+// A panel is the stock you crosscut. Its stock is EITHER a primitive rip glue-up
+// OR a previously-built composite board — so a finished glue-up can be cut,
+// flipped, and rotated again (recursive composition).
+type SourcePanel = RipPanel | DerivedPanel
+
+interface RipPanel {
   id: string
   name: string
+  kind: 'rip'
   construction: 'edge' | 'end'      // 'end' = pieces turned so end grain shows
   strips: BoardStrip[]              // reuses the existing strip model
+  crosscut: { stripWidthMm: number; kerfMm: number; count: number }
+}
+
+interface DerivedPanel {
+  id: string
+  name: string
+  kind: 'derived'
+  sourceBoardId: string             // crosscut the finished assembly of this composite board
+  construction: 'edge' | 'end'
   crosscut: { stripWidthMm: number; kerfMm: number; count: number }
 }
 
@@ -82,9 +99,29 @@ interface CompositeBoard {
 }
 ```
 
-Crosscutting a panel yields `crosscut.count` pieces; each piece's cross-section is the
-panel's strip stack (its end-grain or face pattern). `AssemblyCell` references a piece
-by `(panelId, pieceIndex)` so the same panel's pieces can be reused across cells.
+Crosscutting a panel yields `crosscut.count` pieces. For a `RipPanel` each piece's
+cross-section is its strip stack; for a `DerivedPanel` each piece is a crosscut of the
+referenced board's **fully assembled** face. `AssemblyCell` references a piece by
+`(panelId, pieceIndex)` so the same panel's pieces can be reused across cells.
+
+### Recursive composition (cut the finished glue-up again)
+
+A `DerivedPanel` points at another `CompositeBoard` by `sourceBoardId`. That means a
+board's assembled output becomes **stock** for a new crosscut + flip/rotate stage — you
+can glue up to the end, cut *that*, and rearrange, to any depth (glue → cut →
+rearrange → glue → cut → …). In the UI this is **"Add panel → from a finished board"**:
+pick an existing composite board and set its crosscut, then its pieces appear in the
+tray like any other panel.
+
+Two rules keep this sound:
+
+- **Acyclic only:** a board cannot derive from itself, directly or transitively. The
+  designer prevents creating a cycle (it filters out boards that already depend on the
+  current one when you add a derived panel).
+- **Hierarchical cut plan & material:** building a derived panel first requires building
+  its source board. The cut plan is therefore staged — "Build board A → crosscut A into
+  N pieces → use in board B" — and material/board-feet flow up through the chain. The
+  domain renders a board's assembled face first, then crosscuts it for the parent.
 
 ### The screen (layout B, touch-first, landscape)
 
@@ -109,21 +146,26 @@ by `(panelId, pieceIndex)` so the same panel's pieces can be reused across cells
 ### Domain logic (pure, test-first)
 
 A new `src/domain/compositeBoard.ts`, reusing helpers from `units.ts` and patterns
-from `brickAssembly.ts`:
+from `brickAssembly.ts`. Functions take a board **registry** (`Map<id, CompositeBoard>`)
+so derived panels can resolve their source board:
 
-- `panelPieces(panel): Piece[]` — derive the `count` crosscut pieces and each piece's
-  dimensions (strip stack height × crosscut width × thickness).
-- `assembledSize(board): { lengthMm, widthMm, thicknessMm }` — finished board size from
-  the grid of placed pieces (accounting for piece dimensions and the chosen
-  construction).
-- `materialBySpecies(board): WoodUsage[]` — board-feet per species summed **across all
-  panels**, conserved (source pieces placed = finished + accounted waste).
-- `compositeCutPlan(board): CutPlan` — per panel: rip strips, then the crosscut (count,
-  kerf, offcut, trim); plus the final assembly order. Reuses the existing cut-plan and
-  `resolveScale`/SVG patterns.
+- `panelPieces(panel, registry): Piece[]` — crosscut `count` pieces. A `RipPanel` cuts
+  its strip stack; a `DerivedPanel` first renders its source board's assembled face
+  (recursively) then crosscuts that.
+- `assembledSize(board, registry): { lengthMm, widthMm, thicknessMm }` — finished board
+  size from the grid of placed pieces and the chosen construction.
+- `materialBySpecies(board, registry): WoodUsage[]` — board-feet per species summed
+  **across all panels and up the derived-panel chain**, conserved (pieces placed =
+  finished + accounted waste).
+- `compositeCutPlan(board, registry): CutPlan` — a **staged** plan: build each source
+  board before the panel that derives from it, then per panel the rip + crosscut steps
+  (count, kerf, offcut, trim), then the final assembly order. Reuses the existing
+  cut-plan and `resolveScale`/SVG patterns.
+- `boardDependsOn(board, candidateId, registry): boolean` — cycle guard the designer
+  uses to forbid self/transitive derivation.
 
-The place/rotate/flip/grid interaction math (e.g. cell-from-pointer, transform cycle,
-swap) is extracted into a pure module and unit-tested like `sliceDrag.ts`.
+The place/rotate/flip/grid interaction math (cell-from-pointer, transform cycle, swap)
+is extracted into a pure module and unit-tested like `sliceDrag.ts`.
 
 ### Reuse (don't reinvent)
 
@@ -133,9 +175,10 @@ the cut-plan helpers.
 
 ### Testing strategy
 
-1. Domain first (test-first): `panelPieces` counts/dimensions; `assembledSize` for a
-   known grid; **material conservation across multiple panels**; `compositeCutPlan`
-   counts (strips, crosscuts, kerf/trim).
+1. Domain first (test-first): `panelPieces` counts/dimensions (rip **and** derived,
+   render-then-crosscut); `assembledSize` for a known grid; **material conservation
+   across multiple panels and up a derived chain**; `compositeCutPlan` staging + counts
+   (strips, crosscuts, kerf/trim); `boardDependsOn` cycle detection.
 2. Interaction math extracted and unit-tested (cell-from-pointer, transform cycle, swap)
    — no DOM needed, same approach as `sliceDrag`/`usePinchPan`.
 3. A manual tablet pass (touch place/rotate/flip, pinch-zoom) before calling it done.
@@ -148,11 +191,16 @@ the cut-plan helpers.
 - **No cross-project inventory/library** (Phase 2).
 - **No pattern templates** (brick/herringbone/mirror auto-fill) — Phase 3.
 - No printable build sheet polish yet (basic on-screen cut plan only).
+- Recursive derived panels are supported by the model and staged cut plan, but the
+  Phase 1 UI for managing many chained stages stays basic (add/remove a derived panel,
+  with a cycle guard; no visual dependency graph yet).
 
 ## Acceptance criteria (Phase 1)
 
 - A composite board can hold **2 or more** source panels and combine pieces from any of
   them in one final board.
+- A **finished composite board can be used as a panel** in another board — crosscut it
+  and flip/rotate its pieces — to any acyclic depth; cycles are prevented.
 - Each placed piece can be independently rotated (90° steps) and flipped.
 - The canvas is a true-to-scale live preview and works with touch: tap-to-place,
   tap-to-cycle-transform, drag-to-move, pinch-zoom — verified on a tablet.
@@ -171,3 +219,6 @@ the cut-plan helpers.
   renders both but does not deeply validate end-grain volume conservation per piece
   (that lives in the existing end-grain engine and can be layered in later).
 - Empty cells are allowed (a sparse grid), so partial/asymmetric layouts are possible.
+- A `DerivedPanel` treats its source board's **assembled face** as a flat blank to
+  crosscut; the source board's own glue-up is an earlier stage in the cut plan, not
+  re-derived per piece.

@@ -65,6 +65,20 @@ docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0
 
 ---
 
+## "no matching manifest for ... arm64" (or "amd64") when downloading
+
+This means the copy of SawdustAtlas you tried to download did not have a build for your computer's processor. SawdustAtlas is now published for both **Intel/AMD (amd64)** and **Apple Silicon / ARM (arm64)**, so a fresh download works on any machine. If you saw this error, just download the newest copy again:
+
+```text
+docker rm -f sawdust-atlas
+docker pull headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+```
+
+If you ever need to force a specific build, add `--platform linux/amd64` to the `docker run` line.
+
+---
+
 ## A tablet or another device cannot connect
 
 - The tablet and the host computer must be on the **same private Wi-Fi network**.

@@ -60,10 +60,10 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **P1** | ☐ | The whole derived domain pipeline (`calculateEndGrainMetrics`, `readSliceStates`, `calculateBuildDimensions`, `buildEndGrainTemplate`, `generateCuttingBoardPlan`, `calculateWoodUsage`, `new Map(woods)`) recomputes on **every render**, including every `pointermove` during a slice drag. | `src/components/BoardDesigner.tsx` | `useMemo` the derived values keyed on `project`/`woods`. |
-| **P2** | ☐ | `generateCuttingBoardPlan` recomputes `calculateBuildDimensions`/`calculateEndGrainMetrics` 4–5× internally per call. | `src/domain/boardCutPlan.ts:84,118,157` | Pass already-computed `build`/`metrics` into the helpers. |
-| **P3** | ☐ | `previewPattern` regenerates fresh ids each render while the preview dialog is open, forcing full preview re-render. | `src/components/BoardDesigner.tsx` | Memoize keyed on `[pendingPattern, project, woods]`. |
-| **P4** | ☐ | Service worker is network-first with an unbounded, manually-versioned cache; re-fetches even content-hashed assets and never prunes. | `public/sw.js` | Cache-first for `/assets/` (already `immutable` via nginx); keep network-first for navigations. |
+| **P1** | ☑ | (`13b583b`) The whole derived domain pipeline (`calculateEndGrainMetrics`, `readSliceStates`, `calculateBuildDimensions`, `buildEndGrainTemplate`, `generateCuttingBoardPlan`, `calculateWoodUsage`, `new Map(woods)`) recomputes on **every render**, including every `pointermove` during a slice drag. | `src/components/BoardDesigner.tsx` | `useMemo` the derived values keyed on `project`/`woods`. |
+| **P2** | ☑ | (`ec699e5`) `generateCuttingBoardPlan` recomputes `calculateBuildDimensions`/`calculateEndGrainMetrics` 4–5× internally per call. | `src/domain/boardCutPlan.ts:84,118,157` | Pass already-computed `build`/`metrics` into the helpers. |
+| **P3** | ⊘ | `previewPattern` regenerates fresh ids each render while the preview dialog is open. **Deferred:** a clean memo is awkward — the preview depends on the post-early-return `sliceCount` and hooks must precede the early return; gain is marginal (transient modal). Revisit when the dialog becomes its own component. | `src/components/BoardDesigner.tsx` | Deferred. |
+| **P4** | ⊘ | Service worker network-first with an unbounded, manually-versioned cache. **Deferred:** cache-first for `/assets/` is sound but changes offline-update + eviction semantics; wants its own change + manual offline test, not this sweep. | `public/sw.js` | Deferred. |
 
 ---
 
@@ -164,3 +164,4 @@
 | 2026-06-24 | Tracker opened; folded in `REVIEW-2026-06-24-develop.md` + fresh audit; baseline green (67 tests). |
 | 2026-06-24 | P0 C1–C5 fixed test-first (`9c798de`,`6b3df17`,`2a4f1a9`,`8bc115f`,`ed2cb7a`); TEST6 + storage persistence coverage added; suite 67→76 green. |
 | 2026-06-24 | Dead code removed (`555eadc`); repo hygiene + ignore rules (`8ffeb4a`); Node 24 reconcile (`fa7fe7c`); deps pinned off "latest" (`5d56f68`). |
+| 2026-06-24 | Perf: memoized BoardDesigner pipeline (`13b583b`) and de-duped cut-plan recomputation (`ec699e5`); P3/P4 deferred with rationale. |

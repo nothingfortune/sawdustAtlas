@@ -2,7 +2,7 @@ import type { BoardProject, WoodSpecies } from '../types'
 import { calculateBuildDimensions, resolveAllowances } from './boardAllowances'
 import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
 
-export type CutStage = 'stock-prep' | 'rip' | 'crosscut' | 'trim' | 'surface'
+export type CutStage = 'rip' | 'crosscut' | 'trim'
 
 export interface StockRequirement {
   id: string

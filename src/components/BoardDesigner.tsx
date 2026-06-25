@@ -32,7 +32,6 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   // Preview lives at the top of the editor panel; collapsible to reclaim panel
   // height when focusing on strip edits.
   const [studioMinimized, setStudioMinimized] = useState(false)
-  const [selectedSlice, setSelectedSlice] = useState(0)
   const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
@@ -42,7 +41,6 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
   const end = calculateEndGrainMetrics(project)
   const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
-  const selectedSliceIndex = Math.min(Math.max(selectedSlice, 0), Math.max(sliceStates.length - 1, 0))
   const build = calculateBuildDimensions(project)
   const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
   const template = buildEndGrainTemplate(project)
@@ -80,7 +78,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
     update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
   }
-  const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null); setSelectedSlice(0) }
+  const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
   const previewPattern = (pattern: BoardPatternId) => {
     let nextId = 0
     return applyBoardPattern(pattern, project, woods, end.sliceCount, () => `preview-${pattern}-${nextId++}`)
@@ -130,7 +128,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
-        <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
+        <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[0]} sliceIndex={0} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
         <div className="panel-section first">
           <h3>Construction</h3>
           <div className="construction-toggle"><button className={project.construction === 'edge' ? 'active' : ''} onClick={() => update({ construction: 'edge' })}>Edge grain</button><button className={project.construction === 'end' ? 'active' : ''} onClick={() => update({ construction: 'end' })}>End grain</button></div>

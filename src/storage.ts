@@ -47,7 +47,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
         id: stringValue(strip['id'], createId()),
         speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
         width: finiteNumber(strip['width'], 38),
-        trailingAngle: finiteNumber(strip['trailingAngle'], 0),
+        trailingAngle: signedFinite(strip['trailingAngle'], 0),
       })),
       endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
     })),
@@ -75,7 +75,7 @@ function normalizeEndGrain(value: unknown, stockThickness: number): EndGrainSett
     trimAllowance: finiteNumber(saved['trimAllowance'], 20),
     rowFlips: Array.isArray(saved['rowFlips']) ? saved['rowFlips'].map(Boolean) : [],
     rowRotations: Array.isArray(saved['rowRotations']) ? saved['rowRotations'].map(Boolean) : [],
-    rowOffsets: Array.isArray(saved['rowOffsets']) ? saved['rowOffsets'].map(value => finiteNumber(value, 0)) : [],
+    rowOffsets: Array.isArray(saved['rowOffsets']) ? saved['rowOffsets'].map(value => signedFinite(value, 0)) : [],
     rowOrder: Array.isArray(saved['rowOrder']) ? saved['rowOrder'].map(value => Math.trunc(finiteNumber(value, 0))) : [],
   }
 }
@@ -119,8 +119,15 @@ function stringValue(value: unknown, fallback: string): string {
   return typeof value === 'string' && value.trim() ? value : fallback
 }
 
+// For true dimensions (widths, lengths, thicknesses) that can never be negative.
 function finiteNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
+}
+
+// For signed quantities (trailing angles, row offsets) where a negative value is
+// meaningful and load-bearing — chevron/herringbone/mirrored bevels rely on it.
+function signedFinite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
 function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }

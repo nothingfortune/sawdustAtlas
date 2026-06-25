@@ -42,6 +42,50 @@ describe('workspace storage migration', () => {
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
   })
 
+  it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'Chevron', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [
+          { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 45 },
+          { id: 'b', speciesId: 'maple', width: 40, trailingAngle: -45 },
+        ],
+        allowances: {},
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.strips[0]?.trailingAngle).toBe(45)
+    expect(board.strips[1]?.trailingAngle).toBe(-45)
+  })
+
+  it('preserves negative end-grain row offsets (C1)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'Offsets', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [],
+        endGrain: { stockThickness: 38, rowOffsets: [-10, 0, 12] },
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.endGrain.rowOffsets).toEqual([-10, 0, 12])
+  })
+
+  it('still floors negative dimensions to zero (width/length stay non-negative)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'b', length: -400, thickness: 38, construction: 'edge', updatedAt: '',
+        strips: [{ id: 's', speciesId: 'walnut', width: -40, trailingAngle: 0 }],
+        allowances: {},
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.length).toBe(0)
+    expect(board.strips[0]?.width).toBe(0)
+  })
+
   it('repairs malformed nested import records instead of throwing away the backup', () => {
     const legacy = {
       woods: [null, { id: 'walnut', name: 'Walnut', color: 'brown', accent: '#87614a', pricePerBoardFoot: -5 }],

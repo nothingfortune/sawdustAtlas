@@ -7,6 +7,8 @@ vite.config.d.ts
 .DS_Store
 coverage/
 test-results/
+playwright-report/
+playwright/.cache/
 .claude/settings.local.json
 .claude/*
 .agents/

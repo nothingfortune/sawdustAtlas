@@ -102,4 +102,12 @@ describe('applySliceOrder', () => {
     const states = readSliceStates(input, 2)
     expect(applySliceOrder(input, 2, [0, 1])).toEqual(writeSliceStates(states))
   })
+
+  it('normalizes a duplicate/short order into a full permutation (no dup or missing slices)', () => {
+    const result = applySliceOrder(settings({ rowRotations: [true, false, false, true] }), 4, [0, 0, 1])
+    expect(result.rowOrder).toHaveLength(4)
+    expect([...(result.rowOrder ?? [])].sort((a, b) => a - b)).toEqual([0, 1, 2, 3])
+    expect(result.rowFlips).toHaveLength(4)
+    expect(result.rowRotations).toHaveLength(4)
+  })
 })

@@ -1,5 +1,5 @@
 import type { BoardProject, WoodSpecies } from '../types'
-import { calculateBuildDimensions } from './boardAllowances'
+import { calculateBuildDimensions, resolveAllowances } from './boardAllowances'
 import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
 
 export type CutStage = 'stock-prep' | 'rip' | 'crosscut' | 'trim' | 'surface'
@@ -56,6 +56,7 @@ export interface CuttingBoardPlan {
 export function generateCuttingBoardPlan(project: BoardProject, woods: readonly WoodSpecies[]): CuttingBoardPlan {
   const build = calculateBuildDimensions(project)
   const metrics = calculateEndGrainMetrics(project)
+  const allowance = resolveAllowances(project)
   const stock = aggregateStock(project, woods)
   const cuts = project.construction === 'end' ? endGrainCuts(project, build.stripRoughWidths, metrics.crosscutCount) : edgeGrainCuts(project, build.stripRoughWidths)
   const warnings = project.construction === 'end' ? [...metrics.errors] : []
@@ -74,7 +75,7 @@ export function generateCuttingBoardPlan(project: BoardProject, woods: readonly 
       finishedBoardFeet: build.finishedBoardFeet,
       plannedWasteBoardFeet: Math.max(0, build.roughBoardFeet - build.finishedBoardFeet),
       ripPasses: project.strips.length,
-      crosscutPasses: project.construction === 'end' ? metrics.crosscutCount : project.allowances.lengthTrim > 0 ? 2 : 0,
+      crosscutPasses: project.construction === 'end' ? metrics.crosscutCount : allowance.lengthTrim > 0 ? 2 : 0,
     },
     warnings,
   }
@@ -116,6 +117,7 @@ function aggregateStock(project: BoardProject, woods: readonly WoodSpecies[]): S
 
 function edgeGrainCuts(project: BoardProject, roughWidths: readonly number[]): CutListItem[] {
   const build = calculateBuildDimensions(project)
+  const allowance = resolveAllowances(project)
   const cuts: CutListItem[] = project.strips.map((strip, index) => ({
     id: `rip-${index + 1}`,
     stage: 'rip',
@@ -130,12 +132,13 @@ function edgeGrainCuts(project: BoardProject, roughWidths: readonly number[]): C
     trailingAngle: 0,
     note: `Leave ${format((roughWidths[index] ?? strip.width) - strip.width)} mm total width allowance before final sizing.`,
   }))
-  if (project.allowances.lengthTrim > 0) cuts.push({ id: 'trim-length', stage: 'trim', label: 'Square both ends', quantity: 1, passes: 2, note: `Remove ${format(project.allowances.lengthTrim)} mm total to reach ${format(project.length)} mm.` })
-  if (project.allowances.widthTrim > 0) cuts.push({ id: 'trim-width', stage: 'trim', label: 'Square outside edges', quantity: 1, passes: 2, note: `Remove ${format(project.allowances.widthTrim)} mm total after glue-up.` })
+  if (allowance.lengthTrim > 0) cuts.push({ id: 'trim-length', stage: 'trim', label: 'Square both ends', quantity: 1, passes: 2, note: `Remove ${format(allowance.lengthTrim)} mm total to reach ${format(project.length)} mm.` })
+  if (allowance.widthTrim > 0) cuts.push({ id: 'trim-width', stage: 'trim', label: 'Square outside edges', quantity: 1, passes: 2, note: `Remove ${format(allowance.widthTrim)} mm total after glue-up.` })
   return cuts
 }
 
 function endGrainCuts(project: BoardProject, roughWidths: readonly number[], crosscutCount: number): CutListItem[] {
+  const allowance = resolveAllowances(project)
   const cuts: CutListItem[] = project.strips.map((strip, index) => ({
     id: `rip-${index + 1}`,
     stage: 'rip',
@@ -162,13 +165,14 @@ function endGrainCuts(project: BoardProject, roughWidths: readonly number[], cro
     kerf: project.endGrain.kerf,
     note: `${crosscutCount} saw passes at ${format(project.endGrain.kerf)} mm measured kerf. End-trim allowance is treated as inclusive of its squaring cuts.`,
   })
-  if (project.allowances.lengthTrim > 0 || project.allowances.widthTrim > 0) cuts.push({ id: 'trim-final', stage: 'trim', label: 'Square assembled board', quantity: 1, passes: 4, note: `Final allowances: ${format(project.allowances.lengthTrim)} mm length and ${format(project.allowances.widthTrim)} mm width.` })
+  if (allowance.lengthTrim > 0 || allowance.widthTrim > 0) cuts.push({ id: 'trim-final', stage: 'trim', label: 'Square assembled board', quantity: 1, passes: 4, note: `Final allowances: ${format(allowance.lengthTrim)} mm length and ${format(allowance.widthTrim)} mm width.` })
   return cuts
 }
 
 function edgeGrainSteps(project: BoardProject): BuildStep[] {
+  const allowance = resolveAllowances(project)
   return [
-    { id: 'mill', order: 1, title: 'Mill stock', instruction: `Joint and plane rough stock, preserving ${format(project.allowances.jointing + project.allowances.planing + project.allowances.routerTable)} mm thickness allowance.` },
+    { id: 'mill', order: 1, title: 'Mill stock', instruction: `Joint and plane rough stock, preserving ${format(allowance.jointing + allowance.planing + allowance.routerTable)} mm thickness allowance.` },
     { id: 'rip', order: 2, title: 'Rip the strip recipe', instruction: 'Keep strips numbered and oriented in the order shown in the design.' },
     { id: 'glue', order: 3, title: 'First glue-up', instruction: 'Assemble the long-grain strip pattern, keeping reference faces aligned.' },
     { id: 'finish', order: 4, title: 'Square and surface', instruction: `Trim to ${format(project.length)} mm finished length and surface to ${format(project.thickness)} mm.` },

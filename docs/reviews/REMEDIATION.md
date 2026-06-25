@@ -34,11 +34,11 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Performance items `P1`, `P2`, `P3`, and `P4`
 - CI and infra items `CI1` through `CI4`, plus the `CI6` keep-as-advisory decision
 - Security items `SEC1`, `SEC2`, and `SEC5`
-- Tooling items `TOOL1` through `TOOL3`
+- Tooling items `TOOL1` through `TOOL5`
 - Hygiene items `HYG1` through `HYG11`, and `HYG13`
 - Accessibility items `A1`, `A2`, `A3`, and `A6`
 - Documentation items `DOC1` through `DOC5`
-- Test items `TEST4`, `TEST6`, and `TEST7`
+- Test items `TEST1`, `TEST2`, `TEST4`, `TEST5`, `TEST6`, and `TEST7`
 - High-priority UX/correctness items `H1`, `H2`, `H3`, `H4`, `H6`, `H7`, and `H8`
 
 ### What is partially done
@@ -345,17 +345,19 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Notes: This is more deterministic than jsdom and avoids an extra dependency. `downloadData` still needs coverage and is tracked under `TEST3`.
 - Commit: `8bc115f`
 
-### TOOL4 `☐`
+### TOOL4 `☑`
 
-- Problem: `tsconfig.app.json` is referenced as a project but does not set `composite: true`.
+- Problem: `tsconfig.app.json` is referenced as a project but did not set `composite: true`.
 - Location: `tsconfig.app.json`
-- Proposed fix: Add `composite: true`.
+- Resolution: Added `composite: true` (matching the node/test referenced projects); build stays green.
+- Commit: TOOL4/5+TEST7 commit.
 
-### TOOL5 `☐`
+### TOOL5 `☑`
 
-- Problem: There is no formatter config for a multi-file TypeScript and Markdown repo.
+- Problem: No formatter config for a multi-file TypeScript and Markdown repo.
 - Location: repo root
-- Proposed fix: Add `.editorconfig` and optionally Prettier.
+- Resolution: Added `.editorconfig` (charset, LF, final newline, trim trailing whitespace except in Markdown, 2-space indent).
+- Commit: TOOL4/5+TEST7 commit.
 
 ## P2 Repo Hygiene and Dead Code
 
@@ -479,16 +481,17 @@ Keep the status markers current. If this file drifts away from the code, it stop
 
 ## Test Coverage Gaps
 
-### TEST1 `☐`
+### TEST1 `☑`
 
-- Gap: Live slice drag-reorder math in `DraggableAssembledBoard` is still untested.
-- Why it matters: This is the largest remaining pocket of untested logic.
-- Proposed fix: Extract `targetFromX`, `orderWithKeyAt`, and tap-vs-drag threshold logic into pure helpers and unit-test them.
+- Gap: Live slice drag-reorder math in `DraggableAssembledBoard` was untested (the largest untested pocket).
+- Resolution: Extracted `dropTargetFromX` and `orderWithKeyAt` into `src/components/sliceDrag.ts` and unit-tested them (drop-target clamping, unsorted midpoints, and the permutation invariant for every target).
+- Commit: `TEST1/TEST2 commit`
 
-### TEST2 `☐`
+### TEST2 `☑`
 
-- Gap: `usePinchPan` transform math is untested.
-- Proposed fix: Extract and test scale clamp, pan offset, and single-pointer pass-through behavior.
+- Gap: `usePinchPan` transform math was untested.
+- Resolution: Extracted `pinchTransform` and tested the scale clamp (min/max) and pan-offset math.
+- Commit: `TEST1/TEST2 commit`
 
 ### TEST3 `◐`
 
@@ -501,10 +504,10 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Resolution: `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm` (fallback/clamp branches), `calculateWoodUsage` per-species split + skip-unknown-wood branch, and `projectPolygon`/`pointsAttribute` are now covered. Domain branch coverage rose from ~72% to ~80%; coverage floors ratcheted up.
 - Commits: `b110241`, TEST3/4/7 commit.
 
-### TEST5 `☐`
+### TEST5 `☑`
 
 - Gap: No CI container smoke test.
-- Status note: Covered by `CI3`.
+- Resolution: Delivered by `CI3` (`docker-verify` runs the image and curls `/` + a deep link).
 
 ### TEST6 `☑`
 
@@ -512,10 +515,11 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Resolution: Added a 120-case angled fuzz pass alongside `C2`.
 - Commit: `6b3df17`
 
-### TEST7 `☐`
+### TEST7 `☑`
 
-- Gap: Some assertions are weak or tautological.
-- Examples: `tests/storage.test.ts:62` uses `toBeDefined`; `tests/boardGeometry.test.ts:47-48` compares literals to literals.
+- Gap: Some assertions were weak or tautological.
+- Resolution: Strengthened the placeholder-wood `toBeDefined` to a shape assertion and replaced the literal-vs-literal slice-boundary assertion with a comment plus the real `sliceCount` check.
+- Commits: TEST3/4/7 commit, TOOL4/5+TEST7 commit.
 
 ## Changelog
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
-import { loadData, saveData, downloadData, normalizeData } from './storage'
+import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
@@ -22,6 +22,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
+  // Workspace captured before the last import, recoverable across reloads.
+  const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
@@ -127,11 +129,22 @@ export default function App() {
       const next = JSON.parse(await file.text()) as AtlasData
       if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
       const normalized = normalizeData(next)
+      const previous = dataRef.current
+      savePreImportSnapshot(previous)
+      setPreImport(previous)
       commitData(() => normalized)
       setActiveShop(normalized.shops[0]?.id ?? '')
       setActiveBoard(normalized.boards[0]?.id ?? '')
       setView('home')
     } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
+  }
+  const restorePreImport = () => {
+    if (!preImport) return
+    commitData(() => preImport)
+    setActiveShop(preImport.shops[0]?.id ?? '')
+    setActiveBoard(preImport.boards[0]?.id ?? '')
+    clearPreImportSnapshot()
+    setPreImport(null)
   }
 
   return <div className="app-shell">
@@ -151,6 +164,7 @@ export default function App() {
         {sidebarOpen && <div className="coming-soon"><Sparkles size={16} /><div><b>Notion sync</b><span>Planned integration</span></div></div>}
         <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
         <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
+        {preImport && <button className="nav-button" aria-label="Restore the workspace from before the last import" onClick={restorePreImport}><Undo2 />{sidebarOpen && <span>Undo import</span>}</button>}
       </div>
     </aside>
     <main>

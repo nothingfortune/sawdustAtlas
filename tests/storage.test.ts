@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadData, normalizeData, saveData } from '../src/storage'
+import { clearPreImportSnapshot, loadData, loadPreImportSnapshot, normalizeData, savePreImportSnapshot, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
 // A deterministic in-memory localStorage so the persistence tests don't depend on
@@ -147,5 +147,26 @@ describe('saveData / loadData persistence', () => {
     })
     expect(() => saveData(data)).not.toThrow()
     expect(saveData(data)).toBe(false)
+  })
+})
+
+describe('pre-import snapshot (H3)', () => {
+  beforeEach(() => vi.stubGlobal('localStorage', new MemoryStorage()))
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  it('round-trips a pre-import snapshot and clears it', () => {
+    const data = normalizeData({ shops: [], boards: [{ id: 'b', name: 'Keep me', construction: 'edge', strips: [] }] } as unknown as AtlasData)
+    expect(loadPreImportSnapshot()).toBeNull()
+    savePreImportSnapshot(data)
+    expect(loadPreImportSnapshot()?.boards[0]?.name).toBe('Keep me')
+    clearPreImportSnapshot()
+    expect(loadPreImportSnapshot()).toBeNull()
+  })
+
+  it('does not throw when the snapshot write is rejected', () => {
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+    expect(() => savePreImportSnapshot(normalizeData({ shops: [], boards: [] } as unknown as AtlasData))).not.toThrow()
   })
 })

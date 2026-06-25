@@ -145,6 +145,29 @@ export function saveData(data: AtlasData): boolean {
   }
 }
 
+const PRE_IMPORT_KEY = 'sawdust-atlas:pre-import'
+
+// Best-effort snapshot of the workspace taken immediately before an import
+// replaces it, under a separate key so it survives a reload and stays recoverable.
+export function savePreImportSnapshot(data: AtlasData): void {
+  try { localStorage.setItem(PRE_IMPORT_KEY, JSON.stringify(data)) } catch { /* best effort; non-fatal */ }
+}
+
+export function loadPreImportSnapshot(): AtlasData | null {
+  try {
+    const saved = localStorage.getItem(PRE_IMPORT_KEY)
+    if (!saved) return null
+    const parsed: unknown = JSON.parse(saved)
+    return isRecord(parsed) ? normalizeData(parsed) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearPreImportSnapshot(): void {
+  try { localStorage.removeItem(PRE_IMPORT_KEY) } catch { /* best effort; non-fatal */ }
+}
+
 export function downloadData(data: AtlasData) {
   const blob = new Blob([JSON.stringify(normalizeData(data), null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)

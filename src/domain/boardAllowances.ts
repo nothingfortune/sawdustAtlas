@@ -51,6 +51,16 @@ export function resolveAllowances(project: BoardProject): BuildAllowances {
   return { ...DEFAULT_ALLOWANCES, ...project.allowances }
 }
 
+// The rough stock width to rip one first-glue-up strip to, including the extra
+// width an angled end-grain face needs. Shared by the rough-board-feet total and
+// the cut-plan BOM so the angle shift is applied identically (and only once) in
+// both. `stripRoughWidth` already includes the rip/width-trim allowance.
+export function roughStripStockWidth(project: BoardProject, stripRoughWidth: number, trailingAngle: number): number {
+  if (project.construction !== 'end') return stripRoughWidth
+  const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(trailingAngle) * Math.PI / 180)
+  return stripRoughWidth + Math.max(0, angleShift)
+}
+
 export function calculateBuildDimensions(project: BoardProject): BuildDimensions {
   const allowance = resolveAllowances(project)
   const surfacing = nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.routerTable)
@@ -80,8 +90,7 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     const finishedWidth = metrics.finishedWidth
     const finishedThickness = nonNegative(project.endGrain.sliceThickness)
     const roughStockVolume = project.strips.reduce((volume, strip, index) => {
-      const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(strip.trailingAngle) * Math.PI / 180)
-      const stockWidth = (stripRoughWidths[index] ?? 0) + Math.max(0, angleShift)
+      const stockWidth = roughStripStockWidth(project, stripRoughWidths[index] ?? 0, strip.trailingAngle)
       return volume + stockWidth * project.endGrain.sourceLength * project.endGrain.stockThickness
     }, 0)
     const roughBoardFeet = toBoardFeet(roughStockVolume)

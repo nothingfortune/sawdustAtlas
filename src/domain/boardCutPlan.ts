@@ -1,5 +1,5 @@
 import type { BoardProject, WoodSpecies } from '../types'
-import { calculateBuildDimensions, resolveAllowances } from './boardAllowances'
+import { calculateBuildDimensions, resolveAllowances, roughStripStockWidth } from './boardAllowances'
 import type { BuildDimensions } from './boardAllowances'
 import { clampAngle, toBoardFeet } from './units'
 import { calculateEndGrainMetrics } from './boardGeometry'
@@ -89,9 +89,8 @@ function aggregateStock(project: BoardProject, woods: readonly WoodSpecies[], bu
   project.strips.forEach((strip, index) => {
     const wood = woods.find(candidate => candidate.id === strip.speciesId)
     const angle = clampAngle(strip.trailingAngle)
-    const angleShift = project.construction === 'end' ? project.endGrain.stockThickness * Math.tan(angle * Math.PI / 180) : 0
     const length = project.construction === 'end' ? project.endGrain.sourceLength : build.length.rough
-    const width = (build.stripRoughWidths[index] ?? strip.width) + Math.max(0, angleShift)
+    const width = roughStripStockWidth(project, build.stripRoughWidths[index] ?? strip.width, strip.trailingAngle)
     const thickness = project.construction === 'end' ? project.endGrain.stockThickness : build.thickness.rough
     const key = [strip.speciesId, length, width, thickness, angle].join('|')
     const existing = byKey.get(key)

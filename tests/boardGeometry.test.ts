@@ -97,6 +97,31 @@ describe('angled strip geometry', () => {
     project.endGrain.stockThickness = 20
     expect(buildEndGrainTemplate(project).errors).toHaveLength(1)
   })
+
+  it('reports only the real crossing error, not a spurious conservation failure (C2)', () => {
+    const project = makeProject({}, [{ id: 'a', speciesId: 'walnut', width: 10, trailingAngle: -45 }])
+    project.endGrain.stockThickness = 20
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.errors.some(error => error.includes('closes or crosses'))).toBe(true)
+    expect(metrics.errors.some(error => error.toLowerCase().includes('conservation'))).toBe(false)
+  })
+
+  it('conserves volume for valid angled designs (C2 / TEST6)', () => {
+    for (let index = 1; index <= 120; index += 1) {
+      const angle = (index % 2 ? 1 : -1) * (5 + index % 35)
+      const project = makeProject({}, [
+        { id: 'a', speciesId: 'walnut', width: 40 + index % 30, trailingAngle: angle },
+        { id: 'b', speciesId: 'maple', width: 40 + index % 30, trailingAngle: -angle },
+      ])
+      project.endGrain.sourceLength = 200 + index * 2.9
+      project.endGrain.stockThickness = 18 + index % 22
+      project.endGrain.sliceThickness = 9 + index % 31
+      project.endGrain.kerf = (index % 7) * 0.5
+      const metrics = calculateEndGrainMetrics(project)
+      expect(metrics.errors).toEqual([])
+      expect(metrics.sourceBoardFeet).toBeCloseTo(metrics.finishedBoardFeet + metrics.totalWasteBoardFeet, 9)
+    }
+  })
 })
 
 describe('material accounting', () => {

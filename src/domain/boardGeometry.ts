@@ -136,8 +136,14 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
   const finishedVolume = sliceCount * stockThickness * template.finishedWidth * sliceThickness
   const totalWasteVolume = ripWasteVolume + crosscutWasteVolume + sideTrimVolume
 
+  // The volume identity only holds for otherwise-valid geometry. A strip that
+  // closes or crosses already reports a specific error and breaks the identity by
+  // definition (its clamped volume diverges from the unclamped template edges), so
+  // guard on `errors.length` to avoid piling a confusing second message on top.
   const conservationDifference = Math.abs(sourceVolume - finishedVolume - totalWasteVolume)
-  if (conservationDifference > Math.max(1, sourceVolume) * 1e-8) errors.push('Material-volume conservation failed; check the design inputs.')
+  if (errors.length === 0 && conservationDifference > Math.max(1, sourceVolume) * 1e-8) {
+    errors.push('Material-volume conservation failed; check the design inputs.')
+  }
 
   return {
     panelWidth: template.height,

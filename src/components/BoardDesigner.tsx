@@ -22,6 +22,7 @@ import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
+import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 
@@ -59,6 +60,15 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
       : edgeEstimatedCost
     return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost }
   }, [project, woods])
+  // The pattern-preview project (with stable preview-* ids) only needs recomputing
+  // when the pending pattern or inputs change — not on every render while the
+  // dialog is open. Null unless a preview is pending.
+  const previewProject = useMemo(() => {
+    if (!project || !pendingPattern) return null
+    let nextId = 0
+    const sliceCount = calculateEndGrainMetrics(project).sliceCount
+    return { ...project, ...applyBoardPattern(pendingPattern, project, woods, sliceCount, () => `preview-${pendingPattern}-${nextId++}`) }
+  }, [project, woods, pendingPattern])
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
@@ -89,10 +99,6 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     update({ strips: shuffled })
   }
   const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
-  const previewPattern = (pattern: BoardPatternId) => {
-    let nextId = 0
-    return applyBoardPattern(pattern, project, woods, end.sliceCount, () => `preview-${pattern}-${nextId++}`)
-  }
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
@@ -164,7 +170,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     {pendingPattern && <PatternPreviewDialog
       pattern={BOARD_PATTERNS.find(candidate => candidate.id === pendingPattern)}
       current={project}
-      preview={{ ...project, ...previewPattern(pendingPattern) }}
+      preview={previewProject ?? project}
       woods={woods}
       onApply={() => applyPattern(pendingPattern)}
       onDismiss={() => setPendingPattern(null)}
@@ -616,6 +622,5 @@ function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {
   </div>
 }
 
-function Field({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min="0" step={step} value={value} onChange={event => onChange(Number(event.target.value))}/></label> }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><b>{value}</b></div> }
 function format(value: number) { return Number(value.toFixed(2)).toString() }

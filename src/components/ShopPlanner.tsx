@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ShopProject } from '../types'
 import { createId } from '../id'
+import { NumberField as Field } from './fields'
 import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
 import type { ShopObjectDefinition } from '../domain/shopObjects'
 import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
@@ -201,6 +202,5 @@ function ObjectIcon({ kind }: { kind: ShopItemKind }) { return kind === 'door' ?
 function TextField({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) { return <label className="field"><span>{label}</span><input value={value} onChange={e => onChange(e.target.value)}/></label> }
 function KindField({ value, onChange }: { value: ShopItemKind, onChange: (value: ShopItemKind) => void }) { return <label className="field"><span>Category</span><select value={value} onChange={e => onChange(e.target.value as ShopItemKind)}>{SHOP_ITEM_KINDS.map(kind => <option value={kind.value} key={kind.value}>{kind.label}</option>)}</select></label> }
 function ColorField({ value, onChange }: { value: string, onChange: (value: string) => void }) { return <label className="field color-field"><span>Color</span><input type="color" value={value} onChange={e => onChange(e.target.value)}/></label> }
-function Field({ label, value, min = 0, onChange }: { label: string, value: number, min?: number, onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min={min} step="1" value={value} onChange={e => onChange(Number(e.target.value))}/></label> }
 function Empty({ title, action }: { title: string, action: () => void }) { return <div className="empty-page"><h2>{title}</h2><button className="button" onClick={action}><Plus/>Create one</button></div> }
 function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max) }

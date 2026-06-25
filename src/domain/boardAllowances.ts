@@ -1,5 +1,6 @@
 import type { BoardProject, BuildAllowances } from '../types'
-import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
+import { calculateEndGrainMetrics } from './boardGeometry'
+import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
 // Build allowances describe how much oversized rough stock must be relative to the
 // finished board. They are surfacing/trim stock removed to reach finished faces and
@@ -115,8 +116,3 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     removedBoardFeet: Math.max(0, roughBoardFeet - finishedBoardFeet),
   }
 }
-
-function toBoardFeet(cubicMillimeters: number) { return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT }
-function nonNegative(value: number) { return Number.isFinite(value) ? Math.max(0, value) : 0 }
-function sum(values: readonly number[]) { return values.reduce((total, value) => total + value, 0) }
-function clampAngle(value: number) { return Math.min(Math.max(Number.isFinite(value) ? value : 0, -89), 89) }

@@ -1,7 +1,7 @@
 import type { BoardProject, WoodSpecies } from '../types'
+import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
-export const CUBIC_MM_PER_BOARD_FOOT = 2_359_737.216
-const ANGLE_LIMIT = 89
+export { CUBIC_MM_PER_BOARD_FOOT } from './units'
 const EPSILON = 1e-9
 
 export interface TemplatePolygon {
@@ -68,7 +68,7 @@ export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
 
   const raw = project.strips.map((strip, index) => {
     const width = nonNegative(strip.width)
-    const angle = clamp(strip.trailingAngle, -ANGLE_LIMIT, ANGLE_LIMIT)
+    const angle = clampAngle(strip.trailingAngle)
     const rightWidth = width + thickness * Math.tan(angle * Math.PI / 180)
     if (rightWidth <= EPSILON) errors.push(`Strip ${index + 1} closes or crosses on its angled face.`)
     const nextLeft = left + width
@@ -196,7 +196,7 @@ function calculateStripVolumes(project: BoardProject, wasteLength: number): Stri
   const stockThickness = nonNegative(project.endGrain.stockThickness)
   return project.strips.map(strip => {
     const leftWidth = nonNegative(strip.width)
-    const angle = clamp(strip.trailingAngle, -ANGLE_LIMIT, ANGLE_LIMIT)
+    const angle = clampAngle(strip.trailingAngle)
     const rightWidth = Math.max(0, leftWidth + stockThickness * Math.tan(angle * Math.PI / 180))
     const stockWidth = Math.max(leftWidth, rightWidth)
     const averageWidth = (leftWidth + rightWidth) / 2
@@ -208,8 +208,3 @@ function calculateStripVolumes(project: BoardProject, wasteLength: number): Stri
     }
   })
 }
-
-function toBoardFeet(cubicMillimeters: number) { return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT }
-function nonNegative(value: number) { return Number.isFinite(value) ? Math.max(0, value) : 0 }
-function clamp(value: number, min: number, max: number) { return Math.min(Math.max(Number.isFinite(value) ? value : 0, min), max) }
-function sum(values: readonly number[]) { return values.reduce((total, value) => total + value, 0) }

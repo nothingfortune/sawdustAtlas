@@ -1,7 +1,8 @@
 import type { BoardProject, WoodSpecies } from '../types'
 import { calculateBuildDimensions, resolveAllowances } from './boardAllowances'
 import type { BuildDimensions } from './boardAllowances'
-import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
+import { clampAngle, toBoardFeet } from './units'
+import { calculateEndGrainMetrics } from './boardGeometry'
 
 export type CutStage = 'rip' | 'crosscut' | 'trim'
 
@@ -190,6 +191,4 @@ function endGrainSteps(project: BoardProject, sliceCount: number, crosscutCount:
   ]
 }
 
-function toBoardFeet(cubicMillimeters: number) { return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT }
-function clampAngle(value: number) { return Math.min(Math.max(Number.isFinite(value) ? value : 0, -89), 89) }
 function format(value: number) { return Number(value.toFixed(2)).toString() }

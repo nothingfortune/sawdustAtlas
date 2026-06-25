@@ -270,6 +270,24 @@ These items came from the 2026-06-24 comparison pass against cutting-board apps,
 | 8. Tablet build mode | `BOARD-022`, `UX-001`, `UX-002`, `UX-008` | Turns a finished design into a bench-side execution workflow with fewer measurement mistakes and less paper shuffling. | Prototype a read-only build checklist view with large measurements, current operation, warning callouts, and completion state. |
 | 9. Material-first design | `CUT-008`, `CUT-009`, `CUT-010`, `CUT-012` | Supports the woodworker who starts with actual stock or scrap and wants feasible designs, not only a shopping list for ideal material. | Research a stock-first flow that filters or adapts board/project options based on selected inventory and defects; keep XR/AR optional and later. |
 
+## Review Follow-Ups
+
+These recommendations came from the 2026-06-24 end-of-develop review pass. They are not all defects; several are product and release-hardening tasks that should be handled before broader beta use.
+
+| Area | Priority | Recommendation | Why it matters | Next action |
+| --- | --- | --- | --- | --- |
+| Backup restore | Now | Keep hardening import normalization and user-facing restore flow. | Browser-local data is the current source of truth, so restore failures are trust failures. | Add migration fixtures for realistic exported files from older app states, including partial records, missing libraries, and malformed nested arrays. |
+| Import safety | Now | Make destructive import state explicit. | Import currently replaces local projects; users need confidence before overwriting browser-local work. | After import, show a success state with project counts, replacement warning, and a prompt to export the new workspace backup. |
+| Warning center | Now | Centralize "safe, saved, wrong, or ready to build" status. | Geometry, storage, backup, stock, and clearance issues are currently spread across screens. | Start with app-wide warnings for import/storage status, board geometry errors, missing wood references, and shop clearance conflicts. |
+| E2E testing | Next | Add a repeatable browser smoke path after the local Playwright/tooling issue is resolved. | Lint, unit tests, and build pass, but they do not prove the friend-beta flows work in a browser. | Create a minimal smoke suite for Home, starter board, starter shop, export backup, import backup, print build sheet, and tablet landscape layout. |
+| Package tooling | Next | Decide whether to rely on Corepack/pnpm only or document the repo's direct local-binary fallback. | On Windows, `pnpm` may not be on PATH even when Corepack is available; this can confuse contributors. | Update developer docs with `corepack pnpm ...` commands and troubleshooting for missing shims or optional native packages. |
+| Dependency policy | Next | Replace broad `latest` dependency ranges with intentional update cadence. | `latest` can shift Vite, TypeScript, ESLint, and React behavior between installs, making support harder for a local appliance. | Pin direct dependencies or use compatible ranges, then let Dependabot propose controlled updates. |
+| Docker install | Next | Treat Docker as the appliance path, not necessarily the only try-it path. | Docker is reproducible, but Docker Desktop is unfamiliar to many non-technical users. | Add a hosted/static demo option for browser-local evaluation, while keeping Docker for LAN/tablet appliance use. |
+| Local persistence | Next | Decide the first shared persistence backend before adding more sync UI. | Tablet and desktop currently have separate browser stores, which is clear but limiting. | Choose between SQLite behind a small local API and atomic versioned JSON files; document conflict and backup semantics before implementation. |
+| Accessibility | Next | Add keyboard and screen-reader acceptance criteria to canvas-like interactions. | The app has many drag, drawer, and visual controls that unit tests do not validate. | Define keyboard paths for moving shop objects, editing board strips, selecting slices, opening drawers, and dismissing modals. |
+| Print/export QA | Next | Add golden manual checks for build sheets and shop plans. | Printed output is part of the "take it to the bench" promise. | Maintain a short checklist for print preview: assumptions visible, dimensions legible, warnings included, app chrome hidden, and scale statement present. |
+| Release confidence | Later | Add a friend-beta release checklist separate from feature DoD. | Release readiness includes install, backup, docs, and recovery, not only code correctness. | Create a checklist covering Docker Hub pull, local run, tablet access, starter project edit, export/import restore, and issue-report instructions. |
+
 ## Near-Term Ordered Backlog
 
 1. Friend-beta smoke test: Docker Hub install, starter shop, starter board, tablet landscape, export backup, import backup in a second browser.

@@ -8,3 +8,8 @@ vite.config.d.ts
 coverage/
 claude/*
 agents/*
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

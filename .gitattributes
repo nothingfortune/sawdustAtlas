@@ -1,0 +1,16 @@
+# Normalize all text to LF in the repo, regardless of editor/OS (WSL + Windows
+# tooling was rewriting files to CRLF and churning every diff). Binary assets
+# are marked so git never touches their bytes.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary

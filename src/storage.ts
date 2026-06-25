@@ -1,7 +1,8 @@
-import type { AtlasData, BoardProject, BuildAllowances, WoodSpecies } from './types'
+import type { AtlasData, BoardProject, BuildAllowances, EndGrainSettings, ShopItem, ShopProject, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
+import { createId } from './id'
 
 const KEY = 'sawdust-atlas:v1'
 export const CURRENT_SCHEMA_VERSION = 1
@@ -16,45 +17,65 @@ export function loadData(): AtlasData {
 }
 
 export function normalizeData(data: Partial<AtlasData>): AtlasData {
-  const shops = Array.isArray(data.shops) ? data.shops : []
-  const boards = Array.isArray(data.boards) ? data.boards : []
-  const savedWoods = Array.isArray(data.woods) && data.woods.length > 0 ? data.woods : defaultSpecies
+  const shops = records(data.shops)
+  const boards = records(data.boards)
+  const savedWoods = records(data.woods).length > 0 ? records(data.woods) : defaultSpecies
   const normalizedWoods = savedWoods.map(normalizeWood)
   const knownIds = new Set(normalizedWoods.map(wood => wood.id))
-  const missingIds = boards.flatMap(board => board.strips.map(strip => strip.speciesId)).filter(id => !knownIds.has(id))
+  const missingIds = boards
+    .flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? '')))
+    .filter(id => id && !knownIds.has(id))
   // Milling allowances are shop-wide. Seed the global from saved global, else a
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
-  const allowances = normalizeAllowances(data.allowances ?? boards[0]?.allowances)
+  const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
   return {
-    ...data,
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
-    shops: shops.map(shop => ({ ...shop, items: shop.items.map(normalizeShopItem) })),
+    shops: shops.map(normalizeShop),
     boards: boards.map((board): BoardProject => ({
-      ...board,
-      construction: board.construction ?? 'edge',
+      id: stringValue(board['id'], createId()),
+      name: stringValue(board['name'], 'Imported cutting board'),
+      length: finiteNumber(board['length'], 450),
+      thickness: finiteNumber(board['thickness'], 38),
+      updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
+      construction: board['construction'] === 'end' ? 'end' : 'edge',
       allowances,
-      strips: board.strips.map(strip => ({ ...strip, trailingAngle: strip.trailingAngle ?? 0 })),
-      endGrain: board.endGrain ? {
-        ...board.endGrain,
-        rowFlips: board.endGrain.rowFlips ?? [],
-        rowRotations: board.endGrain.rowRotations ?? [],
-        rowOffsets: board.endGrain.rowOffsets ?? [],
-        rowOrder: board.endGrain.rowOrder ?? [],
-      } : {
-        sourceLength: 900,
-        stockThickness: board.thickness,
-        sliceThickness: 45,
-        kerf: 3.2,
-        trimAllowance: 20,
-        rowFlips: [],
-        rowRotations: [],
-        rowOffsets: [],
-        rowOrder: [],
-      },
+      strips: records(board['strips']).map(strip => ({
+        id: stringValue(strip['id'], createId()),
+        speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
+        width: finiteNumber(strip['width'], 38),
+        trailingAngle: clampedAngle(strip['trailingAngle'], 0),
+      })),
+      endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
     })),
+  }
+}
+
+function normalizeShop(shop: Record<string, unknown>): ShopProject {
+  return {
+    id: stringValue(shop['id'], createId()),
+    name: stringValue(shop['name'], 'Imported workshop'),
+    width: finiteNumber(shop['width'], 6000),
+    depth: finiteNumber(shop['depth'], 6000),
+    updatedAt: stringValue(shop['updatedAt'], new Date().toISOString()),
+    items: records(shop['items']).map(item => normalizeShopItem(item as unknown as ShopItem)),
+  }
+}
+
+function normalizeEndGrain(value: unknown, stockThickness: number): EndGrainSettings {
+  const saved = isRecord(value) ? value : {}
+  return {
+    sourceLength: finiteNumber(saved['sourceLength'], 900),
+    stockThickness: finiteNumber(saved['stockThickness'], stockThickness),
+    sliceThickness: finiteNumber(saved['sliceThickness'], 45),
+    kerf: finiteNumber(saved['kerf'], 3.2),
+    trimAllowance: finiteNumber(saved['trimAllowance'], 20),
+    rowFlips: Array.isArray(saved['rowFlips']) ? saved['rowFlips'].map(Boolean) : [],
+    rowRotations: Array.isArray(saved['rowRotations']) ? saved['rowRotations'].map(Boolean) : [],
+    rowOffsets: Array.isArray(saved['rowOffsets']) ? saved['rowOffsets'].map(value => finiteNumber(value, 0)) : [],
+    rowOrder: Array.isArray(saved['rowOrder']) ? saved['rowOrder'].map(value => Math.trunc(finiteNumber(value, 0))) : [],
   }
 }
 
@@ -75,20 +96,51 @@ function normalizeAllowances(saved: (BuildAllowances & { drumSanding?: number })
   }
 }
 
-function normalizeWood(wood: WoodSpecies): WoodSpecies {
+function normalizeWood(wood: Partial<WoodSpecies>): WoodSpecies {
   return {
-    id: String(wood.id),
-    name: String(wood.name || wood.id || 'Custom wood'),
+    id: stringValue(wood.id, createId()),
+    name: stringValue(wood.name, stringValue(wood.id, 'Custom wood')),
     color: validColor(wood.color, '#8c6a48'),
     accent: validColor(wood.accent, '#b18a5e'),
-    pricePerBoardFoot: Number.isFinite(wood.pricePerBoardFoot) ? Math.max(0, wood.pricePerBoardFoot) : 0,
+    pricePerBoardFoot: finiteNumber(wood.pricePerBoardFoot, 0),
   }
 }
 
-function validColor(value: string, fallback: string) { return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
+function records(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : []
+}
 
-export function saveData(data: AtlasData) {
-  localStorage.setItem(KEY, JSON.stringify(data))
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function stringValue(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() ? value : fallback
+}
+
+function finiteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
+}
+
+// Trailing bevel angle keeps its sign (negative angles drive chevron/herringbone
+// layouts) — only clamp to the geometry's ±89° limit. finiteNumber would floor
+// it to 0 and silently destroy angled designs on every load/export.
+function clampedAngle(value: unknown, fallback: number): number {
+  const angle = typeof value === 'number' && Number.isFinite(value) ? value : fallback
+  return Math.min(89, Math.max(-89, angle))
+}
+
+function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
+
+// Returns false when the write fails (quota exceeded, private-mode, etc.) so the
+// UI can tell the user their work isn't being saved instead of silently lying.
+export function saveData(data: AtlasData): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function downloadData(data: AtlasData) {

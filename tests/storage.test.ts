@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeData } from '../src/storage'
+import { normalizeData, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
+
+const boardWithAngle = (trailingAngle: number) => ({
+  shops: [],
+  boards: [{
+    id: 'b', name: 'B', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+    strips: [{ id: 's', speciesId: 'walnut', width: 40, trailingAngle }],
+  }],
+}) as unknown as AtlasData
 
 describe('workspace storage migration', () => {
   it('stamps normalized data with the current schema version', () => {
@@ -40,5 +48,41 @@ describe('workspace storage migration', () => {
     } as unknown as AtlasData
     const normalized = normalizeData(legacy)
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
+  })
+
+  it('repairs malformed nested import records instead of throwing away the backup', () => {
+    const legacy = {
+      woods: [null, { id: 'walnut', name: 'Walnut', color: 'brown', accent: '#87614a', pricePerBoardFoot: -5 }],
+      shops: [{ id: 'shop', name: '', width: Number.NaN }],
+      boards: [{
+        id: 'board',
+        name: '',
+        construction: 'end',
+        strips: [null, { id: 'strip', speciesId: 'mystery', width: 40 }],
+        endGrain: { stockThickness: 38 },
+      }],
+    } as unknown as AtlasData
+
+    const normalized = normalizeData(legacy)
+    expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, items: [] })
+    expect(normalized.boards[0]).toMatchObject({ id: 'board', name: 'Imported cutting board', construction: 'end' })
+    expect(normalized.boards[0]?.strips).toHaveLength(1)
+    expect(normalized.woods.find(wood => wood.id === 'mystery')).toBeDefined()
+    expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
+  })
+
+  it('preserves negative strip trailing angles (chevron) instead of zeroing them', () => {
+    expect(normalizeData(boardWithAngle(-30)).boards[0]?.strips[0]?.trailingAngle).toBe(-30)
+  })
+
+  it('clamps trailing angle to the +/-89 limit', () => {
+    expect(normalizeData(boardWithAngle(-200)).boards[0]?.strips[0]?.trailingAngle).toBe(-89)
+    expect(normalizeData(boardWithAngle(200)).boards[0]?.strips[0]?.trailingAngle).toBe(89)
+  })
+})
+
+describe('saveData', () => {
+  it('never throws and reports a boolean result even when storage is unavailable', () => {
+    expect(typeof saveData(normalizeData({ shops: [], boards: [] } as unknown as AtlasData))).toBe('boolean')
   })
 })

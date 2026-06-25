@@ -83,7 +83,9 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const randomizeArrangement = () => {
     const shuffled = [...project.strips]
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
-    update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
+    // Reorder in place: keep each strip's id so StripList rows move rather than
+    // remount (which would drop focus and re-key every row).
+    update({ strips: shuffled })
   }
   const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
   const previewPattern = (pattern: BoardPatternId) => {

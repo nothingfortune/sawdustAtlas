@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ShopProject } from '../types'
 import { createId } from '../id'
@@ -23,10 +23,18 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const [selected, setSelected] = useState<string>('')
   const [zoom, setZoom] = useState(.74)
+  // Mirror zoom into a ref so an in-progress drag reads the live value: a pinch
+  // (which updates zoom) during a one-finger object drag must not use a stale zoom.
+  const zoomRef = useRef(zoom)
+  useEffect(() => { zoomRef.current = zoom }, [zoom])
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
   const [customObject, setCustomObject] = useState<ShopObjectDefinition>(DEFAULT_CUSTOM_OBJECT)
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
+  // Clear a stale selection when the active project changes so the inspector
+  // doesn't point at an item from the previous plan (render-time reset pattern).
+  const [lastProjectId, setLastProjectId] = useState(project?.id)
+  if (project?.id !== lastProjectId) { setLastProjectId(project?.id); setSelected('') }
   const item = project?.items.find(i => i.id === selected)
   const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateItem = (id: string, patch: Partial<ShopItem>) => project && update({ items: project.items.map(i => i.id === id ? { ...i, ...patch } : i) })
@@ -50,9 +58,9 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   function beginDrag(event: React.PointerEvent, target: ShopItem) {
     event.currentTarget.setPointerCapture(event.pointerId); setSelected(target.id)
     const start = { x: event.clientX, y: event.clientY, itemX: target.x, itemY: target.y }
-    const move = (e: PointerEvent) => updateItem(target.id, { x: clamp(start.itemX + (e.clientX - start.x) / (SCALE * zoom), 0, (project?.width ?? 0) - target.width), y: clamp(start.itemY + (e.clientY - start.y) / (SCALE * zoom), 0, (project?.depth ?? 0) - target.depth) })
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
+    const move = (e: PointerEvent) => updateItem(target.id, { x: clamp(start.itemX + (e.clientX - start.x) / (SCALE * zoomRef.current), 0, (project?.width ?? 0) - target.width), y: clamp(start.itemY + (e.clientY - start.y) / (SCALE * zoomRef.current), 0, (project?.depth ?? 0) - target.depth) })
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up) }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up)
   }
 
   // Two-finger pinch on the room scales the existing zoom state (so item-drag

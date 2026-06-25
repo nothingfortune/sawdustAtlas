@@ -155,7 +155,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
         <div className="panel-section milling-hint"><h3>Milling &amp; wood</h3><p>Milling allowances and the wood library are now shared workspace modules — find them in the left sidebar under Library.</p></div>
       </aside>
-      {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
+      {panelOpen && <div className="panel-scrim" role="presentation" onClick={() => setPanelOpen(false)}/>}
       <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>
     </div>
     {pendingPattern && <PatternPreviewDialog
@@ -272,14 +272,17 @@ function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; met
 function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: StudioTab[]; activeId: string; woods: WoodSpecies[]; onSelect: (id: string) => void; onClose: () => void }) {
   const pinch = usePinchPan()
   const active = tabs.find(tab => tab.id === activeId) ?? tabs[0]
+  const dialogRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    dialogRef.current?.focus()
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); previouslyFocused?.focus?.() }
   }, [onClose])
   if (!active) return null
-  return createPortal(<div className="modal-scrim" role="presentation" onClick={onClose}>
-    <div className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`} onClick={event => event.stopPropagation()}>
+  return createPortal(<div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div ref={dialogRef} tabIndex={-1} className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`}>
       <header>
         <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => onSelect(tab.id)}>{tab.label}</button>)}</div>
         <button className="icon-button" onClick={onClose} aria-label="Close preview"><X/></button>
@@ -296,6 +299,14 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
 }
 
 function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    dialogRef.current?.focus()
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onDismiss() }
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); previouslyFocused?.focus?.() }
+  }, [onDismiss])
   if (!pattern) return null
   const currentMetrics = calculateEndGrainMetrics(current)
   const previewMetrics = calculateEndGrainMetrics(preview)
@@ -304,8 +315,8 @@ function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDis
   const lengthMm = Math.max(currentMetrics.finalLength, previewMetrics.finalLength, 1)
   const widthMm = Math.max(currentMetrics.panelWidth, previewMetrics.panelWidth, 1)
   const { pxPerMm } = resolveScale(lengthMm, 420)
-  return <div className="modal-scrim" role="presentation" onClick={onDismiss}>
-    <div className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`} onClick={event => event.stopPropagation()}>
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onDismiss() }}>
+    <div ref={dialogRef} tabIndex={-1} className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`}>
       <header>
         <div><span className="eyebrow">PATTERN PREVIEW</span><h2>{pattern.name}</h2><p>{pattern.description}</p></div>
         <button className="icon-button" onClick={onDismiss} aria-label="Dismiss pattern preview"><X/></button>

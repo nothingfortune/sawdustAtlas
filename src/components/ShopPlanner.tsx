@@ -36,6 +36,16 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     update({ items: [...project.items, next] }); setSelected(next.id); setLeftOpen(false); setRightOpen(true)
   }
   const remove = () => { if (project && item) { update({ items: project.items.filter(i => i.id !== item.id) }); setSelected('') } }
+  // Keyboard equivalent of select-and-drag for the top-view objects: Enter/Space
+  // selects, arrows nudge (Shift = coarse), clamped to the room like the pointer drag.
+  const onObjectKeyDown = (event: React.KeyboardEvent, target: ShopItem) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelected(target.id); return }
+    const step = event.shiftKey ? 100 : 10
+    const delta: [number, number] | null = event.key === 'ArrowLeft' ? [-step, 0] : event.key === 'ArrowRight' ? [step, 0] : event.key === 'ArrowUp' ? [0, -step] : event.key === 'ArrowDown' ? [0, step] : null
+    if (!delta || !project) return
+    event.preventDefault(); setSelected(target.id)
+    updateItem(target.id, { x: clamp(target.x + delta[0], 0, project.width - target.width), y: clamp(target.y + delta[1], 0, project.depth - target.depth) })
+  }
 
   function beginDrag(event: React.PointerEvent, target: ShopItem) {
     event.currentTarget.setPointerCapture(event.pointerId); setSelected(target.id)
@@ -94,7 +104,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
           <div className="room-canvas" onPointerDown={() => setSelected('')} style={{ width: project.width * SCALE, height: project.depth * SCALE, transform: `scale(${zoom})` }}>
             <FeedClearanceLayer project={project}/>
-            {project.items.map(i => <div key={i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
+            {project.items.map(i => <div key={i.id} role="button" tabIndex={0} aria-label={`${i.name}, ${i.width} by ${i.depth} millimetres`} aria-pressed={selected === i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} onKeyDown={e => onObjectKeyDown(e, i)} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
               {i.clearance > 0 && <span className="clearance" style={{ inset: -i.clearance * SCALE }}/>}<span className="object-name">{i.name}<small>{i.width} × {i.depth} mm</small></span>
             </div>)}
             <span className="dimension width-dimension">{project.width} mm</span><span className="dimension depth-dimension">{project.depth} mm</span>
@@ -118,7 +128,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <button className="button secondary full" onClick={() => { const copy = { ...item, id: createId(), x: item.x + 300, y: item.y + 300 }; update({ items: [...project.items, copy] }); setSelected(copy.id) }}><Copy/>Duplicate object</button>
       </> : <div className="empty-inspector"><CircleGauge/><h3>Select an object</h3><p>Choose an item on the plan to edit its size, rotation, and working clearance.</p></div>}
     </div>
-    {(leftOpen || rightOpen) && <div className="panel-scrim" onClick={() => { setLeftOpen(false); setRightOpen(false) }}/>}
+    {(leftOpen || rightOpen) && <div className="panel-scrim" role="presentation" onClick={() => { setLeftOpen(false); setRightOpen(false) }}/>}
     <div className="shop-fabs"><button className="panel-fab" onClick={() => { setLeftOpen(open => !open); setRightOpen(false) }} aria-label="Toggle objects panel"><Box/>Objects</button><button className="panel-fab" onClick={() => { setRightOpen(open => !open); setLeftOpen(false) }} aria-label="Toggle inspector"><SlidersHorizontal/>Inspector</button></div>
   </div>
 }

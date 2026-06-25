@@ -336,3 +336,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .scaled-board { max-width:100%;height:auto; }
   .build-step, .build-summary, .cut-plan-sheet, .build-sequence li, .plan-table > div, .build-assumptions div { break-inside:avoid; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -17,12 +17,17 @@ export default function App() {
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [undoData, setUndoData] = useState<AtlasData | null>(null)
+  const [saveOk, setSaveOk] = useState(true)
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
   useEffect(() => {
-    saveData(data)
+    // Autosave is a genuine side effect; surfacing whether the write succeeded is
+    // not derivable during render, so syncing it into state here is intentional.
+    const ok = saveData(data)
     dataRef.current = data
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaveOk(prev => (prev === ok ? prev : ok))
   }, [data])
 
   const commitData = (updater: (current: AtlasData) => AtlasData) => {
@@ -129,7 +134,9 @@ export default function App() {
       <header className="topbar">
         <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
-          <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+          {saveOk
+            ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+            : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
           <button className="backup-button" disabled={!undoData} onClick={undoLastChange} title={undoData ? 'Undo last change' : 'No change to undo'}><Undo2 size={15} />Undo</button>
           <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
         </div>

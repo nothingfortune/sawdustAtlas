@@ -1,6 +1,18 @@
-import { describe, expect, it } from 'vitest'
-import { normalizeData } from '../src/storage'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadData, normalizeData, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
+
+// A deterministic in-memory localStorage so the persistence tests don't depend on
+// a DOM environment. setItem can be overridden per-test to simulate quota errors.
+class MemoryStorage {
+  private store = new Map<string, string>()
+  get length() { return this.store.size }
+  clear() { this.store.clear() }
+  getItem(key: string) { return this.store.has(key) ? this.store.get(key)! : null }
+  setItem(key: string, value: string) { this.store.set(key, String(value)) }
+  removeItem(key: string) { this.store.delete(key) }
+  key(index: number) { return [...this.store.keys()][index] ?? null }
+}
 
 describe('workspace storage migration', () => {
   it('stamps normalized data with the current schema version', () => {
@@ -105,5 +117,30 @@ describe('workspace storage migration', () => {
     expect(normalized.boards[0]?.strips).toHaveLength(1)
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toBeDefined()
     expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
+  })
+})
+
+describe('saveData / loadData persistence', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', new MemoryStorage())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('round-trips data through localStorage and reports success (C4)', () => {
+    const data = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
+    expect(saveData(data)).toBe(true)
+    expect(loadData().schemaVersion).toBe(data.schemaVersion)
+  })
+
+  it('returns false instead of throwing when the storage write is rejected (C4)', () => {
+    const data = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+    expect(() => saveData(data)).not.toThrow()
+    expect(saveData(data)).toBe(false)
   })
 })

@@ -132,8 +132,16 @@ function signedFinite(value: unknown, fallback: number): number {
 
 function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
 
-export function saveData(data: AtlasData) {
-  localStorage.setItem(KEY, JSON.stringify(data))
+// Returns whether the write succeeded. localStorage.setItem can throw on quota
+// exhaustion (large libraries) or in privacy modes (SecurityError); callers must
+// surface that honestly instead of claiming the work is saved.
+export function saveData(data: AtlasData): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function downloadData(data: AtlasData) {

@@ -1,6 +1,6 @@
 # SawdustAtlas Product Plan
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 ## Purpose
 
@@ -26,7 +26,7 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 
 ## Current Planning Focus
 
-The immediate goal is a **friend beta**: a small group can install SawdustAtlas from Docker Hub, open the starter projects, make a simple board or shop edit, export a backup, and recover that backup without needing developer help. Larger modeling work remains important, but it should not outrank first-run clarity, data safety, and tablet usability for the next pass.
+The immediate goal is a **friend beta**: a small group can install SawdustAtlas from Docker Hub, open the starter projects, make a simple board or shop edit, export a backup, and recover that backup without needing developer help. Larger modeling work remains important, but it should not outrank first-run clarity, data safety, tablet usability, printability, and trustworthy shop math for the next pass. Near-term scope should favor practical woodworking calculations over capture-heavy features such as room scanning or media annotation unless repeated user testing shows those are blocking adoption.
 
 ## Product Principles
 
@@ -110,6 +110,9 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | 🔵 | BOARD-020 | Reusable wafer workflow | Research | Research | Decide whether user-created wafers/source panels should be independent recipes, references to other board projects, or an alternate direct-slice workflow. This should converge with `BOARD-008`. |
 | 🔵 | BOARD-021 | Direct slice creation | Research | Research | Explore an alternate entry point where users create slices directly, including custom cut angles and shapes, then generate the final preview and build plan from those slices. |
 | ⚪ | BOARD-022 | Interactive build instructions | Planned | Later | Provide step-by-step instructions derived from the current design, cuts, wood choices, allowances, and warnings; printable output remains covered by `BOARD-014` and bench/tablet execution by `UX-008`. |
+| ⚪ | BOARD-023 | Rip and stock requirement calculator | Planned | Next | Given finished size, strip widths or strip count, kerf, allowances, and slice plan, calculate the rough rip widths, required source-panel widths, purchased-stock width, and per-species board-foot requirements with explicit assumptions and units. |
+| ⚪ | BOARD-024 | Angle and setup calculator | Planned | Next | Convert between target pattern geometry and shop setup values: trailing angle, effective strip length/width change, angle-induced offset, wedge loss, and related saw-setup numbers. Outputs must stay tied to the same domain assumptions used by board generation. |
+| ⚪ | BOARD-025 | Setup cards and reference outputs | Planned | Next | Generate concise bench-side references for rip widths, angle settings, stop-block lengths, crosscut counts, and allowance assumptions for print and tablet viewing. This complements `BOARD-014` build sheets and should remain readable to non-CAD users. |
 
 
 ### Shared Cut Planner and Stock
@@ -121,7 +124,7 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | ⚪ | CUT-001 | Typed cut-plan domain model | Planned | Next | Represent stock, required parts, quantity, material, grain direction, rotation rules, kerf, trim, defects, and placements. |
 | 🟡 | CUT-002 | Cutting-board generated cut plan | Partial | Next | Board-specific cut plans exist; extract the shared contract so board recipes emit rip and crosscut requirements without duplicate math in the UI. |
 | ⚪ | CUT-003 | Exact 1D optimizer | Planned | Next | Optimize linear rips/crosscuts with measured kerf, trim, quantities, and reusable offcuts; verify every placement. |
-| ⚪ | CUT-004 | 2D sheet/board optimizer | Planned | Later | Use continuous millimeter geometry; honor grain, rotation, kerf, defects, and cutting method constraints. |
+| ⚪ | CUT-004 | 2D sheet-goods optimizer and cutting list | Planned | Next | Generate exact panel layouts and printable cutting lists for plywood and other sheet goods using continuous millimeter geometry. Honor grain, rotation, kerf, trim, sheet sizes, labels, and method constraints; report unusable leftovers and reusable offcuts separately. |
 | ⚪ | CUT-005 | Optimizer result validator | Planned | Next | Independently prove bounds, non-overlap, quantities, kerf spacing, and material balance for every result. |
 | ⚪ | CUT-006 | Multiple optimization goals | Planned | Later | Choose minimum stock, minimum waste, fewest cuts, preferred offcuts, or lower cost; show tradeoffs. |
 | ⚪ | CUT-007 | Cut sequence | Planned | Later | Produce an executable sequence appropriate to rip fence, crosscut sled, track saw, or sheet breakdown. |
@@ -130,6 +133,8 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | ⚪ | CUT-010 | Defects and no-cut zones | Planned | Later | Mark knots, checks, live edge, splits, and reserved grain features on individual stock pieces. |
 | ⚪ | CUT-011 | Printable labels and cut maps | Planned | Later | Print stock IDs, part labels, dimensions, grain arrows, and placement diagrams. printable via label printer or label sheet |
 | 🔵 | CUT-012 | Material-first planning | Research | Research | Explore workflows where the user starts from available stock, offcuts, defects, and shop constraints, then sees feasible board or project options before committing to new material. |
+| ⚪ | CUT-013 | Finished-product cost accounting | Planned | Next | Track purchased-stock cost, consumed-stock cost, reusable-offcut value, discarded-waste value, hardware/labor add-ons, and finished-product cost with explicit definitions so users can see what the project actually cost to build and what assumptions were used. |
+| ⚪ | CUT-014 | Material and cost reconciliation totals | Planned | Next | Every cut plan must show source total, finished-parts total, kerf/trim/waste total, reusable-offcut total, and reconciliation remainder within tolerance. Cost views must likewise reconcile purchased cost, retained offcut value, waste cost, and finished-product cost so estimates can be sanity-checked. |
 
 ### Data, Tablet, and Deployment
 
@@ -212,6 +217,7 @@ Exit criteria: a non-developer friend can install from Docker Hub, open the app,
 - Add rough/finished allowances (`BOARD-012`). _Done._
 - Generate cut list and BOM (`BOARD-013`). _Done._
 - Generate a printable build sheet (`BOARD-014`). _Done._
+- Add practical shop-math helpers for rip sizing, angle setup, and bench-side reference output (`BOARD-023`, `BOARD-024`, `BOARD-025`).
 - Expand golden and property tests for angled and multi-panel designs.
 - Complete touch and accessibility pass for board editing.
 
@@ -221,7 +227,9 @@ Exit criteria: a woodworker can design, validate, save, print, and build an edge
 
 - Implement typed cut-plan model, exact 1D optimizer, and independent validator.
 - Generate cutting-board operations from the board domain engine.
+- Add sheet-goods layout and printable cutting lists (`CUT-004`).
 - Add stock inventory and reusable offcuts.
+- Add finished-product cost accounting and reconciliation totals (`CUT-013`, `CUT-014`).
 - Support measured tool/kerf profiles.
 
 Exit criteria: every generated cut is traceable to a design requirement, fits verified stock, and reconciles material without approximation.
@@ -264,11 +272,14 @@ These items came from the 2026-06-24 comparison pass against cutting-board apps,
 | --- | --- | --- | --- |
 | 1. Warning center + fix links | `UX-006`, `SHOP-007`, `BOARD-007`, `CUT-005` | Keeps geometry, stock, import, storage, and clearance problems visible and correctable instead of scattered across separate screens. | Start with a basic app-wide warning list that links to the project, board input, shop object, or import action that caused each issue. |
 | 2. Stock and offcut inventory | `CUT-008`, `CUT-009`, `CUT-010`, `NOTION-005` | Lets the app answer whether a design can be built from available material, purchased stock, or reusable offcuts. | Define the first stock record shape: species/material, dimensions, quantity, cost, location, moisture, notes, photos, and defect/no-cut zones. |
+| 3. Sheet-goods cutting lists | `CUT-004`, `CUT-005`, `CUT-011` | Many real woodworking jobs start with plywood or MDF, and users expect a panel cut diagram plus a believable list they can take to the saw. | Define the first sheet-goods scope around rectangular parts, grain direction, kerf, trim, sheet sizes, labeled cuts, and validator-backed layout reconciliation. |
+| 4. Cost and waste realism | `CUT-013`, `CUT-014`, `BOARD-013` | Woodworkers need to know whether the finished product price, scrap, and leftovers make sense, not just the nominal board-foot total. | Add a shared accounting vocabulary for purchased stock, consumed stock, reusable offcuts, discarded waste, finished-part value, and tolerance-based reconciliation. |
 | 5. Shop layout precision tools | `SHOP-006`, `SHOP-012`, `SHOP-013` | Makes the workshop planner usable for real equipment placement, not just approximate visual arrangement. | Add grid snap, nudge, coordinate entry, dimension lines, annotations, and print/export acceptance criteria before expanding room geometry. |
 | 6. Clearance and collision intelligence | `SHOP-004`, `SHOP-007`, `SHOP-010`, `SHOP-011` | SawdustAtlas can beat generic room planners by modeling machine envelopes, infeed/outfeed, operator zones, utility conflicts, and workflow paths. | Separate physical overlap warnings from working-zone warnings, then identify the conflicting objects and clearance type. |
 | 7. Board assembly recipes | `BOARD-008`, `BOARD-015`, `BOARD-020`, `BOARD-021` | Unlocks true brick-and-mortar, basket weave, borders, wafers, separators, and other patterns that a single source panel cannot represent. | Decide whether source panels/wafers are independent recipes, references to other board projects, or both. |
 | 8. Tablet build mode | `BOARD-022`, `UX-001`, `UX-002`, `UX-008` | Turns a finished design into a bench-side execution workflow with fewer measurement mistakes and less paper shuffling. | Prototype a read-only build checklist view with large measurements, current operation, warning callouts, and completion state. |
 | 9. Material-first design | `CUT-008`, `CUT-009`, `CUT-010`, `CUT-012` | Supports the woodworker who starts with actual stock or scrap and wants feasible designs, not only a shopping list for ideal material. | Research a stock-first flow that filters or adapts board/project options based on selected inventory and defects; keep XR/AR optional and later. |
+| 10. Practical board math and setup helpers | `BOARD-023`, `BOARD-024`, `BOARD-025` | Gives woodworkers the exact rip widths, angle numbers, and setup references they still often compute on paper, which is a better near-term fit than capture/documentation-heavy features. | Define the first calculator set around finished-to-rough conversion, kerf-aware rip sizing, angle/offset conversion, and a simple printable setup card. |
 
 ## Review Follow-Ups
 
@@ -288,6 +299,20 @@ These recommendations came from the 2026-06-24 end-of-develop review pass. They 
 | Print/export QA | Next | Add golden manual checks for build sheets and shop plans. | Printed output is part of the "take it to the bench" promise. | Maintain a short checklist for print preview: assumptions visible, dimensions legible, warnings included, app chrome hidden, and scale statement present. |
 | Release confidence | Later | Add a friend-beta release checklist separate from feature DoD. | Release readiness includes install, backup, docs, and recovery, not only code correctness. | Create a checklist covering Docker Hub pull, local run, tablet access, starter project edit, export/import restore, and issue-report instructions. |
 
+## User-Reported Issues and Requests
+
+These came from direct user feedback on 2026-06-25. They are logged here for triage only. No fix or scope commitment is implied by this section.
+
+| Type | Area | Report | Likely plan home / note |
+| --- | --- | --- | --- |
+| Bug | Navigation / app shell | If the left nav is collapsed, the ruler in the icon jumps upward. | UI polish; likely app-shell/nav alignment issue. |
+| UX issue | Workshop layout | Room size control was found, but too late: when `New` is selected, workshop dimensions should be the first thing shown instead of living at the bottom of a long scroll. | `SHOP-001`, `UX-004`, `UX-006`; primarily a control-ordering and discoverability problem for first-time layout setup. |
+| Feature | Material/library metadata | Add an `available at` field for stores/vendors. | Likely `BOARD-010` and later `CUT-008`; could hold preferred store, SKU, aisle, or supplier note. |
+| Feature | Cutting board preview controls | In the expanded preview under the 90-degree turn, allow slice rotation there too, not only on the finished board. | `BOARD-003`, `BOARD-004`; interaction expansion in the staged workflow. |
+| Bug | End-grain randomize | In the end-grain cutting board flow, `Randomize` can produce results that feel excessively chaotic. | Likely `BOARD-002` / arrangement logic; needs a reproducible definition of acceptable randomization. |
+| UX confusion | Cutting board arrangement tools | User does not understand what `Gradient` is trying to do. | Naming, affordance, preview, or docs problem; likely `UX-004` plus board-arrangement UX cleanup. |
+| Bug | Navigation / app shell | The top-left icon should always take the user home. | App-shell navigation behavior; should be verified against current route behavior and expectations. |
+
 ## Near-Term Ordered Backlog
 
 1. Friend-beta smoke test: Docker Hub install, starter shop, starter board, tablet landscape, export backup, import backup in a second browser.
@@ -295,11 +320,13 @@ These recommendations came from the 2026-06-24 end-of-develop review pass. They 
 3. `UX-002`, `PLAT-008`: touch and keyboard pass for board editing, slice controls, shop object movement, and visible focus.
 4. `UX-004`, `UX-005`: first-run guidance for units, browser-local saving, backups, kerf, and allowances.
 5. `UX-006`: basic warning center for geometry, import, storage, and backup issues.
-6. `BOARD-008`: support composable board assemblies with source panels, reusable wafers, separators, and final glue-up recipes.
-7. `CUT-001`, `CUT-002`, `CUT-008`, `CUT-009`: establish shared cut-plan types, move cutting-board operations toward that contract, and define stock/offcut inventory records.
-8. `CUT-003`, `CUT-005`: exact 1D optimizer plus independent validator.
-9. `DATA-005`, `DATA-007`, `DATA-008`: shared LAN persistence, private HTTPS, and automated backups.
-10. `SHOP-006`, `SHOP-007`, `SHOP-012`, `SHOP-013`: precision placement, collision warnings, annotations, and printable shop plans.
+6. `BOARD-023`, `BOARD-024`, `BOARD-025`: add rip sizing, angle/setup calculators, and bench-side reference outputs that reuse the same domain math as the board designer.
+7. `BOARD-008`: support composable board assemblies with source panels, reusable wafers, separators, and final glue-up recipes.
+8. `CUT-001`, `CUT-002`, `CUT-008`, `CUT-009`: establish shared cut-plan types, move cutting-board operations toward that contract, and define stock/offcut inventory records.
+9. `CUT-003`, `CUT-005`, `CUT-013`, `CUT-014`: exact 1D optimizer, validator, and explicit material/cost reconciliation totals for believable estimates.
+10. `CUT-004`, `CUT-011`: add sheet-goods layouts, cutting lists, and printable cut maps for plywood and similar materials.
+11. `DATA-005`, `DATA-007`, `DATA-008`: shared LAN persistence, private HTTPS, and automated backups.
+12. `SHOP-006`, `SHOP-007`, `SHOP-012`, `SHOP-013`: precision placement, collision warnings, annotations, and printable shop plans.
 
 ## Open Decisions
 
@@ -308,6 +335,7 @@ These recommendations came from the 2026-06-24 end-of-develop review pass. They 
 - Should source panels/wafers be independent recipes, reusable references to other board projects, or both?
 - Which rough-stock allowances should have defaults, and which must always be explicitly entered?
 - Should stock inventory track individual physical boards, pooled quantities, or both?
+- How should reusable offcuts affect project cost views: subtract immediately from waste, remain neutral until reused, or support both accounting modes?
 - Which cut method constraints are required first: table-saw rip/crosscut, miter saw, bandsaw, or sheet-goods breakdown?
 - Is a Tailscale-based private HTTPS setup acceptable for tablet installation, or is fully local certificate management required?
 - Docker Hub release cadence is branch-gated: `develop` runs validation and local Docker builds only; `main` pushes publish `latest`, `main`, and `sha-...` tags. Decide later whether named immutable version tags should be added on top of this.

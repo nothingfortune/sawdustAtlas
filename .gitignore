@@ -8,4 +8,5 @@ vite.config.d.ts
 coverage/
 test-results/
 .claude/settings.local.json
-.claude/skills/
+.claude/*
+.agents/

@@ -85,16 +85,16 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **CI1** | ☐ | No standalone type-check; types only checked inside `pnpm build`. | `package.json`, `.github/workflows/ci.yml` | Add `"typecheck": "tsc -b"` script + a CI step. |
-| **CI2** | ☐ | No coverage gate (`vitest run` has no `--coverage`/threshold). | `package.json`, `vite.config.ts`, ci | Add coverage config + a `test:coverage` script; surface in CI. |
-| **CI3** | ☐ | `docker-verify` builds + CVE-scans the image but never **runs** it to confirm nginx serves `/` and a deep link. | `.github/workflows/ci.yml` | Add a step: run the image, `curl` `/` and a deep route (SPA fallback). |
-| **CI4** | ☐ | Redundant `corepack enable` inside the "Activate pnpm" step (already enabled before `setup-node`). | `.github/workflows/ci.yml:43-46` | Drop the duplicate. |
-| **CI5** | ☐ | `docker-publish` requests `id-token: write` but auths to Docker Hub with username/password. | `.github/workflows/ci.yml:104` | Confirm attestation need; drop if unused (least privilege). |
-| **CI6** | ☐ | Docker Scout scans are advisory (`continue-on-error`, no comment, no gate). | `.github/workflows/ci.yml` | Decide consciously: keep advisory or gate criticals. (Doc the decision.) |
-| **SEC1** | ☐ | nginx serves no security headers. | `nginx.conf` | Add `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `X-Frame-Options: DENY`, a basic CSP. |
-| **SEC2** | ☐ | No `gzip` — JS/CSS ship uncompressed. | `nginx.conf` | Enable `gzip` for text/JS/CSS/SVG/manifest. |
-| **SEC3** | ☐ | Container runs as root. | `Dockerfile` | Consider `nginxinc/nginx-unprivileged`. |
-| **SEC4** | ☐ | Base images pinned by tag, not digest. | `Dockerfile` | Pin `node`/`nginx` by digest (Dependabot can bump). |
+| **CI1** | ☑ | (`60abe3b`) Added `"typecheck": "tsc -b"` script + a CI Type-check step for fast feedback. | `package.json`, `ci.yml` | Done. |
+| **CI2** | ☑ | (`60abe3b`) Added `test:coverage` + a v8 coverage gate on the domain/storage layer (lines 88 / stmts 85 / fns 82 / branches 70 — floors just below current); CI runs it. | `package.json`, `vite.config.ts`, `ci.yml` | Done. |
+| **CI3** | ☑ | (`60abe3b`) `docker-verify` now starts the image and curls `/` + a deep link (SPA fallback) and asserts the security headers ship. **Note:** could not run locally — the sandbox blocks base-image pulls; validated by review + runs on GitHub runners. | `ci.yml` | Done (verified on CI). |
+| **CI4** | ☑ | (`60abe3b`) Dropped the redundant second `corepack enable`. | `ci.yml` | Done. |
+| **CI5** | ⊘ | `docker-publish` requests `id-token: write`. **Deferred:** `provenance`/`sbom` attestation may legitimately need it; can't confirm without a real publish run (publish only fires on push to `main`). Left as-is; verify against an actual publish, then drop if unused. | `ci.yml` | Needs a live publish run to confirm. |
+| **CI6** | ☑ | Docker Scout advisory-only. **Decision:** keep advisory for this hobby/noncommercial project — Scout output informs without blocking releases. Documented here rather than changed. | `ci.yml` | Decided: keep advisory. |
+| **SEC1** | ☑ | (`c21604a`) Added X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and a CSP (allowlisting the Google Fonts the app @imports). | `nginx.conf` | Done. |
+| **SEC2** | ☑ | (`c21604a`) Enabled gzip for text/JS/CSS/SVG/manifest. | `nginx.conf` | Done. |
+| **SEC3** | ⊘ | Container runs as root. **Deferred:** `nginx-unprivileged` listens on 8080, rippling to `nginx.conf` listen, Dockerfile `EXPOSE`/healthcheck, `compose.yaml`, and the install docs' `-p` mapping; wants its own change so the port story stays consistent. | `Dockerfile` | Deferred (port ripple). |
+| **SEC4** | ⊘ | Base images pinned by tag, not digest. **Deferred:** low value here — Dependabot's docker ecosystem already bumps tags weekly; digest pinning adds churn without a clear threat-model win for this project. | `Dockerfile` | Deferred. |
 | **SEC5** | ☐ | Import path under-validates: `JSON.parse(...) as AtlasData` + `normalizeData` spreads `...data`, preserving arbitrary keys from untrusted localStorage/import. | `src/App.tsx`, `src/storage.ts:19,32` | Return an explicit known-key object; guard `isRecord(parsed)` before normalizing. |
 
 ---
@@ -165,3 +165,4 @@
 | 2026-06-24 | P0 C1–C5 fixed test-first (`9c798de`,`6b3df17`,`2a4f1a9`,`8bc115f`,`ed2cb7a`); TEST6 + storage persistence coverage added; suite 67→76 green. |
 | 2026-06-24 | Dead code removed (`555eadc`); repo hygiene + ignore rules (`8ffeb4a`); Node 24 reconcile (`fa7fe7c`); deps pinned off "latest" (`5d56f68`). |
 | 2026-06-24 | Perf: memoized BoardDesigner pipeline (`13b583b`) and de-duped cut-plan recomputation (`ec699e5`); P3/P4 deferred with rationale. |
+| 2026-06-24 | nginx security headers + gzip (`c21604a`); CI type-check, coverage gate, container smoke test, corepack cleanup (`60abe3b`); CI5/CI6/SEC3/SEC4 deferred/decided. |

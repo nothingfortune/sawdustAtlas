@@ -6,16 +6,13 @@ interface Props {
   onAdd: () => void
   onUpdate: (id: string, patch: Partial<WoodSpecies>) => void
   onDelete: (id: string) => void
-  onUse?: (id: string) => void
 }
 
-export function WoodLibraryEditor({ woods, onAdd, onUpdate, onDelete, onUse }: Props) {
+export function WoodLibraryEditor({ woods, onAdd, onUpdate, onDelete }: Props) {
   return <div className="wood-library-editor">
     <div className="panel-title-row"><div><h3>Species</h3><p>Custom species are saved in this workspace.</p></div><button className="icon-button" onClick={onAdd} aria-label="Add custom wood"><Plus/></button></div>
     <div className="wood-editor-list">{woods.map(wood => <div className="wood-editor-row" key={wood.id}>
-      {onUse
-        ? <button className="wood-use" onClick={() => onUse(wood.id)} title="Add this wood as a strip" aria-label={`Add ${wood.name} strip`}><i style={{ background: wood.color }}/><Plus/></button>
-        : <span className="wood-use static"><i style={{ background: wood.color }}/></span>}
+      <span className="wood-use static"><i style={{ background: wood.color }}/></span>
       <input aria-label="Wood name" value={wood.name} onChange={event => onUpdate(wood.id, { name: event.target.value })}/>
       <label title="Base color"><input type="color" aria-label={`${wood.name} base color`} value={wood.color} onChange={event => onUpdate(wood.id, { color: event.target.value })}/></label>
       <label title="Grain accent"><input type="color" aria-label={`${wood.name} grain color`} value={wood.accent} onChange={event => onUpdate(wood.id, { accent: event.target.value })}/></label>

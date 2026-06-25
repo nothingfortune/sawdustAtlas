@@ -1,4 +1,5 @@
 import type { BuildAllowances } from '../types'
+import { NumberField as Field } from './fields'
 
 interface Props {
   allowances: BuildAllowances
@@ -17,8 +18,4 @@ export function MillingAllowances({ allowances, onChange }: Props) {
       <div className="field-row"><Field label="Length trim (mm)" value={allowances.lengthTrim} onChange={value => onChange({ lengthTrim: value })}/><Field label="Width trim (mm)" value={allowances.widthTrim} onChange={value => onChange({ widthTrim: value })}/></div>
     </div>
   </div>
-}
-
-function Field({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (value: number) => void }) {
-  return <label className="field"><span>{label}</span><input type="number" min="0" step={step} value={value} onChange={event => onChange(Number(event.target.value))}/></label>
 }

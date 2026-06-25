@@ -51,16 +51,14 @@ export function moveSlice(states: readonly SliceState[], from: number, to: numbe
   return source
 }
 
-// Apply an explicit ordering of original slice indices (the order the UI drags
-// into). Unknown or out-of-range indices are dropped rather than trusted.
+// Apply an explicit ordering of current slice positions (the order the UI drags
+// into). The order is normalized to a full permutation of 0..count-1 first:
+// unknown/out-of-range and duplicate indices are dropped and any positions the
+// order omits are backfilled, so the parallel transform arrays never desync from
+// the slice count.
 export function applySliceOrder(settings: EndGrainSettings, count: number, order: readonly number[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets' | 'rowOrder'> {
-  const length = Math.max(0, Math.trunc(count))
-  const states = readSliceStates(settings, length)
-  // Normalize the requested order into a true permutation of 0..length-1 —
-  // dropping out-of-range/duplicate indices and back-filling any omitted ones —
-  // so a malformed order (e.g. [0,0,1]) can never persist duplicated or missing
-  // slices and desync the parallel rowFlips/rowRotations/rowOffsets/rowOrder.
-  const reordered = normalizeOrder(order, length)
+  const states = readSliceStates(settings, count)
+  const reordered = normalizeOrder(order, states.length)
     .map(index => states[index])
     .filter((state): state is SliceState => !!state)
   return writeSliceStates(reordered)

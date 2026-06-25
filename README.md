@@ -81,6 +81,7 @@ pnpm dev
 - Per-strip trailing angles, independent slice rotation and flipping, angle-aware dimensions, and species-level stock and waste totals
 - Generated rough-stock list, machine cuts, saw-pass counts, and ordered build sequence
 - Browser autosave plus JSON import and export
+- Installable, offline-capable PWA (web app manifest plus a service worker that caches the app shell)
 - Domain models separated from the UI so additional woodworking designers and storage adapters can be added cleanly
 
 ## Accuracy policy

@@ -88,6 +88,15 @@ describe('applySliceOrder', () => {
     expect(result.rowOrder).toEqual([1, 0])
   })
 
+  it('dedupes and backfills a malformed order into a full permutation (C5)', () => {
+    const input = settings({ rowRotations: [true, false, false], rowFlips: [false, true, false], rowOffsets: [1, 2, 3] })
+    const result = applySliceOrder(input, 3, [0, 0, 1])
+    expect([...(result.rowOrder ?? [])].sort((a, b) => a - b)).toEqual([0, 1, 2])
+    expect(result.rowRotations).toHaveLength(3)
+    expect(result.rowFlips).toHaveLength(3)
+    expect(result.rowOffsets).toHaveLength(3)
+  })
+
   it('round-trips through read/write when the order is identity', () => {
     const input = settings({ rowRotations: [false, true], rowFlips: [true, false], rowOffsets: [7, 8] })
     const states = readSliceStates(input, 2)

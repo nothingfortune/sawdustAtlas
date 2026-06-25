@@ -13,15 +13,29 @@ self.addEventListener('activate', event => {
   self.clients.claim()
 })
 
+function networkFirst(request) {
+  return fetch(request)
+    .then(response => {
+      const copy = response.clone()
+      caches.open(CACHE).then(cache => cache.put(request, copy))
+      return response
+    })
+    .catch(() => caches.match(request).then(cached => cached || caches.match('/')))
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then(cached => cached || fetch(request).then(response => {
+    const copy = response.clone()
+    caches.open(CACHE).then(cache => cache.put(request, copy))
+    return response
+  }))
+}
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone()
-        caches.open(CACHE).then(cache => cache.put(event.request, copy))
-        return response
-      })
-      .catch(() => caches.match(event.request).then(cached => cached || caches.match('/')))
-  )
+  const path = new URL(event.request.url).pathname
+  // Build assets are content-hashed and immutable, so serve them from cache first
+  // (instant, offline) and only hit the network on a miss. Everything else stays
+  // network-first so HTML, the manifest, and the service worker pick up updates.
+  event.respondWith(path.startsWith('/assets/') ? cacheFirst(event.request) : networkFirst(event.request))
 })

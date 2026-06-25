@@ -43,9 +43,8 @@ describe('end-grain crosscut geometry', () => {
     const project = makeProject()
     project.endGrain.sourceLength = 95.999
     const metrics = calculateEndGrainMetrics(project)
+    // A third slice would need 3*30 + 2*3 = 96 mm, just over the 95.999 mm stock.
     expect(metrics.sliceCount).toBe(2)
-    expect(2 * 30 + 3).toBeLessThanOrEqual(95.999)
-    expect(3 * 30 + 2 * 3).toBeGreaterThan(95.999)
   })
 
   it('reserves a final kerf when an offcut must be separated', () => {
@@ -97,6 +96,31 @@ describe('angled strip geometry', () => {
     project.endGrain.stockThickness = 20
     expect(buildEndGrainTemplate(project).errors).toHaveLength(1)
   })
+
+  it('reports only the real crossing error, not a spurious conservation failure (C2)', () => {
+    const project = makeProject({}, [{ id: 'a', speciesId: 'walnut', width: 10, trailingAngle: -45 }])
+    project.endGrain.stockThickness = 20
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.errors.some(error => error.includes('closes or crosses'))).toBe(true)
+    expect(metrics.errors.some(error => error.toLowerCase().includes('conservation'))).toBe(false)
+  })
+
+  it('conserves volume for valid angled designs (C2 / TEST6)', () => {
+    for (let index = 1; index <= 120; index += 1) {
+      const angle = (index % 2 ? 1 : -1) * (5 + index % 35)
+      const project = makeProject({}, [
+        { id: 'a', speciesId: 'walnut', width: 40 + index % 30, trailingAngle: angle },
+        { id: 'b', speciesId: 'maple', width: 40 + index % 30, trailingAngle: -angle },
+      ])
+      project.endGrain.sourceLength = 200 + index * 2.9
+      project.endGrain.stockThickness = 18 + index % 22
+      project.endGrain.sliceThickness = 9 + index % 31
+      project.endGrain.kerf = (index % 7) * 0.5
+      const metrics = calculateEndGrainMetrics(project)
+      expect(metrics.errors).toEqual([])
+      expect(metrics.sourceBoardFeet).toBeCloseTo(metrics.finishedBoardFeet + metrics.totalWasteBoardFeet, 9)
+    }
+  })
 })
 
 describe('material accounting', () => {
@@ -109,6 +133,18 @@ describe('material accounting', () => {
     const usage = calculateWoodUsage(project, woods, metrics)
     expect(usage.reduce((sum, item) => sum + item.requiredBoardFeet, 0)).toBeCloseTo(metrics.sourceBoardFeet, 10)
     expect(usage.reduce((sum, item) => sum + item.wasteBoardFeet, 0)).toBeCloseTo(metrics.totalWasteBoardFeet, 10)
+  })
+
+  it('splits usage per species and skips strips whose wood is absent from the library', () => {
+    const project = makeProject({}, [
+      { id: 'a', speciesId: 'walnut', width: 50, trailingAngle: 0 },
+      { id: 'b', speciesId: 'ghost', width: 50, trailingAngle: 0 },
+    ])
+    const metrics = calculateEndGrainMetrics(project)
+    const usage = calculateWoodUsage(project, woods, metrics)
+    expect(usage.map(item => item.speciesId)).toEqual(['walnut'])
+    expect(usage[0]!.requiredBoardFeet).toBeGreaterThan(0)
+    expect(usage[0]!.usedBoardFeet).toBeCloseTo(Math.max(0, usage[0]!.requiredBoardFeet - usage[0]!.wasteBoardFeet), 10)
   })
 
   it('conserves volume over a broad set of rectangular designs', () => {

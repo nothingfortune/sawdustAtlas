@@ -61,4 +61,28 @@ describe('cutting-board stock plan', () => {
     const project = makeProject('end', [{ id: 'a', speciesId: 'walnut', width: 50, trailingAngle: 45 }])
     expect(generateCuttingBoardPlan(project, woods).warnings.some(warning => warning.includes('side squaring'))).toBe(true)
   })
+
+  it('reconciles end-grain BOM stock board-feet with rough board feet for angled strips (H7)', () => {
+    const project = makeProject('end', [
+      { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 15 },
+      { id: 'b', speciesId: 'maple', width: 35, trailingAngle: -10 },
+    ])
+    const plan = generateCuttingBoardPlan(project, woods)
+    const bomBoardFeet = plan.stock.reduce((sum, row) => sum + row.boardFeet, 0)
+    // The rough-stock width (incl. angle shift) is counted once per output and the
+    // two outputs agree — i.e. the angle shift is not double-counted.
+    expect(bomBoardFeet).toBeCloseTo(calculateBuildDimensions(project).roughBoardFeet, 9)
+  })
+
+  it('falls back to default allowances when a board has none (C3)', () => {
+    const project = makeProject('edge', [
+      { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 0 },
+      { id: 'b', speciesId: 'maple', width: 20, trailingAngle: 0 },
+    ])
+    delete (project as { allowances?: unknown }).allowances
+    const plan = generateCuttingBoardPlan(project, woods)
+    expect(plan.cuts.map(cut => cut.note).join(' ')).not.toMatch(/NaN/)
+    expect(plan.cuts.find(cut => cut.id === 'trim-length')?.note).toContain('12')
+    expect(plan.summary.crosscutPasses).toBe(2)
+  })
 })

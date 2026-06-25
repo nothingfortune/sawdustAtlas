@@ -10,7 +10,9 @@ export const CURRENT_SCHEMA_VERSION = 1
 export function loadData(): AtlasData {
   try {
     const saved = localStorage.getItem(KEY)
-    return saved ? normalizeData(JSON.parse(saved) as AtlasData) : starterData
+    if (!saved) return starterData
+    const parsed: unknown = JSON.parse(saved)
+    return isRecord(parsed) ? normalizeData(parsed) : starterData
   } catch {
     return starterData
   }
@@ -46,7 +48,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
         id: stringValue(strip['id'], createId()),
         speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
         width: finiteNumber(strip['width'], 38),
-        trailingAngle: clampedAngle(strip['trailingAngle'], 0),
+        trailingAngle: signedFinite(strip['trailingAngle'], 0),
       })),
       endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
     })),
@@ -74,7 +76,7 @@ function normalizeEndGrain(value: unknown, stockThickness: number): EndGrainSett
     trimAllowance: finiteNumber(saved['trimAllowance'], 20),
     rowFlips: Array.isArray(saved['rowFlips']) ? saved['rowFlips'].map(Boolean) : [],
     rowRotations: Array.isArray(saved['rowRotations']) ? saved['rowRotations'].map(Boolean) : [],
-    rowOffsets: Array.isArray(saved['rowOffsets']) ? saved['rowOffsets'].map(value => finiteNumber(value, 0)) : [],
+    rowOffsets: Array.isArray(saved['rowOffsets']) ? saved['rowOffsets'].map(value => signedFinite(value, 0)) : [],
     rowOrder: Array.isArray(saved['rowOrder']) ? saved['rowOrder'].map(value => Math.trunc(finiteNumber(value, 0))) : [],
   }
 }
@@ -118,22 +120,22 @@ function stringValue(value: unknown, fallback: string): string {
   return typeof value === 'string' && value.trim() ? value : fallback
 }
 
+// For true dimensions (widths, lengths, thicknesses) that can never be negative.
 function finiteNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
 }
 
-// Trailing bevel angle keeps its sign (negative angles drive chevron/herringbone
-// layouts) — only clamp to the geometry's ±89° limit. finiteNumber would floor
-// it to 0 and silently destroy angled designs on every load/export.
-function clampedAngle(value: unknown, fallback: number): number {
-  const angle = typeof value === 'number' && Number.isFinite(value) ? value : fallback
-  return Math.min(89, Math.max(-89, angle))
+// For signed quantities (trailing angles, row offsets) where a negative value is
+// meaningful and load-bearing — chevron/herringbone/mirrored bevels rely on it.
+function signedFinite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
 function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }
 
-// Returns false when the write fails (quota exceeded, private-mode, etc.) so the
-// UI can tell the user their work isn't being saved instead of silently lying.
+// Returns whether the write succeeded. localStorage.setItem can throw on quota
+// exhaustion (large libraries) or in privacy modes (SecurityError); callers must
+// surface that honestly instead of claiming the work is saved.
 export function saveData(data: AtlasData): boolean {
   try {
     localStorage.setItem(KEY, JSON.stringify(data))
@@ -141,6 +143,29 @@ export function saveData(data: AtlasData): boolean {
   } catch {
     return false
   }
+}
+
+const PRE_IMPORT_KEY = 'sawdust-atlas:pre-import'
+
+// Best-effort snapshot of the workspace taken immediately before an import
+// replaces it, under a separate key so it survives a reload and stays recoverable.
+export function savePreImportSnapshot(data: AtlasData): void {
+  try { localStorage.setItem(PRE_IMPORT_KEY, JSON.stringify(data)) } catch { /* best effort; non-fatal */ }
+}
+
+export function loadPreImportSnapshot(): AtlasData | null {
+  try {
+    const saved = localStorage.getItem(PRE_IMPORT_KEY)
+    if (!saved) return null
+    const parsed: unknown = JSON.parse(saved)
+    return isRecord(parsed) ? normalizeData(parsed) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearPreImportSnapshot(): void {
+  try { localStorage.removeItem(PRE_IMPORT_KEY) } catch { /* best effort; non-fatal */ }
 }
 
 export function downloadData(data: AtlasData) {

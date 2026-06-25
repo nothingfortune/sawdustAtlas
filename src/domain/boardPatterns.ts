@@ -21,6 +21,11 @@ interface PatternContext {
   createId: () => string
 }
 
+// Width of each generated preset strip. Bond offsets below are derived from this
+// (half-cell, third-cell, …) rather than hard-coded, so they stay correct if the
+// preset strip width ever changes. See docs/plans/BRICK_PATTERN_CORRECTION.md.
+const PRESET_STRIP_WIDTH = 40
+
 export const BOARD_PATTERNS = [
   define('stripe', 'Stripe', 'Straight repeating color bands.', context => result(context, stripes(context))),
   define('checker', 'Checkerboard', 'Alternating square end-grain cells.', context => {
@@ -28,17 +33,17 @@ export const BOARD_PATTERNS = [
     return result(context, stripes(context), { rowFlips: alternate, rowRotations: alternate })
   }),
   define('brick', 'Running bond', 'Single-panel brick-bond approximation with every other slice offset half a cell.', context => result(context, stripes(context), {
-    rowOffsets: slices(context, index => index % 2 === 1 ? 20 : 0),
+    rowOffsets: slices(context, index => index % 2 === 1 ? PRESET_STRIP_WIDTH / 2 : 0),
   })),
   define('third-bond', 'Third bond', 'Three-step running bond offset.', context => result(context, stripes(context), {
-    rowOffsets: slices(context, index => index % 3 * (40 / 3)),
+    rowOffsets: slices(context, index => index % 3 * (PRESET_STRIP_WIDTH / 3)),
   })),
   define('chevron', 'Chevron', 'Alternating 45-degree strip faces.', context => result(context, stripes(context, 45))),
   define('zigzag', 'Zig-zag', 'Chevron blank with alternating slice direction.', context => result(context, stripes(context, 45), {
     rowRotations: slices(context, index => index % 2 === 1),
   })),
   define('stepped-wave', 'Stepped wave', 'Repeating rise-and-fall offset across slices.', context => {
-    const offsets = [0, 10, 20, 30, 20, 10]
+    const offsets = [0, 0.25, 0.5, 0.75, 0.5, 0.25].map(fraction => fraction * PRESET_STRIP_WIDTH)
     return result(context, stripes(context), { rowOffsets: slices(context, index => offsets[index % offsets.length]!) })
   }),
 ] as const satisfies readonly BoardPatternDefinition[]
@@ -110,7 +115,7 @@ function stripes(context: PatternContext, angle = 0): BoardStrip[] {
   return Array.from({ length: context.stripCount }, (_, index) => ({
     id: context.createId(),
     speciesId: index % 2 ? context.secondaryId : context.primaryId,
-    width: 40,
+    width: PRESET_STRIP_WIDTH,
     trailingAngle: angle ? (index % 2 ? -angle : angle) : 0,
   }))
 }

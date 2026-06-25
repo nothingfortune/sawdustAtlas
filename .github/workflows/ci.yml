@@ -41,18 +41,19 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Activate pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.5.3 --activate
+        run: corepack prepare pnpm@11.5.3 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm typecheck
 
       - name: Lint
         run: pnpm lint
 
       - name: Test
-        run: pnpm test
+        run: pnpm test:coverage
 
       - name: Build
         run: pnpm build
@@ -82,6 +83,25 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke-test the served image
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+        run: |
+          docker run -d --name sawdust-ci -p 8080:80 "$IMAGE_REF"
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then break; fi
+            sleep 1
+          done
+          echo "Root document:"
+          curl -fsS -o /dev/null -w '  HTTP %{http_code}\n' http://127.0.0.1:8080/
+          echo "Deep link (SPA fallback to index.html):"
+          curl -fsS -o /dev/null -w '  HTTP %{http_code}\n' http://127.0.0.1:8080/boards/unknown-id
+          echo "Security headers present:"
+          curl -fsS -D - -o /dev/null http://127.0.0.1:8080/ \
+            | grep -iE 'content-security-policy|x-content-type-options|x-frame-options' \
+            || { echo "expected security headers missing"; docker logs sawdust-ci; docker rm -f sawdust-ci; exit 1; }
+          docker rm -f sawdust-ci
 
       - name: Scan local Docker image
         uses: docker/scout-action@481412c8b8de36d0f79e85aa382c60397466feb6 # v1

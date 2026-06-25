@@ -146,6 +146,12 @@ The build sheet should warn that end grain should not be planed. The generated i
 
 ### Immediate correction
 
+> **Status (2026-06-24): done.** The preset is named **Running bond** and its
+> offset now derives from the preset strip width (`PRESET_STRIP_WIDTH / 2`, with
+> third-bond/stepped-wave derived likewise) in `src/domain/boardPatterns.ts` —
+> no hard-coded `20 mm`. True brick-and-mortar (separate mortar course strips)
+> still depends on composite source panels (BOARD-008); see "Proper correction".
+
 Rename or describe the current `brick` preset as `Running bond` or `Brick bond approximation` until composite source panels exist. It may keep a staggered visual, but it must not claim to produce a true brick-and-mortar build plan.
 
 Also fix the current offset math:

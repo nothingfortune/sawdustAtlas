@@ -1,5 +1,6 @@
 import type { BoardProject, BuildAllowances } from '../types'
-import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
+import { calculateEndGrainMetrics } from './boardGeometry'
+import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
 // Build allowances describe how much oversized rough stock must be relative to the
 // finished board. They are surfacing/trim stock removed to reach finished faces and
@@ -50,6 +51,16 @@ export function resolveAllowances(project: BoardProject): BuildAllowances {
   return { ...DEFAULT_ALLOWANCES, ...project.allowances }
 }
 
+// The rough stock width to rip one first-glue-up strip to, including the extra
+// width an angled end-grain face needs. Shared by the rough-board-feet total and
+// the cut-plan BOM so the angle shift is applied identically (and only once) in
+// both. `stripRoughWidth` already includes the rip/width-trim allowance.
+export function roughStripStockWidth(project: BoardProject, stripRoughWidth: number, trailingAngle: number): number {
+  if (project.construction !== 'end') return stripRoughWidth
+  const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(trailingAngle) * Math.PI / 180)
+  return stripRoughWidth + Math.max(0, angleShift)
+}
+
 export function calculateBuildDimensions(project: BoardProject): BuildDimensions {
   const allowance = resolveAllowances(project)
   const surfacing = nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.routerTable)
@@ -79,8 +90,7 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     const finishedWidth = metrics.finishedWidth
     const finishedThickness = nonNegative(project.endGrain.sliceThickness)
     const roughStockVolume = project.strips.reduce((volume, strip, index) => {
-      const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(strip.trailingAngle) * Math.PI / 180)
-      const stockWidth = (stripRoughWidths[index] ?? 0) + Math.max(0, angleShift)
+      const stockWidth = roughStripStockWidth(project, stripRoughWidths[index] ?? 0, strip.trailingAngle)
       return volume + stockWidth * project.endGrain.sourceLength * project.endGrain.stockThickness
     }, 0)
     const roughBoardFeet = toBoardFeet(roughStockVolume)
@@ -115,8 +125,3 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
     removedBoardFeet: Math.max(0, roughBoardFeet - finishedBoardFeet),
   }
 }
-
-function toBoardFeet(cubicMillimeters: number) { return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT }
-function nonNegative(value: number) { return Number.isFinite(value) ? Math.max(0, value) : 0 }
-function sum(values: readonly number[]) { return values.reduce((total, value) => total + value, 0) }
-function clampAngle(value: number) { return Math.min(Math.max(Number.isFinite(value) ? value : 0, -89), 89) }

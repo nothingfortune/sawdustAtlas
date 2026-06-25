@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../src/domain/boardPatterns'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, evenStripCount, gradientStrips, pickSpeciesPair } from '../src/domain/boardPatterns'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: WoodSpecies[] = [
@@ -13,6 +13,37 @@ const project: BoardProject = {
   endGrain: { sourceLength: 900, stockThickness: 40, sliceThickness: 40, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [] },
   allowances: { jointing: 0, planing: 0, routerTable: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 },
 }
+
+const speciesStrip = (speciesId: string): BoardStrip => ({ id: speciesId, speciesId, width: 40, trailingAngle: 0 })
+const stripsOf = (count: number): BoardStrip[] => Array.from({ length: count }, (_, i) => ({ id: String(i), speciesId: 'walnut', width: 40, trailingAngle: 0 }))
+
+describe('pickSpeciesPair', () => {
+  it('uses the first strip and the next distinct species', () => {
+    expect(pickSpeciesPair({ ...project, strips: [speciesStrip('walnut'), speciesStrip('maple')] }, woods)).toEqual(['walnut', 'maple'])
+  })
+
+  it('falls back to the library first two species when there are no strips', () => {
+    expect(pickSpeciesPair({ ...project, strips: [] }, woods)).toEqual(['walnut', 'maple'])
+  })
+
+  it('repeats the primary when the library has a single species', () => {
+    expect(pickSpeciesPair({ ...project, strips: [] }, [woods[0]!])).toEqual(['walnut', 'walnut'])
+  })
+})
+
+describe('evenStripCount', () => {
+  it('uses a floor of eight strips', () => {
+    expect(evenStripCount({ ...project, strips: stripsOf(3) })).toBe(8)
+  })
+
+  it('rounds an odd count up to the next even number', () => {
+    expect(evenStripCount({ ...project, strips: stripsOf(9) })).toBe(10)
+  })
+
+  it('leaves an even count unchanged', () => {
+    expect(evenStripCount({ ...project, strips: stripsOf(10) })).toBe(10)
+  })
+})
 
 describe('board pattern registry', () => {
   it('keeps ids unique and exposes researched patterns', () => {

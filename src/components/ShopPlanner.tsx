@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, ChevronDown, CircleGauge, Copy, DoorOpen, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ShopProject } from '../types'
 import { createId } from '../id'
+import { NumberField as Field } from './fields'
 import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
 import type { ShopObjectDefinition } from '../domain/shopObjects'
 import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
@@ -23,10 +24,18 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const [selected, setSelected] = useState<string>('')
   const [zoom, setZoom] = useState(.74)
+  // Mirror zoom into a ref so an in-progress drag reads the live value: a pinch
+  // (which updates zoom) during a one-finger object drag must not use a stale zoom.
+  const zoomRef = useRef(zoom)
+  useEffect(() => { zoomRef.current = zoom }, [zoom])
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
   const [customObject, setCustomObject] = useState<ShopObjectDefinition>(DEFAULT_CUSTOM_OBJECT)
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
+  // Clear a stale selection when the active project changes so the inspector
+  // doesn't point at an item from the previous plan (render-time reset pattern).
+  const [lastProjectId, setLastProjectId] = useState(project?.id)
+  if (project?.id !== lastProjectId) { setLastProjectId(project?.id); setSelected('') }
   const item = project?.items.find(i => i.id === selected)
   const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateItem = (id: string, patch: Partial<ShopItem>) => project && update({ items: project.items.map(i => i.id === id ? { ...i, ...patch } : i) })
@@ -36,13 +45,23 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     update({ items: [...project.items, next] }); setSelected(next.id); setLeftOpen(false); setRightOpen(true)
   }
   const remove = () => { if (project && item) { update({ items: project.items.filter(i => i.id !== item.id) }); setSelected('') } }
+  // Keyboard equivalent of select-and-drag for the top-view objects: Enter/Space
+  // selects, arrows nudge (Shift = coarse), clamped to the room like the pointer drag.
+  const onObjectKeyDown = (event: React.KeyboardEvent, target: ShopItem) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelected(target.id); return }
+    const step = event.shiftKey ? 100 : 10
+    const delta: [number, number] | null = event.key === 'ArrowLeft' ? [-step, 0] : event.key === 'ArrowRight' ? [step, 0] : event.key === 'ArrowUp' ? [0, -step] : event.key === 'ArrowDown' ? [0, step] : null
+    if (!delta || !project) return
+    event.preventDefault(); setSelected(target.id)
+    updateItem(target.id, { x: clamp(target.x + delta[0], 0, project.width - target.width), y: clamp(target.y + delta[1], 0, project.depth - target.depth) })
+  }
 
   function beginDrag(event: React.PointerEvent, target: ShopItem) {
     event.currentTarget.setPointerCapture(event.pointerId); setSelected(target.id)
     const start = { x: event.clientX, y: event.clientY, itemX: target.x, itemY: target.y }
-    const move = (e: PointerEvent) => updateItem(target.id, { x: clamp(start.itemX + (e.clientX - start.x) / (SCALE * zoom), 0, (project?.width ?? 0) - target.width), y: clamp(start.itemY + (e.clientY - start.y) / (SCALE * zoom), 0, (project?.depth ?? 0) - target.depth) })
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
+    const move = (e: PointerEvent) => updateItem(target.id, { x: clamp(start.itemX + (e.clientX - start.x) / (SCALE * zoomRef.current), 0, (project?.width ?? 0) - target.width), y: clamp(start.itemY + (e.clientY - start.y) / (SCALE * zoomRef.current), 0, (project?.depth ?? 0) - target.depth) })
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up) }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up)
   }
 
   // Two-finger pinch on the room scales the existing zoom state (so item-drag
@@ -94,7 +113,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
           <div className="room-canvas" onPointerDown={() => setSelected('')} style={{ width: project.width * SCALE, height: project.depth * SCALE, transform: `scale(${zoom})` }}>
             <FeedClearanceLayer project={project}/>
-            {project.items.map(i => <div key={i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
+            {project.items.map(i => <div key={i.id} role="button" tabIndex={0} aria-label={`${i.name}, ${i.width} by ${i.depth} millimetres`} aria-pressed={selected === i.id} className={`shop-object ${selected === i.id ? 'selected' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e, i) }} onKeyDown={e => onObjectKeyDown(e, i)} style={{ left: i.x * SCALE, top: i.y * SCALE, width: i.width * SCALE, height: i.depth * SCALE, transform: `rotate(${i.rotation}deg)`, background: i.color }}>
               {i.clearance > 0 && <span className="clearance" style={{ inset: -i.clearance * SCALE }}/>}<span className="object-name">{i.name}<small>{i.width} × {i.depth} mm</small></span>
             </div>)}
             <span className="dimension width-dimension">{project.width} mm</span><span className="dimension depth-dimension">{project.depth} mm</span>
@@ -118,7 +137,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <button className="button secondary full" onClick={() => { const copy = { ...item, id: createId(), x: item.x + 300, y: item.y + 300 }; update({ items: [...project.items, copy] }); setSelected(copy.id) }}><Copy/>Duplicate object</button>
       </> : <div className="empty-inspector"><CircleGauge/><h3>Select an object</h3><p>Choose an item on the plan to edit its size, rotation, and working clearance.</p></div>}
     </div>
-    {(leftOpen || rightOpen) && <div className="panel-scrim" onClick={() => { setLeftOpen(false); setRightOpen(false) }}/>}
+    {(leftOpen || rightOpen) && <div className="panel-scrim" role="presentation" onClick={() => { setLeftOpen(false); setRightOpen(false) }}/>}
     <div className="shop-fabs"><button className="panel-fab" onClick={() => { setLeftOpen(open => !open); setRightOpen(false) }} aria-label="Toggle objects panel"><Box/>Objects</button><button className="panel-fab" onClick={() => { setRightOpen(open => !open); setLeftOpen(false) }} aria-label="Toggle inspector"><SlidersHorizontal/>Inspector</button></div>
   </div>
 }
@@ -183,6 +202,5 @@ function ObjectIcon({ kind }: { kind: ShopItemKind }) { return kind === 'door' ?
 function TextField({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) { return <label className="field"><span>{label}</span><input value={value} onChange={e => onChange(e.target.value)}/></label> }
 function KindField({ value, onChange }: { value: ShopItemKind, onChange: (value: ShopItemKind) => void }) { return <label className="field"><span>Category</span><select value={value} onChange={e => onChange(e.target.value as ShopItemKind)}>{SHOP_ITEM_KINDS.map(kind => <option value={kind.value} key={kind.value}>{kind.label}</option>)}</select></label> }
 function ColorField({ value, onChange }: { value: string, onChange: (value: string) => void }) { return <label className="field color-field"><span>Color</span><input type="color" value={value} onChange={e => onChange(e.target.value)}/></label> }
-function Field({ label, value, min = 0, onChange }: { label: string, value: number, min?: number, onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min={min} step="1" value={value} onChange={e => onChange(Number(e.target.value))}/></label> }
 function Empty({ title, action }: { title: string, action: () => void }) { return <div className="empty-page"><h2>{title}</h2><button className="button" onClick={action}><Plus/>Create one</button></div> }
 function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max) }

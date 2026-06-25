@@ -1,22 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useElementSize } from './useElementSize'
 
-// Measures an element's content width so the board previews can resolve one
-// shared px-per-mm scale. Returns a ref to attach and the current width in px.
+// Width-only convenience over useElementSize for the board previews, which need
+// one shared px-per-mm scale. Returns a ref to attach and the measured content
+// width in px, falling back to `initial` until the first measurement.
 export function useContainerWidth(initial = 800): [React.RefObject<HTMLDivElement | null>, number] {
-  const ref = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(initial)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-    const observer = new ResizeObserver(entries => {
-      const entry = entries[0]
-      if (entry) setWidth(entry.contentRect.width)
-    })
-    observer.observe(element)
-    setWidth(element.clientWidth || initial)
-    return () => observer.disconnect()
-  }, [initial])
-
-  return [ref, width]
+  const [ref, size] = useElementSize()
+  return [ref, size.width || initial]
 }

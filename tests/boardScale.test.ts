@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { buildTicks, niceTickStep, resolveScale, scaleBarValue } from '../src/domain/boardScale'
+import { buildTicks, fitPxPerMm, niceTickStep, resolveScale, scaleBarValue } from '../src/domain/boardScale'
+
+describe('fitPxPerMm', () => {
+  it('fills the box on the tighter axis, preserving aspect ratio', () => {
+    // 200px box minus 24px default padding = 176 avail; tighter axis is width (176/100).
+    expect(fitPxPerMm(100, 50, 200, 200)).toBeCloseTo(1.76, 5)
+  })
+
+  it('clamps up to the maximum for a small piece in a large box', () => {
+    expect(fitPxPerMm(1, 1, 1000, 1000)).toBe(6)
+  })
+
+  it('clamps down to the minimum for a large piece in a tiny box', () => {
+    expect(fitPxPerMm(10000, 10000, 50, 50)).toBe(0.02)
+  })
+
+  it('returns the clamped fallback for degenerate inputs', () => {
+    expect(fitPxPerMm(0, 50, 200, 200, { fallbackPxPerMm: 2 })).toBe(2)
+    expect(fitPxPerMm(100, 50, 0, 200, { fallbackPxPerMm: 2 })).toBe(2)
+  })
+})
 
 describe('resolveScale', () => {
   it('uses the target scale when the board fits comfortably', () => {

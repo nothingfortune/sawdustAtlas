@@ -1,14 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Ruler, Save, Sparkles, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
-import { loadData, saveData, downloadData, normalizeData } from './storage'
+import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
 import { createId } from './id'
+import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
+import type { History } from './history'
+
+interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
 
 export default function App() {
   const [data, setData] = useState<AtlasData>(loadData)
@@ -16,31 +20,55 @@ export default function App() {
   const [activeShop, setActiveShop] = useState(data.shops[0]?.id ?? '')
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
-  const [undoData, setUndoData] = useState<AtlasData | null>(null)
+  const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
+  // Workspace captured before the last import, recoverable across reloads.
+  const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
-  // Persist on every committed change (the single mutation funnel) and reflect
-  // whether the write actually succeeded, so the topbar can't claim "Saved" when
-  // localStorage is full/unavailable.
-  const persist = (next: AtlasData) => {
-    dataRef.current = next
-    setData(next)
-    setSaveOk(saveData(next))
-  }
+  useEffect(() => {
+    // Autosave is a genuine side effect; surfacing whether the write succeeded is
+    // not derivable during render, so syncing it into state here is intentional.
+    const ok = saveData(data)
+    dataRef.current = data
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaveOk(prev => (prev === ok ? prev : ok))
+  }, [data])
+
   const commitData = (updater: (current: AtlasData) => AtlasData) => {
     const current = dataRef.current
     const next = updater(current)
     if (next === current) return
-    setUndoData(current)
-    persist(next)
+    setHistory(past => record(past, { data: current, activeShop, activeBoard }))
+    dataRef.current = next
+    setData(next)
   }
-  const undoLastChange = () => {
-    if (!undoData) return
-    persist(undoData)
-    setUndoData(null)
+  // Step the undo or redo stack, restoring the data AND the active selection that
+  // was current at that point (so undoing a delete re-selects what came back).
+  const applyHistory = (step: typeof undoHistory) => {
+    const result = step(history, { data: dataRef.current, activeShop, activeBoard })
+    if (!result) return
+    setHistory(result.history)
+    dataRef.current = result.restored.data
+    setData(result.restored.data)
+    setActiveShop(result.restored.activeShop)
+    setActiveBoard(result.restored.activeBoard)
   }
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      event.preventDefault()
+      applyHistory(event.shiftKey ? redoHistory : undoHistory)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // applyHistory is recreated each render from these values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, activeShop, activeBoard])
 
   const updateShop = (project: ShopProject) => commitData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
   const updateBoard = (project: BoardProject) => commitData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
@@ -101,11 +129,22 @@ export default function App() {
       const next = JSON.parse(await file.text()) as AtlasData
       if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
       const normalized = normalizeData(next)
+      const previous = dataRef.current
+      savePreImportSnapshot(previous)
+      setPreImport(previous)
       commitData(() => normalized)
       setActiveShop(normalized.shops[0]?.id ?? '')
       setActiveBoard(normalized.boards[0]?.id ?? '')
       setView('home')
     } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
+  }
+  const restorePreImport = () => {
+    if (!preImport) return
+    commitData(() => preImport)
+    setActiveShop(preImport.shops[0]?.id ?? '')
+    setActiveBoard(preImport.boards[0]?.id ?? '')
+    clearPreImportSnapshot()
+    setPreImport(null)
   }
 
   return <div className="app-shell">
@@ -125,6 +164,7 @@ export default function App() {
         {sidebarOpen && <div className="coming-soon"><Sparkles size={16} /><div><b>Notion sync</b><span>Planned integration</span></div></div>}
         <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
         <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
+        {preImport && <button className="nav-button" aria-label="Restore the workspace from before the last import" onClick={restorePreImport}><Undo2 />{sidebarOpen && <span>Undo import</span>}</button>}
       </div>
     </aside>
     <main>
@@ -133,8 +173,9 @@ export default function App() {
         <div className="topbar-actions">
           {saveOk
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
-            : <div className="save-state error" title="Storage is full or unavailable — your changes are NOT being saved. Export a backup now."><Save size={15} />Not saved — storage full</div>}
-          <button className="backup-button" disabled={!undoData} onClick={undoLastChange} title={undoData ? 'Undo last change' : 'No change to undo'}><Undo2 size={15} />Undo</button>
+            : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
+          <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
+          <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
           <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
         </div>
       </header>

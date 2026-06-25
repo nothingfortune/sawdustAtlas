@@ -1,5 +1,5 @@
 import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
@@ -15,12 +15,15 @@ import { resolveScale, fitPxPerMm } from '../domain/boardScale'
 import { useContainerWidth } from './useContainerWidth'
 import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
+import { useModalDialog } from './useModalDialog'
+import { dropTargetFromX, orderWithKeyAt } from './sliceDrag'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { EndGrainFace } from './board/EndGrainFace'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
+import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 
@@ -32,39 +35,53 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   // Preview lives at the top of the editor panel; collapsible to reclaim panel
   // height when focusing on strip edits.
   const [studioMinimized, setStudioMinimized] = useState(false)
-  const [selectedSlice, setSelectedSlice] = useState(0)
   const [pendingPattern, setPendingPattern] = useState<BoardPatternId | null>(null)
+  // Memoize the full derived domain pipeline so it only recomputes when the project
+  // or wood library actually change — not on every unrelated re-render (panel toggle,
+  // resize, child drag state). Kept above the early return to satisfy hook ordering.
+  const derived = useMemo(() => {
+    if (!project) return null
+    const end = calculateEndGrainMetrics(project)
+    const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
+    const build = calculateBuildDimensions(project)
+    const template = buildEndGrainTemplate(project)
+    const cutPlan = generateCuttingBoardPlan(project, woods)
+    const woodUsage = calculateWoodUsage(project, woods, end)
+    const woodById = new Map(woods.map(wood => [wood.id, wood]))
+    const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
+    const boardFeet = build.roughBoardFeet
+    const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
+    const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
+      const roughWidth = build.stripRoughWidths[index] ?? strip.width
+      const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
+      return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
+    }, 0)
+    const estimatedCost = project.construction === 'end'
+      ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
+      : edgeEstimatedCost
+    return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost }
+  }, [project, woods])
+  // The pattern-preview project (with stable preview-* ids) only needs recomputing
+  // when the pending pattern or inputs change — not on every render while the
+  // dialog is open. Null unless a preview is pending.
+  const previewProject = useMemo(() => {
+    if (!project || !pendingPattern) return null
+    let nextId = 0
+    const sliceCount = calculateEndGrainMetrics(project).sliceCount
+    return { ...project, ...applyBoardPattern(pendingPattern, project, woods, sliceCount, () => `preview-${pendingPattern}-${nextId++}`) }
+  }, [project, woods, pendingPattern])
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
-  const end = calculateEndGrainMetrics(project)
-  const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
-  const selectedSliceIndex = Math.min(Math.max(selectedSlice, 0), Math.max(sliceStates.length - 1, 0))
-  const build = calculateBuildDimensions(project)
-  const finishedSize = `${format(build.length.finished)} x ${format(build.width.finished)} x ${format(build.thickness.finished)} mm`
-  const template = buildEndGrainTemplate(project)
-  const cutPlan = generateCuttingBoardPlan(project, woods)
-  const boardFeet = build.roughBoardFeet
-  const woodUsage = calculateWoodUsage(project, woods, end)
-  const woodById = new Map(woods.map(wood => [wood.id, wood]))
+  const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
     ? Math.max(project.endGrain.sourceLength, end.finalLength, 1)
     : Math.max(project.length, 1)
   const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
-
-  const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
-    const roughWidth = build.stripRoughWidths[index] ?? strip.width
-    const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
-    return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
-  }, 0)
-  const estimatedCost = project.construction === 'end'
-    ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
-    : edgeEstimatedCost
 
   const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
   const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
@@ -78,13 +95,11 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const randomizeArrangement = () => {
     const shuffled = [...project.strips]
     for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
-    update({ strips: shuffled.map(strip => ({ ...strip, id: createId() })) })
+    // Reorder in place: keep each strip's id so StripList rows move rather than
+    // remount (which would drop focus and re-key every row).
+    update({ strips: shuffled })
   }
-  const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null); setSelectedSlice(0) }
-  const previewPattern = (pattern: BoardPatternId) => {
-    let nextId = 0
-    return applyBoardPattern(pattern, project, woods, end.sliceCount, () => `preview-${pattern}-${nextId++}`)
-  }
+  const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
     const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
@@ -130,7 +145,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>
-        <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[selectedSliceIndex]} sliceIndex={selectedSliceIndex} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
+        <PreviewStudio project={project} woods={woods} metrics={end} template={template} edgeWidth={width} sliceState={sliceStates[0]} sliceIndex={0} onToggleRow={cycleRow} onReorder={reorderSlices} minimized={studioMinimized} onMinimize={() => setStudioMinimized(true)} onExpand={() => setStudioMinimized(false)}/>
         <div className="panel-section first">
           <h3>Construction</h3>
           <div className="construction-toggle"><button className={project.construction === 'edge' ? 'active' : ''} onClick={() => update({ construction: 'edge' })}>Edge grain</button><button className={project.construction === 'end' ? 'active' : ''} onClick={() => update({ construction: 'end' })}>End grain</button></div>
@@ -150,13 +165,13 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
         <div className="panel-section milling-hint"><h3>Milling &amp; wood</h3><p>Milling allowances and the wood library are now shared workspace modules — find them in the left sidebar under Library.</p></div>
       </aside>
-      {panelOpen && <div className="panel-scrim" onClick={() => setPanelOpen(false)}/>}
+      {panelOpen && <div className="panel-scrim" role="presentation" onClick={() => setPanelOpen(false)}/>}
       <button className="panel-fab" onClick={() => setPanelOpen(open => !open)} aria-label="Toggle editor panel"><SlidersHorizontal/>Edit</button>
     </div>
     {pendingPattern && <PatternPreviewDialog
       pattern={BOARD_PATTERNS.find(candidate => candidate.id === pendingPattern)}
       current={project}
-      preview={{ ...project, ...previewPattern(pendingPattern) }}
+      preview={previewProject ?? project}
       woods={woods}
       onApply={() => applyPattern(pendingPattern)}
       onDismiss={() => setPendingPattern(null)}
@@ -267,14 +282,10 @@ function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies[]; met
 function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: StudioTab[]; activeId: string; woods: WoodSpecies[]; onSelect: (id: string) => void; onClose: () => void }) {
   const pinch = usePinchPan()
   const active = tabs.find(tab => tab.id === activeId) ?? tabs[0]
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
   if (!active) return null
-  return createPortal(<div className="modal-scrim" role="presentation" onClick={onClose}>
-    <div className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`} onClick={event => event.stopPropagation()}>
+  return createPortal(<div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div ref={dialogRef} tabIndex={-1} className="preview-popout" role="dialog" aria-modal="true" aria-label={`${active.label} preview`}>
       <header>
         <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => onSelect(tab.id)}>{tab.label}</button>)}</div>
         <button className="icon-button" onClick={onClose} aria-label="Close preview"><X/></button>
@@ -291,6 +302,7 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
 }
 
 function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {
+  const dialogRef = useModalDialog<HTMLDivElement>(onDismiss)
   if (!pattern) return null
   const currentMetrics = calculateEndGrainMetrics(current)
   const previewMetrics = calculateEndGrainMetrics(preview)
@@ -299,8 +311,8 @@ function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDis
   const lengthMm = Math.max(currentMetrics.finalLength, previewMetrics.finalLength, 1)
   const widthMm = Math.max(currentMetrics.panelWidth, previewMetrics.panelWidth, 1)
   const { pxPerMm } = resolveScale(lengthMm, 420)
-  return <div className="modal-scrim" role="presentation" onClick={onDismiss}>
-    <div className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`} onClick={event => event.stopPropagation()}>
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onDismiss() }}>
+    <div ref={dialogRef} tabIndex={-1} className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`}>
       <header>
         <div><span className="eyebrow">PATTERN PREVIEW</span><h2>{pattern.name}</h2><p>{pattern.description}</p></div>
         <button className="icon-button" onClick={onDismiss} aria-label="Dismiss pattern preview"><X/></button>
@@ -422,19 +434,6 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
       return { slot: Number(group.getAttribute('data-slot')), mid: rect.left + rect.width / 2, width: rect.width }
     })
   }
-  const targetFromX = (clientX: number) => {
-    let target = 0
-    for (const rect of [...rectsRef.current].sort((a, b) => a.mid - b.mid)) { if (clientX < rect.mid) break; target += 1 }
-    return Math.min(Math.max(target, 0), sliceCount - 1)
-  }
-  const orderWithKeyAt = (key: number, target: number) => {
-    const others = slots.filter(slot => slot !== key)
-    const order: number[] = []
-    let next = 0
-    for (let position = 0; position < sliceCount; position += 1) order.push(position === target ? key : others[next++]!)
-    return order
-  }
-
   const onPointerDown = (event: ReactPointerEvent<SVGGElement>) => {
     const cell = (event.target as Element).closest('[data-slot]')
     if (!cell) return
@@ -449,7 +448,7 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
     const clientX = event.clientX
     // 10px slop so a tap (which jitters on touch) stays a tap and rotates,
     // rather than being read as a drag that just lifts the wafer and does nothing.
-    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 10, target: targetFromX(clientX) })
+    setDrag(current => current && { ...current, dx: clientX - current.startX, moved: current.moved || Math.abs(clientX - current.startX) > 10, target: dropTargetFromX(rectsRef.current.map(rect => rect.mid), clientX) })
   }
   const endDrag = () => {
     // Read drag from state and fire the parent update OUTSIDE setDrag's updater —
@@ -457,7 +456,7 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
     if (drag) {
       // Only reorder if the column actually lands on a different slot; otherwise
       // (a tap, or a drag returned to origin) cycle this wafer's rotate/flip.
-      if (drag.moved && drag.target !== drag.key) onReorder(orderWithKeyAt(drag.key, drag.target))
+      if (drag.moved && drag.target !== drag.key) onReorder(orderWithKeyAt(sliceCount, drag.key, drag.target))
       else onToggleRow(drag.key)
     }
     setDrag(null)
@@ -620,6 +619,5 @@ function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {
   </div>
 }
 
-function Field({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (value: number) => void }) { return <label className="field"><span>{label}</span><input type="number" min="0" step={step} value={value} onChange={event => onChange(Number(event.target.value))}/></label> }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><b>{value}</b></div> }
 function format(value: number) { return Number(value.toFixed(2)).toString() }

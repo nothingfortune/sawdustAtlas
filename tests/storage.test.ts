@@ -1,14 +1,18 @@
-import { describe, expect, it } from 'vitest'
-import { normalizeData, saveData } from '../src/storage'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearPreImportSnapshot, loadData, loadPreImportSnapshot, normalizeData, savePreImportSnapshot, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
-const boardWithAngle = (trailingAngle: number) => ({
-  shops: [],
-  boards: [{
-    id: 'b', name: 'B', length: 400, thickness: 38, construction: 'end', updatedAt: '',
-    strips: [{ id: 's', speciesId: 'walnut', width: 40, trailingAngle }],
-  }],
-}) as unknown as AtlasData
+// A deterministic in-memory localStorage so the persistence tests don't depend on
+// a DOM environment. setItem can be overridden per-test to simulate quota errors.
+class MemoryStorage {
+  private store = new Map<string, string>()
+  get length() { return this.store.size }
+  clear() { this.store.clear() }
+  getItem(key: string) { return this.store.has(key) ? this.store.get(key)! : null }
+  setItem(key: string, value: string) { this.store.set(key, String(value)) }
+  removeItem(key: string) { this.store.delete(key) }
+  key(index: number) { return [...this.store.keys()][index] ?? null }
+}
 
 describe('workspace storage migration', () => {
   it('stamps normalized data with the current schema version', () => {
@@ -50,6 +54,55 @@ describe('workspace storage migration', () => {
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
   })
 
+  it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
+    const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
+    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'schemaVersion', 'shops', 'woods'])
+  })
+
+  it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'Chevron', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [
+          { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 45 },
+          { id: 'b', speciesId: 'maple', width: 40, trailingAngle: -45 },
+        ],
+        allowances: {},
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.strips[0]?.trailingAngle).toBe(45)
+    expect(board.strips[1]?.trailingAngle).toBe(-45)
+  })
+
+  it('preserves negative end-grain row offsets (C1)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'Offsets', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [],
+        endGrain: { stockThickness: 38, rowOffsets: [-10, 0, 12] },
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.endGrain.rowOffsets).toEqual([-10, 0, 12])
+  })
+
+  it('still floors negative dimensions to zero (width/length stay non-negative)', () => {
+    const data = {
+      shops: [],
+      boards: [{
+        id: 'board', name: 'b', length: -400, thickness: 38, construction: 'edge', updatedAt: '',
+        strips: [{ id: 's', speciesId: 'walnut', width: -40, trailingAngle: 0 }],
+        allowances: {},
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.length).toBe(0)
+    expect(board.strips[0]?.width).toBe(0)
+  })
+
   it('repairs malformed nested import records instead of throwing away the backup', () => {
     const legacy = {
       woods: [null, { id: 'walnut', name: 'Walnut', color: 'brown', accent: '#87614a', pricePerBoardFoot: -5 }],
@@ -67,22 +120,60 @@ describe('workspace storage migration', () => {
     expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, items: [] })
     expect(normalized.boards[0]).toMatchObject({ id: 'board', name: 'Imported cutting board', construction: 'end' })
     expect(normalized.boards[0]?.strips).toHaveLength(1)
-    expect(normalized.woods.find(wood => wood.id === 'mystery')).toBeDefined()
+    expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
     expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
-  })
-
-  it('preserves negative strip trailing angles (chevron) instead of zeroing them', () => {
-    expect(normalizeData(boardWithAngle(-30)).boards[0]?.strips[0]?.trailingAngle).toBe(-30)
-  })
-
-  it('clamps trailing angle to the +/-89 limit', () => {
-    expect(normalizeData(boardWithAngle(-200)).boards[0]?.strips[0]?.trailingAngle).toBe(-89)
-    expect(normalizeData(boardWithAngle(200)).boards[0]?.strips[0]?.trailingAngle).toBe(89)
   })
 })
 
-describe('saveData', () => {
-  it('never throws and reports a boolean result even when storage is unavailable', () => {
-    expect(typeof saveData(normalizeData({ shops: [], boards: [] } as unknown as AtlasData))).toBe('boolean')
+describe('saveData / loadData persistence', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', new MemoryStorage())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('round-trips data through localStorage and reports success (C4)', () => {
+    const data = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
+    expect(saveData(data)).toBe(true)
+    expect(loadData().schemaVersion).toBe(data.schemaVersion)
+  })
+
+  it('falls back to starter data when the stored JSON is not an object or is malformed (TEST3)', () => {
+    localStorage.setItem('sawdust-atlas:v1', '"a plain string"')
+    expect(loadData().schemaVersion).toBe(1)
+    localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
+    expect(loadData().woods.length).toBeGreaterThan(0)
+  })
+
+  it('returns false instead of throwing when the storage write is rejected (C4)', () => {
+    const data = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+    expect(() => saveData(data)).not.toThrow()
+    expect(saveData(data)).toBe(false)
+  })
+})
+
+describe('pre-import snapshot (H3)', () => {
+  beforeEach(() => vi.stubGlobal('localStorage', new MemoryStorage()))
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  it('round-trips a pre-import snapshot and clears it', () => {
+    const data = normalizeData({ shops: [], boards: [{ id: 'b', name: 'Keep me', construction: 'edge', strips: [] }] } as unknown as AtlasData)
+    expect(loadPreImportSnapshot()).toBeNull()
+    savePreImportSnapshot(data)
+    expect(loadPreImportSnapshot()?.boards[0]?.name).toBe('Keep me')
+    clearPreImportSnapshot()
+    expect(loadPreImportSnapshot()).toBeNull()
+  })
+
+  it('does not throw when the snapshot write is rejected', () => {
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+    expect(() => savePreImportSnapshot(normalizeData({ shops: [], boards: [] } as unknown as AtlasData))).not.toThrow()
   })
 })

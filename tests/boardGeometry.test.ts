@@ -43,9 +43,8 @@ describe('end-grain crosscut geometry', () => {
     const project = makeProject()
     project.endGrain.sourceLength = 95.999
     const metrics = calculateEndGrainMetrics(project)
+    // A third slice would need 3*30 + 2*3 = 96 mm, just over the 95.999 mm stock.
     expect(metrics.sliceCount).toBe(2)
-    expect(2 * 30 + 3).toBeLessThanOrEqual(95.999)
-    expect(3 * 30 + 2 * 3).toBeGreaterThan(95.999)
   })
 
   it('reserves a final kerf when an offcut must be separated', () => {
@@ -134,6 +133,18 @@ describe('material accounting', () => {
     const usage = calculateWoodUsage(project, woods, metrics)
     expect(usage.reduce((sum, item) => sum + item.requiredBoardFeet, 0)).toBeCloseTo(metrics.sourceBoardFeet, 10)
     expect(usage.reduce((sum, item) => sum + item.wasteBoardFeet, 0)).toBeCloseTo(metrics.totalWasteBoardFeet, 10)
+  })
+
+  it('splits usage per species and skips strips whose wood is absent from the library', () => {
+    const project = makeProject({}, [
+      { id: 'a', speciesId: 'walnut', width: 50, trailingAngle: 0 },
+      { id: 'b', speciesId: 'ghost', width: 50, trailingAngle: 0 },
+    ])
+    const metrics = calculateEndGrainMetrics(project)
+    const usage = calculateWoodUsage(project, woods, metrics)
+    expect(usage.map(item => item.speciesId)).toEqual(['walnut'])
+    expect(usage[0]!.requiredBoardFeet).toBeGreaterThan(0)
+    expect(usage[0]!.usedBoardFeet).toBeCloseTo(Math.max(0, usage[0]!.requiredBoardFeet - usage[0]!.wasteBoardFeet), 10)
   })
 
   it('conserves volume over a broad set of rectangular designs', () => {

@@ -13,7 +13,7 @@ export default defineConfig({
       // Floor on the pure logic layer the test suite actually exercises. UI
       // components are not unit-tested yet (tracked separately); this gate guards
       // the geometry/persistence code where regressions are most costly.
-      thresholds: { lines: 88, functions: 82, branches: 70, statements: 85 },
+      thresholds: { lines: 90, functions: 85, branches: 75, statements: 88 },
     },
   },
 })

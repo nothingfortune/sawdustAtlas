@@ -140,6 +140,13 @@ describe('saveData / loadData persistence', () => {
     expect(loadData().schemaVersion).toBe(data.schemaVersion)
   })
 
+  it('falls back to starter data when the stored JSON is not an object or is malformed (TEST3)', () => {
+    localStorage.setItem('sawdust-atlas:v1', '"a plain string"')
+    expect(loadData().schemaVersion).toBe(1)
+    localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
+    expect(loadData().woods.length).toBeGreaterThan(0)
+  })
+
   it('returns false instead of throwing when the storage write is rejected (C4)', () => {
     const data = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
     vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {

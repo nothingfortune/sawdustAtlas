@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getFeedClearanceZones, getShopItemFootprint, projectIsometric } from '../src/domain/shopGeometry'
+import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../src/domain/shopGeometry'
+import type { Point2D } from '../src/domain/shopGeometry'
 import type { ShopItem } from '../src/types'
 
 const item: ShopItem = {
@@ -46,5 +47,17 @@ describe('shop geometry', () => {
     const top = projectIsometric({ x: 1000, y: 500, z: 900 })
     expect(top.x).toBe(floor.x)
     expect(top.y).toBe(floor.y - 900)
+  })
+
+  it('projects every polygon vertex through the isometric transform at the given height (TEST4)', () => {
+    const square: [Point2D, Point2D, Point2D, Point2D] = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]
+    const projected = projectPolygon(square, 50)
+    expect(projected).toHaveLength(4)
+    expect(projected[0]).toEqual(projectIsometric({ x: 0, y: 0, z: 50 }))
+    expect(projected[2]).toEqual(projectIsometric({ x: 100, y: 100, z: 50 }))
+  })
+
+  it('formats points into a rounded SVG points attribute (TEST4)', () => {
+    expect(pointsAttribute([{ x: 12.3456, y: -7.891 }, { x: 3, y: 4 }])).toBe('12.35,-7.89 3,4')
   })
 })

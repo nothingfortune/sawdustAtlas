@@ -18,6 +18,12 @@ wants to:
 4. **re-cut a finished board as new stock** — crosscut a completed glue-up and
    flip/rotate those pieces too (recursive composition).
 
+**The central capability is free mix-and-match:** any cell in the final board can hold a
+piece from *any* panel — rip glue-up or re-cut board — so different species, grains, and
+sources combine freely on one board. Everything else (panels, crosscuts, recursion)
+exists to feed that one ability. No panel is "locked" to a region; the tray is fully
+shared.
+
 This is the general form of the "composable board assemblies" concept already named
 in `docs/plans/BRICK_PATTERN_CORRECTION.md` (BOARD-008). The brick domain foundation
 (`src/domain/brickAssembly.ts`: `SourcePanelRecipe`, `AssemblyPart`,

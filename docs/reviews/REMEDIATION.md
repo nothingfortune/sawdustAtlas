@@ -1,181 +1,531 @@
-# SawdustAtlas — Remediation Tracker
+# SawdustAtlas Remediation Tracker
 
-> **Living document.** This is the single source of truth for review findings and their
-> remediation status. It supersedes the point-in-time snapshot `REVIEW-2026-06-24-develop.md`
-> (now removed), folding that review together with a fresh full-repo audit and a
-> hand-verification pass. Update the **Status** column as work lands — do not let it drift.
+This is the living remediation log for the June 24, 2026 review cycle. It replaces the old point-in-time snapshot `REVIEW-2026-06-24-develop.md` and folds that review together with a fresh full-repo audit and a hand-verification pass.
 
-- **Opened:** 2026-06-24
-- **Baseline at open:** `main` @ `b82d63d` — `pnpm lint` clean, `pnpm test` 67/67 green, `pnpm build` OK.
-- **Working branch:** `review/full-e2e-audit` (intended to merge into `develop`).
-- **Method:** five read-only review passes (UI/React, domain/math, tests, CI/CD/infra, docs/hygiene),
-  with every Critical re-confirmed by reading the cited source directly.
+Keep the status markers current. If this file drifts away from the code, it stops being useful.
 
-## Status legend
+## Snapshot
 
-| Mark | Meaning |
-|------|---------|
-| ☐ | Open — not started |
-| ◐ | In progress / partially done |
-| ☑ | Done — landed with verification (test and/or build) |
-| ⊘ | Won't fix / deferred — see note |
+- Opened: 2026-06-24
+- Baseline at open: `main` @ `b82d63d`
+- Baseline verification: `pnpm lint` clean, `pnpm test` 67/67 green, `pnpm build` OK
+- Working branch: `review/full-e2e-audit`
+- Review method: five read-only passes across UI/React, domain/math, tests, CI/CD/infra, and docs/hygiene; every Critical item was re-confirmed directly in source
 
-## How to use this doc
+## Status Key
 
-1. Pick the lowest-numbered open item in the highest-priority open section.
-2. For code/behaviour changes, **write the failing test first** (TDD), then fix, then verify.
-3. Flip the Status mark and add a one-line note (commit SHA or rationale) in the item.
+- `☐` Open and not started
+- `◐` In progress or partially complete
+- `☑` Done and verified
+- `⊘` Closed, deferred, or intentionally not fixed
+
+## How To Use This File
+
+1. Start with the lowest-numbered open item in the highest-priority section.
+2. For behavior changes, write the failing test first.
+3. After the fix lands, update the item with a short verification note or commit SHA.
 4. Keep `pnpm lint && pnpm test && pnpm build` green before each commit.
 
-## Status at a glance (2026-06-24)
+## Executive Summary
 
-**Done (☑):** all P0 correctness (C1–C5) · perf P1–P2 · CI1–CI4 + CI6 decision · SEC1, SEC2, SEC5 · TOOL1–TOOL3 · all dead-code/hygiene (HYG1–HYG8, HYG11, HYG13) · A1, A3, A6 · DOC1–DOC5 · TEST6 · H4, H6, H8. Suite **67 → 87 tests**, lint/build green, domain branch coverage ~72% → ~78%.
+### What is already done
 
-**Partial (◐):** A2 (focus/Escape/restore done; full Tab focus-trap remaining) · TEST3 (persistence + C1 covered; `downloadData`/`validColor`/bad-JSON remaining) · TEST4 (3 of ~5 exports covered).
+- All P0 correctness issues `C1` through `C5`
+- Performance items `P1` and `P2`
+- CI and infra items `CI1` through `CI4`, plus the `CI6` keep-as-advisory decision
+- Security items `SEC1`, `SEC2`, and `SEC5`
+- Tooling items `TOOL1` through `TOOL3`
+- Hygiene items `HYG1` through `HYG8`, `HYG11`, and `HYG13`
+- Accessibility items `A1`, `A3`, and `A6`
+- Documentation items `DOC1` through `DOC5`
+- Test item `TEST6`
+- High-priority UX/correctness items `H1`, `H2`, `H3`, `H4`, `H6`, `H7`, and `H8`
 
-**Deferred / closed (⊘):** larger UX features — H1 (destructive-action guard), H2 (multi-level undo), H3 (import snapshot); needs-analysis — H7 (angle-shift double count); design-owner call — A7 (contrast); infra with ripple — SEC3 (unprivileged nginx port change), SEC4 (digest pinning), P4 (SW cache strategy); marginal — P3, A4, A5, HYG9, HYG10, HYG12; verify-on-publish — CI5 (id-token). **H5 closed as a misdiagnosis** (`Number('') === 0`, no NaN bug). Each row above carries the rationale.
+### What is partially done
 
-**Suggested next pass:** H2 multi-level undo (unlocks H3), then H7 with a board-feet fixture, then A2 focus-trap.
+- `A2`: Escape handling, focus-on-open, focus-restore, and backdrop-close are done; full Tab focus-trap still remains
+- `TEST3`: persistence and `C1` coverage are in place; `downloadData`, `validColor`, and bad-JSON cases still remain
+- `TEST4`: 3 of the remaining domain export cases are covered
 
----
+### What is intentionally deferred or closed
 
-## P0 — Critical correctness (data loss / crashes) — all hand-verified
+- Design-owner decisions: `A7`
+- Infra with ripple effects: `SEC3`, `SEC4`, `P4`
+- Lower-value cleanup: `P3`, `A4`, `A5`, `HYG9`, `HYG10`, `HYG12`
+- Verify during a real publish: `CI5`
+- Misdiagnosis closed: `H5`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **C1** | ☑ | Negative `trailingAngle` floored to `0` on every load/export, flattening chevron/herringbone designs. **Fixed:** added sign-preserving `signedFinite()` for angles/offsets, kept flooring for dimensions; regression tests cover both signed fields. `9c798de` | `src/storage.ts` | Done. |
-| **C2** | ☑ | Spurious "conservation failed" piled onto strips that already report `closes or crosses`. **Fixed:** only assert conservation when the design is otherwise valid; added a 120-case angled fuzz (also TEST6) proving valid angled designs conserve. `6b3df17` | `src/domain/boardGeometry.ts` | Done. |
-| **C3** | ☑ | Cut plan read `project.allowances.*` raw → crash/`NaN` on partial allowances. **Fixed:** threaded `resolveAllowances` through all five reads; test with a board that has no allowances. `2a4f1a9` | `src/domain/boardCutPlan.ts` | Done. |
-| **C4** | ☑ | `saveData` could throw while the UI claimed "Saved". **Fixed:** `saveData` returns a success boolean; App shows an honest "Not saved — export a backup" warning; tests use an in-memory `localStorage` stub for the round-trip and quota-error paths. `8bc115f` | `src/storage.ts`, `src/App.tsx` | Done. |
-| **C5** | ☑ | `applySliceOrder` didn't dedupe/backfill, so a malformed order desynced the parallel arrays. **Fixed:** reuse `normalizeOrder` so the result is always a permutation of `0..count-1`. `ed2cb7a` | `src/domain/boardSlices.ts` | Done. |
+### Suggested next pass
 
----
+1. `A2` full Tab focus-trap in the modals
+2. Remaining test gaps (`TEST3`, `TEST4`, `TEST7`)
+3. Lower-value cleanup (`P3`, `HYG9`, `HYG10`)
 
-## P1 — High (correctness / UX risk)
+## P0 Critical Correctness
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **H1** | ⊘ | Destructive arrangement buttons fire instantly. **Deferred:** a genuine UX feature (route `Randomize`/`Mirror`/`Repeat` through the before/after confirm + visually separate destructive vs non-destructive), best designed with the owner. H4 already removes the worst side effect (id churn). | `src/components/BoardDesigner.tsx` | Deferred (UX feature). |
-| **H2** | ⊘ | Single-level undo, no redo, far from the editing actions. **Deferred:** a bounded undo stack + `Cmd/Z` + active-id snapshots is a sizable feature touching `App`'s whole state model (intertwined with the `dataRef` cleanup); out of scope for this remediation sweep. | `src/App.tsx` | Deferred (feature). |
-| **H3** | ⊘ | Import replaces the workspace with only volatile undo. **Deferred:** auto-snapshot to a separate key pairs naturally with the H2 undo rework; the import confirm + C4 honest-save already mitigate data loss. | `src/App.tsx` | Deferred (with H2). |
-| **H4** | ☑ | (`d8dc359`) `randomizeArrangement` now reorders strips in place, preserving ids so `StripList` rows move rather than remount. (`duplicate`/`mirror` already correctly mint ids only for the *new* appended copies.) | `src/components/BoardDesigner.tsx` | Done. |
-| **H5** | ⊘ | **N/A — not reproduced.** Every `Field` uses `Number(event.target.value)`, and `Number('') === 0` (not `NaN`); a cleared input becomes `0`, which is valid state. No NaN ever reaches the model. Closed as a misdiagnosis. | `src/components/*` | Closed (not a bug). |
-| **H6** | ☑ | (`d8dc359`) `ShopPlanner` clears its selection when the active project id changes (render-time reset), so the inspector no longer references an item from the previous plan. | `src/components/ShopPlanner.tsx` | Done. |
-| **H7** | ⊘ | Possible double-counted angle shift in rough-stock volume. **Deferred:** the two sites (`boardAllowances` rough volume vs `boardCutPlan` BOM width) are parallel computations, not obviously one inflated number; confirming/fixing needs a careful geometry derivation and a fixture that pins the expected board-feet — worth its own focused, test-first pass. | `src/domain/boardAllowances.ts`, `src/domain/boardCutPlan.ts` | Deferred (needs analysis). |
-| **H8** | ☑ | (`d8dc359`) Drag reads live zoom via an effect-synced ref (a pinch mid-drag no longer uses a stale zoom) and tears down on `pointercancel`. (Full element-scoped capture left as a larger refactor.) | `src/components/ShopPlanner.tsx` | Done. |
+### C1 `☑`
 
----
+- Problem: Negative `trailingAngle` was being floored to `0` on load/export, flattening chevron and herringbone designs.
+- Location: `src/storage.ts`
+- Resolution: Added sign-preserving `signedFinite()` for angles and offsets while keeping flooring for dimensions.
+- Verification: Regression tests cover both signed fields.
+- Commit: `9c798de`
 
-## P1 — Performance
+### C2 `☑`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **P1** | ☑ | (`13b583b`) The whole derived domain pipeline (`calculateEndGrainMetrics`, `readSliceStates`, `calculateBuildDimensions`, `buildEndGrainTemplate`, `generateCuttingBoardPlan`, `calculateWoodUsage`, `new Map(woods)`) recomputes on **every render**, including every `pointermove` during a slice drag. | `src/components/BoardDesigner.tsx` | `useMemo` the derived values keyed on `project`/`woods`. |
-| **P2** | ☑ | (`ec699e5`) `generateCuttingBoardPlan` recomputes `calculateBuildDimensions`/`calculateEndGrainMetrics` 4–5× internally per call. | `src/domain/boardCutPlan.ts:84,118,157` | Pass already-computed `build`/`metrics` into the helpers. |
-| **P3** | ⊘ | `previewPattern` regenerates fresh ids each render while the preview dialog is open. **Deferred:** a clean memo is awkward — the preview depends on the post-early-return `sliceCount` and hooks must precede the early return; gain is marginal (transient modal). Revisit when the dialog becomes its own component. | `src/components/BoardDesigner.tsx` | Deferred. |
-| **P4** | ⊘ | Service worker network-first with an unbounded, manually-versioned cache. **Deferred:** cache-first for `/assets/` is sound but changes offline-update + eviction semantics; wants its own change + manual offline test, not this sweep. | `public/sw.js` | Deferred. |
+- Problem: A spurious "conservation failed" error was being added to strips that already reported `closes or crosses`.
+- Location: `src/domain/boardGeometry.ts`
+- Resolution: Conservation is now asserted only when the design is otherwise valid.
+- Verification: Added a 120-case angled fuzz pass, also tracked as `TEST6`.
+- Commit: `6b3df17`
 
----
+### C3 `☑`
 
-## P2 — Accessibility
+- Problem: Cut plan logic read `project.allowances.*` directly, which could crash or produce `NaN` for partial allowances.
+- Location: `src/domain/boardCutPlan.ts`
+- Resolution: Threaded `resolveAllowances` through all five reads.
+- Verification: Added a test with a board that has no allowances.
+- Commit: `2a4f1a9`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **A1** | ☑ | (`8b0537a`) Top-view shop objects are now focusable `role="button"` elements with `aria-label`/`aria-pressed`, Enter/Space select, and arrow-key nudge (Shift = coarse) clamped to the room. | `src/components/ShopPlanner.tsx` | Done. |
-| **A2** | ◐ | (`8b0537a`) `PatternPreviewDialog` now handles Escape; both modals focus the dialog on open, restore focus to the trigger on close, and close on a direct backdrop click. **Remaining:** full Tab focus-trap (cycle within dialog). | `src/components/BoardDesigner.tsx` | Focus-trap still to do. |
-| **A3** | ☑ | (`8b0537a`) Added `eslint-plugin-jsx-a11y` (recommended, as **errors**); cleared all 8 flagged issues. Guards regressions in CI going forward. | `eslint.config.js` | Done. |
-| **A4** | ⊘ | `DraggableAssembledBoard` has no keyboard reorder/rotate. **Deferred:** involved (drag math + a documented rotate key + focus handling on an SVG `<g>` grid); wants its own change. `StripList` already has arrow-key reorder. | `src/components/BoardDesigner.tsx` | Deferred. |
-| **A5** | ⊘ | `studio-tap` nests interactive controls. **Deferred:** jsx-a11y did not flag it and restructuring the tap-to-enlarge affordance is a UX change better made with the designer. | `src/components/BoardDesigner.tsx` | Deferred. |
-| **A6** | ☑ | (`8b0537a`) Added a `prefers-reduced-motion: reduce` media query that neutralizes animations/transitions. (aria-label expansion folded into A1/A2 where relevant.) | `src/styles.css` | Done. |
-| **A7** | ⊘ | Small-text colors near the AA threshold. **Deferred:** darkening brand colors is a design decision for the owner (a designer); flagged for a measured contrast pass rather than an arbitrary change. | `src/styles.css` | Deferred (design decision). |
+### C4 `☑`
 
----
+- Problem: `saveData` could throw while the UI still claimed "Saved".
+- Location: `src/storage.ts`, `src/App.tsx`
+- Resolution: `saveData` now returns a success boolean, and the app shows "Not saved - export a backup" when persistence fails.
+- Verification: Tests cover both normal round-trip behavior and quota-error behavior using an in-memory `localStorage` stub.
+- Commit: `8bc115f`
 
-## P1/P2 — CI/CD, build & infra security
+### C5 `☑`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **CI1** | ☑ | (`60abe3b`) Added `"typecheck": "tsc -b"` script + a CI Type-check step for fast feedback. | `package.json`, `ci.yml` | Done. |
-| **CI2** | ☑ | (`60abe3b`) Added `test:coverage` + a v8 coverage gate on the domain/storage layer (lines 88 / stmts 85 / fns 82 / branches 70 — floors just below current); CI runs it. | `package.json`, `vite.config.ts`, `ci.yml` | Done. |
-| **CI3** | ☑ | (`60abe3b`) `docker-verify` now starts the image and curls `/` + a deep link (SPA fallback) and asserts the security headers ship. **Note:** could not run locally — the sandbox blocks base-image pulls; validated by review + runs on GitHub runners. | `ci.yml` | Done (verified on CI). |
-| **CI4** | ☑ | (`60abe3b`) Dropped the redundant second `corepack enable`. | `ci.yml` | Done. |
-| **CI5** | ⊘ | `docker-publish` requests `id-token: write`. **Deferred:** `provenance`/`sbom` attestation may legitimately need it; can't confirm without a real publish run (publish only fires on push to `main`). Left as-is; verify against an actual publish, then drop if unused. | `ci.yml` | Needs a live publish run to confirm. |
-| **CI6** | ☑ | Docker Scout advisory-only. **Decision:** keep advisory for this hobby/noncommercial project — Scout output informs without blocking releases. Documented here rather than changed. | `ci.yml` | Decided: keep advisory. |
-| **SEC1** | ☑ | (`c21604a`) Added X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and a CSP (allowlisting the Google Fonts the app @imports). | `nginx.conf` | Done. |
-| **SEC2** | ☑ | (`c21604a`) Enabled gzip for text/JS/CSS/SVG/manifest. | `nginx.conf` | Done. |
-| **SEC3** | ⊘ | Container runs as root. **Deferred:** `nginx-unprivileged` listens on 8080, rippling to `nginx.conf` listen, Dockerfile `EXPOSE`/healthcheck, `compose.yaml`, and the install docs' `-p` mapping; wants its own change so the port story stays consistent. | `Dockerfile` | Deferred (port ripple). |
-| **SEC4** | ⊘ | Base images pinned by tag, not digest. **Deferred:** low value here — Dependabot's docker ecosystem already bumps tags weekly; digest pinning adds churn without a clear threat-model win for this project. | `Dockerfile` | Deferred. |
-| **SEC5** | ☑ | (`551dbce`) `normalizeData` now returns only the known `AtlasData` keys (no `...data` spread), and `loadData` falls back to starter data when the stored JSON is not an object. Junk keys can no longer survive a load/import. Test asserts the exact key set. | `src/storage.ts` | Done. |
+- Problem: `applySliceOrder` did not dedupe or backfill malformed orders, so parallel arrays could desync.
+- Location: `src/domain/boardSlices.ts`
+- Resolution: Reused `normalizeOrder` so the result is always a permutation of `0..count-1`.
+- Commit: `ed2cb7a`
 
----
+## P1 High Priority
 
-## P2 — Tooling / build config
+### H1 `☑`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **TOOL1** | ☑ | Every dependency pinned to `"latest"` — manifest carries zero version intent; grouped-`*` Dependabot can float majors. | `package.json` | Pin to the lockfile-resolved versions (React 19, TS 6.0.3, Vite 8.0.16, ESLint 10.5.0, Vitest 4.1.9, …). |
-| **TOOL2** | ☑ | Node version stated three ways: `.nvmrc`=24, `engines.node`=">=20.19", `Dockerfile`=`node:22-alpine`. | `.nvmrc`, `package.json`, `Dockerfile` | Standardize on Node 24. |
-| **TOOL3** | ☑ | `loadData`/`saveData` were untestable without a DOM env. **Resolved** with an in-memory `localStorage` stub (`vi.stubGlobal`) — more deterministic than jsdom and adds no dependency (jsdom 29 + vitest 4 didn't wire a working `localStorage`). `8bc115f` | `tests/storage.test.ts` | Done. `downloadData` (document/Blob/URL) still needs coverage → TEST3. |
-| **TOOL4** | ☐ | `tsconfig.app.json` lacks `composite: true` though referenced as a project. | `tsconfig.app.json` | Add `composite: true`. |
-| **TOOL5** | ☐ | No formatter config despite multi-file TS/MD and a contributor workflow. | repo root | Add `.editorconfig` (+ optional Prettier). |
+- Problem: Destructive arrangement buttons fire immediately.
+- Location: `src/components/BoardDesigner.tsx`
+- Resolution: Resolved by composition rather than by adding confirms. The pattern recipes (the genuinely rebuilding actions) already route through the before/after `PatternPreviewDialog`; the arrangement buttons (Alternate, Gradient, Randomize, Mirror, Repeat, Reverse) only reorder or append strips and never discard them, and `H4` removed the id churn. With `H2` multi-level undo plus Ctrl/Cmd+Z every action is reversible, so redundant confirms on non-destructive reorders were intentionally not added.
 
----
+### H2 `☑`
 
-## P2 — Repo hygiene & dead code
+- Problem: Undo is single-level, has no redo, and lives far from the editing actions.
+- Location: `src/history.ts`, `src/App.tsx`
+- Resolution: Bounded, redo-capable history in a pure, unit-tested `src/history.ts`. App snapshots `{data, activeShop, activeBoard}` so undo restores the selection too. Adds a Redo button and Ctrl/Cmd+Z (Shift to redo), ignored while typing in inputs.
+- Commit: `7b52794`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **HYG1** | ☑ | Dead file — `SliceOrderList` imported nowhere (~111 lines). | `src/components/SliceOrderList.tsx` | Delete. |
-| **HYG2** | ☑ | Dead prop/branch — `WoodLibraryEditor.onUse` never passed by its only caller. | `src/components/WoodLibraryEditor.tsx` | Remove `onUse` + its button branch + dead CSS. |
-| **HYG3** | ☑ | Vestigial `selectedSlice` state (only ever `0`). | `src/components/BoardDesigner.tsx` | Remove state + clamp + prop threading. |
-| **HYG4** | ☑ | `CutStage` declares `'stock-prep'`/`'surface'` members never produced. | `src/domain/boardCutPlan.ts:5` | Remove unused union members. |
-| **HYG5** | ☑ | `test-results/.last-run.json` tracked + not gitignored (churns every run; committed "passed" artifact). | `test-results/`, `.gitignore` | `git rm --cached`; add `test-results/` to `.gitignore`. |
-| **HYG6** | ☑ | `.gitignore` `claude/*` matches nothing (dir is `.claude/`); dead `agents/*`. | `.gitignore` | Fix to `.claude/settings.local.json`; drop dead pattern. |
-| **HYG7** | ☑ | `.dockerignore` lists both `.ds_store` and `.DS_Store`. | `.dockerignore` | Drop the lowercase dup. |
-| **HYG8** | ☑ | (`f9aa322`) Extracted `toBoardFeet`/`nonNegative`/`sum`/`clampAngle` (+ the angle-only generic `clamp`) into `src/domain/units.ts`; three modules now import them. | `src/domain/units.ts` | Done. |
-| **HYG9** | ⊘ | Duplicated UI `Field`/`format` helpers. **Deferred:** the three `Field`s have subtly different props (number vs text, min handling); a shared component is a UI refactor better verified in the running app than by build alone. Lower value than the domain dedup. | `src/components/*` | Deferred. |
-| **HYG10** | ⊘ | Near-duplicate `useContainerWidth`/`useElementSize` hooks. **Deferred:** small polish; both work, and unifying touches live ResizeObserver wiring best checked at runtime. | `src/components/*` | Deferred. |
-| **HYG11** | ☑ | Stale dated review committed as a tracked doc. | `docs/reviews/REVIEW-2026-06-24-develop.md` | Replaced by this living tracker. |
-| **HYG12** | ☐ | Pervasive over-commenting (generated-code tell). | `src/components/BoardDesigner.tsx`, `src/components/board/*` | Trim self-evident comments opportunistically. |
-| **HYG13** | ☑ | `.claude/settings.local.json` tracked (per-developer local file). | `.claude/` | Untrack + gitignore. |
+### H3 `☑`
 
----
+- Problem: Import replaces the workspace and only relies on volatile undo.
+- Location: `src/storage.ts`, `src/App.tsx`
+- Resolution: The pre-import workspace is written to a separate localStorage key before the replace, so it survives a reload. An "Undo import" action restores it, and the restore is itself undoable.
+- Verification: Round-trip and quota-error tests.
+- Commit: `60e8af8`
 
-## P2 — Documentation drift
+### H4 `☑`
 
-| ID | Status | Item | Location | Fix approach |
-|----|:--:|------|----------|--------------|
-| **DOC1** | ☑ | (`233923b`) PRODUCT_PLAN BOARD-015 now lists the seven shipped presets; only seeded-mosaic remains "next". | `docs/plans/PRODUCT_PLAN.md` | Done. |
-| **DOC2** | ☑ | (`b5debab`) Offsets now derive from `PRESET_STRIP_WIDTH` (no hard-coded `20`/`40`); doc marked resolved. True brick-and-mortar still needs composite panels (BOARD-008). | `src/domain/boardPatterns.ts`, `docs/plans/BRICK_PATTERN_CORRECTION.md` | Done. |
-| **DOC3** | ☑ | (`233923b`) README "Current features" notes the installable, offline-capable PWA. | `README.md` | Done. |
-| **DOC4** | ☑ | (`b5debab`) Renamed `docs/howTo/howToREADME.md` → `README.md`. | `docs/howTo/` | Done. |
-| **DOC5** | ☑ | README features/accuracy reviewed against the shipped state; no remaining false claims. | `README.md` | Done. |
+- Problem: Randomization remounted strips by changing ids unnecessarily.
+- Location: `src/components/BoardDesigner.tsx`
+- Resolution: `randomizeArrangement` now reorders strips in place and preserves ids.
+- Notes: `duplicate` and `mirror` were already only minting ids for new appended copies.
+- Commit: `d8dc359`
 
----
+### H5 `⊘`
 
-## Test coverage gaps (highest value first)
+- Problem statement did not hold up.
+- Location: `src/components/*`
+- Decision: Closed as a misdiagnosis.
+- Notes: Every `Field` uses `Number(event.target.value)`, and `Number('') === 0`, not `NaN`. A cleared input becomes `0`, which is still valid state.
 
-| ID | Status | Item | Fix approach |
-|----|:--:|------|--------------|
-| **TEST1** | ☐ | Live slice drag-reorder math (`DraggableAssembledBoard`: `targetFromX`/`orderWithKeyAt`/tap-vs-drag threshold) untested — largest untested logic. | Extract the pure math and unit-test it. |
-| **TEST2** | ☐ | `usePinchPan` transform math untested. | Extract + test scale clamp / pan offset / single-pointer pass-through. |
-| **TEST3** | ◐ | `storage.ts` branches: C1 regression + `saveData`/`loadData` round-trip + quota-error path now covered (`8bc115f`, `9c798de`). Still open: `downloadData`, `validColor` rejection, bad-JSON → `starterData` fallback. | Add remaining cases. |
-| **TEST4** | ◐ | (`b110241`) `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm` now covered (incl. fallback/clamp branches); domain branch coverage ~72%→~78%. Remaining: `calculateWoodUsage` per-species internals, `projectPolygon`/`pointsAttribute`. | Add the rest. |
-| **TEST5** | ☐ | No CI container smoke test. | Covered by CI3. |
-| **TEST6** | ☑ | Conservation fuzz loop only covered `trailingAngle: 0`. **Fixed:** added a 120-case angled fuzz alongside C2. `6b3df17` | Done. |
-| **TEST7** | ☐ | Weak/tautological assertions. | `tests/storage.test.ts:62` (`toBeDefined`), `tests/boardGeometry.test.ts:47-48` (literal-vs-literal). |
+### H6 `☑`
 
----
+- Problem: `ShopPlanner` could keep a stale selection after the active project changed.
+- Location: `src/components/ShopPlanner.tsx`
+- Resolution: Selection is now cleared when the active project id changes.
+- Commit: `d8dc359`
+
+### H7 `☑`
+
+- Problem: Possible double-counted angle shift in rough-stock volume.
+- Location: `src/domain/boardAllowances.ts`, `src/domain/boardCutPlan.ts`
+- Resolution: Investigated - not a double count. Both sites compute the same rough-stock width (strip width + rip + angle shift), once each, for two outputs that reconcile. Added a reconciliation test proving the BOM board-feet sum equals `roughBoardFeet` for angled strips, then extracted `roughStripStockWidth()` so the two sites cannot drift.
+- Commit: `cb3cbb2`
+
+### H8 `☑`
+
+- Problem: Drag behavior could use stale zoom and missed `pointercancel` cleanup.
+- Location: `src/components/ShopPlanner.tsx`
+- Resolution: Drag logic now reads live zoom from an effect-synced ref and tears down on `pointercancel`.
+- Notes: Full element-scoped pointer capture is still a larger refactor.
+- Commit: `d8dc359`
+
+## P1 Performance
+
+### P1 `☑`
+
+- Problem: The full derived domain pipeline recomputed on every render, including every `pointermove` during slice drag.
+- Location: `src/components/BoardDesigner.tsx`
+- Resolution: Memoized `calculateEndGrainMetrics`, `readSliceStates`, `calculateBuildDimensions`, `buildEndGrainTemplate`, `generateCuttingBoardPlan`, `calculateWoodUsage`, and `new Map(woods)` off `project` and `woods`.
+- Commit: `13b583b`
+
+### P2 `☑`
+
+- Problem: `generateCuttingBoardPlan` recomputed `calculateBuildDimensions` and `calculateEndGrainMetrics` four to five times per call.
+- Location: `src/domain/boardCutPlan.ts:84`, `src/domain/boardCutPlan.ts:118`, `src/domain/boardCutPlan.ts:157`
+- Resolution: Passed already-computed `build` and `metrics` into helpers.
+- Commit: `ec699e5`
+
+### P3 `⊘`
+
+- Problem: `previewPattern` regenerates fresh ids every render while the preview dialog is open.
+- Location: `src/components/BoardDesigner.tsx`
+- Decision: Deferred as marginal.
+- Notes: A clean memo is awkward because the preview depends on `sliceCount` after an early return, and hooks must stay above that return. The gain is limited because this is a transient modal.
+
+### P4 `⊘`
+
+- Problem: Service worker uses a network-first strategy with an unbounded, manually versioned cache.
+- Location: `public/sw.js`
+- Decision: Deferred as its own offline-behavior change.
+- Notes: Moving to cache-first for `/assets/` affects update and eviction semantics and needs manual offline verification.
+
+## P2 Accessibility
+
+### A1 `☑`
+
+- Problem: Top-view shop objects were pointer-only.
+- Location: `src/components/ShopPlanner.tsx`
+- Resolution: They are now focusable `role="button"` elements with `aria-label`, `aria-pressed`, Enter/Space activation, and arrow-key nudge support; `Shift` applies a coarse movement and motion is clamped to the room.
+- Commit: `8b0537a`
+
+### A2 `◐`
+
+- Problem: Dialog keyboard behavior was incomplete.
+- Location: `src/components/BoardDesigner.tsx`
+- Done so far: `PatternPreviewDialog` handles Escape; both modals focus the dialog on open, restore focus to the trigger on close, and close on direct backdrop click.
+- Remaining: Full Tab focus-trap that cycles within the dialog.
+- Commit: `8b0537a`
+
+### A3 `☑`
+
+- Problem: No automated accessibility linting.
+- Location: `eslint.config.js`
+- Resolution: Added `eslint-plugin-jsx-a11y` in recommended mode as errors and cleared all eight flagged issues.
+- Commit: `8b0537a`
+
+### A4 `⊘`
+
+- Problem: `DraggableAssembledBoard` still has no keyboard reorder or rotate support.
+- Location: `src/components/BoardDesigner.tsx`
+- Decision: Deferred.
+- Notes: This is a larger interaction change involving drag math, a rotate key contract, and focus behavior on an SVG `<g>` grid. `StripList` already supports arrow-key reorder.
+
+### A5 `⊘`
+
+- Problem: `studio-tap` nests interactive controls.
+- Location: `src/components/BoardDesigner.tsx`
+- Decision: Deferred.
+- Notes: `jsx-a11y` did not flag it, and changing the tap-to-enlarge affordance is more of a UX decision than a remediation fix.
+
+### A6 `☑`
+
+- Problem: Motion preferences were not respected.
+- Location: `src/styles.css`
+- Resolution: Added a `prefers-reduced-motion: reduce` media query that neutralizes animations and transitions.
+- Commit: `8b0537a`
+
+### A7 `⊘`
+
+- Problem: Some small-text colors sit near the AA contrast threshold.
+- Location: `src/styles.css`
+- Decision: Deferred for a design-owner pass.
+- Notes: Darkening brand colors without a measured contrast review would be arbitrary.
+
+## P1 and P2 CI, Build, and Infra Security
+
+### CI1 `☑`
+
+- Problem: No dedicated typecheck script or CI step.
+- Location: `package.json`, `ci.yml`
+- Resolution: Added `"typecheck": "tsc -b"` and a CI typecheck step.
+- Commit: `60abe3b`
+
+### CI2 `☑`
+
+- Problem: No coverage gate around the core domain and storage layer.
+- Location: `package.json`, `vite.config.ts`, `ci.yml`
+- Resolution: Added `test:coverage` and a v8 coverage gate.
+- Notes: Current floors are just below present coverage: lines 88, statements 85, functions 82, branches 70.
+- Commit: `60abe3b`
+
+### CI3 `☑`
+
+- Problem: No smoke verification that the built container actually serves the app and headers.
+- Location: `ci.yml`
+- Resolution: `docker-verify` now boots the image, curls `/` and a deep link for SPA fallback, and asserts the security headers.
+- Notes: This could not be run locally because the sandbox blocks base-image pulls, so validation is by review plus GitHub Actions execution.
+- Commit: `60abe3b`
+
+### CI4 `☑`
+
+- Problem: CI redundantly ran `corepack enable` twice.
+- Location: `ci.yml`
+- Resolution: Removed the duplicate step.
+- Commit: `60abe3b`
+
+### CI5 `⊘`
+
+- Problem: `docker-publish` requests `id-token: write`.
+- Location: `ci.yml`
+- Decision: Deferred until a live publish confirms whether provenance or SBOM attestation needs it.
+
+### CI6 `☑`
+
+- Problem: Whether Docker Scout should block release flow.
+- Location: `ci.yml`
+- Decision: Keep it advisory-only.
+- Notes: This is a hobby/noncommercial project, so informative output is useful without making releases brittle.
+
+### SEC1 `☑`
+
+- Problem: Missing basic browser hardening headers.
+- Location: `nginx.conf`
+- Resolution: Added `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a CSP that allowlists the Google Fonts used by the app.
+- Commit: `c21604a`
+
+### SEC2 `☑`
+
+- Problem: Static text assets were not compressed.
+- Location: `nginx.conf`
+- Resolution: Enabled gzip for text, JS, CSS, SVG, and the manifest.
+- Commit: `c21604a`
+
+### SEC3 `⊘`
+
+- Problem: The container still runs as root.
+- Location: `Dockerfile`
+- Decision: Deferred because switching to `nginx-unprivileged` ripples through ports, health checks, compose config, and install docs.
+
+### SEC4 `⊘`
+
+- Problem: Base images are pinned by tag rather than digest.
+- Location: `Dockerfile`
+- Decision: Deferred.
+- Notes: Dependabot already tracks Docker tags weekly, and digest pinning would add churn without a strong threat-model benefit here.
+
+### SEC5 `☑`
+
+- Problem: `normalizeData` allowed unknown keys through and `loadData` trusted bad JSON shapes too far.
+- Location: `src/storage.ts`
+- Resolution: `normalizeData` now returns only known `AtlasData` keys, and `loadData` falls back to starter data when stored JSON is not an object.
+- Verification: Tests now assert the exact key set.
+- Commit: `551dbce`
+
+## P2 Tooling and Build Config
+
+### TOOL1 `☑`
+
+- Problem: Every dependency was pinned to `"latest"`, so the manifest carried no explicit version intent.
+- Location: `package.json`
+- Resolution: Pinned dependencies to the versions already resolved in the lockfile, including React 19, TypeScript 6.0.3, Vite 8.0.16, ESLint 10.5.0, and Vitest 4.1.9.
+
+### TOOL2 `☑`
+
+- Problem: Node version was declared three different ways.
+- Location: `.nvmrc`, `package.json`, `Dockerfile`
+- Resolution: Standardized on Node 24.
+
+### TOOL3 `☑`
+
+- Problem: `loadData` and `saveData` were hard to test without a DOM environment.
+- Location: `tests/storage.test.ts`
+- Resolution: Added an in-memory `localStorage` stub via `vi.stubGlobal`.
+- Notes: This is more deterministic than jsdom and avoids an extra dependency. `downloadData` still needs coverage and is tracked under `TEST3`.
+- Commit: `8bc115f`
+
+### TOOL4 `☐`
+
+- Problem: `tsconfig.app.json` is referenced as a project but does not set `composite: true`.
+- Location: `tsconfig.app.json`
+- Proposed fix: Add `composite: true`.
+
+### TOOL5 `☐`
+
+- Problem: There is no formatter config for a multi-file TypeScript and Markdown repo.
+- Location: repo root
+- Proposed fix: Add `.editorconfig` and optionally Prettier.
+
+## P2 Repo Hygiene and Dead Code
+
+### HYG1 `☑`
+
+- Problem: `SliceOrderList` was dead code.
+- Location: `src/components/SliceOrderList.tsx`
+- Resolution: Deleted the file.
+
+### HYG2 `☑`
+
+- Problem: `WoodLibraryEditor.onUse` and its related branch were unused.
+- Location: `src/components/WoodLibraryEditor.tsx`
+- Resolution: Removed the prop, button branch, and dead CSS.
+
+### HYG3 `☑`
+
+- Problem: `selectedSlice` state was vestigial and only ever `0`.
+- Location: `src/components/BoardDesigner.tsx`
+- Resolution: Removed the state, clamp, and prop threading.
+
+### HYG4 `☑`
+
+- Problem: `CutStage` still declared `'stock-prep'` and `'surface'` members that were never produced.
+- Location: `src/domain/boardCutPlan.ts:5`
+- Resolution: Removed the unused union members.
+
+### HYG5 `☑`
+
+- Problem: `test-results/.last-run.json` was tracked and churned every run.
+- Location: `test-results/`, `.gitignore`
+- Resolution: Untracked it and added `test-results/` to `.gitignore`.
+
+### HYG6 `☑`
+
+- Problem: `.gitignore` had dead or incorrect patterns for `claude/*` and `agents/*`.
+- Location: `.gitignore`
+- Resolution: Fixed the tracked-local rule to `.claude/settings.local.json` and dropped the dead pattern.
+
+### HYG7 `☑`
+
+- Problem: `.dockerignore` listed both `.ds_store` and `.DS_Store`.
+- Location: `.dockerignore`
+- Resolution: Removed the lowercase duplicate.
+
+### HYG8 `☑`
+
+- Problem: Common unit helpers were duplicated across modules.
+- Location: `src/domain/units.ts`
+- Resolution: Extracted `toBoardFeet`, `nonNegative`, `sum`, `clampAngle`, and the generic angle-only `clamp`, then updated three modules to import them.
+- Commit: `f9aa322`
+
+### HYG9 `⊘`
+
+- Problem: Several UI `Field` and `format` helpers are near-duplicates.
+- Location: `src/components/*`
+- Decision: Deferred.
+- Notes: The three `Field` implementations differ in meaningful ways, and a shared version is better verified in the running UI than by static checks alone.
+
+### HYG10 `⊘`
+
+- Problem: `useContainerWidth` and `useElementSize` are near-duplicate hooks.
+- Location: `src/components/*`
+- Decision: Deferred as low-value cleanup.
+
+### HYG11 `☑`
+
+- Problem: A stale dated review document was still tracked.
+- Location: `docs/reviews/REVIEW-2026-06-24-develop.md`
+- Resolution: Replaced it with this living tracker.
+
+### HYG12 `☐`
+
+- Problem: Some files still have self-evident, generated-code-style comments.
+- Location: `src/components/BoardDesigner.tsx`, `src/components/board/*`
+- Proposed fix: Trim them opportunistically while touching nearby code.
+
+### HYG13 `☑`
+
+- Problem: `.claude/settings.local.json` was tracked even though it is per-developer state.
+- Location: `.claude/`
+- Resolution: Untracked it and added an ignore rule.
+
+## P2 Documentation Drift
+
+### DOC1 `☑`
+
+- Problem: `PRODUCT_PLAN` lagged shipped preset work.
+- Location: `docs/plans/PRODUCT_PLAN.md`
+- Resolution: `BOARD-015` now lists the seven shipped presets; only seeded-mosaic remains future work.
+- Commit: `233923b`
+
+### DOC2 `☑`
+
+- Problem: Brick-pattern offset documentation had drifted from implementation.
+- Location: `src/domain/boardPatterns.ts`, `docs/plans/BRICK_PATTERN_CORRECTION.md`
+- Resolution: Offsets now derive from `PRESET_STRIP_WIDTH` rather than hard-coded `20` and `40`.
+- Notes: True brick-and-mortar still needs composite panels under `BOARD-008`.
+- Commit: `b5debab`
+
+### DOC3 `☑`
+
+- Problem: README did not mention the installable, offline-capable PWA state clearly enough.
+- Location: `README.md`
+- Resolution: Updated the current-features section.
+- Commit: `233923b`
+
+### DOC4 `☑`
+
+- Problem: The `howTo` index file had an awkward name.
+- Location: `docs/howTo/`
+- Resolution: Renamed `howToREADME.md` to `README.md`.
+- Commit: `b5debab`
+
+### DOC5 `☑`
+
+- Problem: README feature and accuracy statements needed a pass against the shipped product.
+- Location: `README.md`
+- Resolution: Reviewed and cleared remaining false claims.
+
+## Test Coverage Gaps
+
+### TEST1 `☐`
+
+- Gap: Live slice drag-reorder math in `DraggableAssembledBoard` is still untested.
+- Why it matters: This is the largest remaining pocket of untested logic.
+- Proposed fix: Extract `targetFromX`, `orderWithKeyAt`, and tap-vs-drag threshold logic into pure helpers and unit-test them.
+
+### TEST2 `☐`
+
+- Gap: `usePinchPan` transform math is untested.
+- Proposed fix: Extract and test scale clamp, pan offset, and single-pointer pass-through behavior.
+
+### TEST3 `◐`
+
+- Gap: `storage.ts` still lacks coverage for `downloadData`, `validColor` rejection, and bad-JSON to `starterData` fallback.
+- Already done: `C1` regression coverage, `saveData`/`loadData` round-trip coverage, and the quota-error path.
+- Commits: `8bc115f`, `9c798de`
+
+### TEST4 `◐`
+
+- Gap: Remaining domain export coverage is still incomplete.
+- Already done: `pickSpeciesPair`, `evenStripCount`, and `fitPxPerMm` are now covered, including fallback and clamp branches.
+- Remaining: `calculateWoodUsage` per-species internals plus `projectPolygon` and `pointsAttribute`.
+- Commit: `b110241`
+
+### TEST5 `☐`
+
+- Gap: No CI container smoke test.
+- Status note: Covered by `CI3`.
+
+### TEST6 `☑`
+
+- Gap: The conservation fuzz loop used to cover only `trailingAngle: 0`.
+- Resolution: Added a 120-case angled fuzz pass alongside `C2`.
+- Commit: `6b3df17`
+
+### TEST7 `☐`
+
+- Gap: Some assertions are weak or tautological.
+- Examples: `tests/storage.test.ts:62` uses `toBeDefined`; `tests/boardGeometry.test.ts:47-48` compares literals to literals.
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
-| 2026-06-24 | Tracker opened; folded in `REVIEW-2026-06-24-develop.md` + fresh audit; baseline green (67 tests). |
-| 2026-06-24 | P0 C1–C5 fixed test-first (`9c798de`,`6b3df17`,`2a4f1a9`,`8bc115f`,`ed2cb7a`); TEST6 + storage persistence coverage added; suite 67→76 green. |
-| 2026-06-24 | Dead code removed (`555eadc`); repo hygiene + ignore rules (`8ffeb4a`); Node 24 reconcile (`fa7fe7c`); deps pinned off "latest" (`5d56f68`). |
-| 2026-06-24 | Perf: memoized BoardDesigner pipeline (`13b583b`) and de-duped cut-plan recomputation (`ec699e5`); P3/P4 deferred with rationale. |
-| 2026-06-24 | nginx security headers + gzip (`c21604a`); CI type-check, coverage gate, container smoke test, corepack cleanup (`60abe3b`); CI5/CI6/SEC3/SEC4 deferred/decided. |
-| 2026-06-24 | a11y: jsx-a11y enforced + dialog focus/Escape + keyboard shop objects + reduced-motion (`8b0537a`); A2 partial, A4/A5/A7 deferred. |
-| 2026-06-24 | Storage sanitize/guard (`551dbce`); domain helpers → units.ts (`f9aa322`); domain tests added, branch coverage ~72%→~78% (`b110241`); HYG9/HYG10 deferred. Suite 76→87 green. |
-| 2026-06-24 | Docs synced: derived bond offsets + howTo index rename (`b5debab`), plan/readme (`233923b`). H4/H6/H8 fixed (`d8dc359`); H5 closed as misdiagnosis; H1/H2/H3/H7 deferred. Added status-at-a-glance summary. |
+- 2026-06-24: Tracker opened; folded in `REVIEW-2026-06-24-develop.md` plus fresh audit; baseline green at 67 tests.
+- 2026-06-24: Fixed `C1` through `C5` test-first in `9c798de`, `6b3df17`, `2a4f1a9`, `8bc115f`, and `ed2cb7a`; added `TEST6` plus storage persistence coverage; suite moved from 67 to 76 tests, green.
+- 2026-06-24: Removed dead code in `555eadc`; cleaned hygiene and ignore rules in `8ffeb4a`; reconciled Node 24 in `fa7fe7c`; pinned dependencies from `"latest"` in `5d56f68`.
+- 2026-06-24: Landed performance work in `13b583b` and `ec699e5`; deferred `P3` and `P4` with rationale.
+- 2026-06-24: Added nginx headers and gzip in `c21604a`; added CI typecheck, coverage gate, container smoke test, and corepack cleanup in `60abe3b`; deferred or decided `CI5`, `CI6`, `SEC3`, and `SEC4`.
+- 2026-06-24: Landed accessibility work in `8b0537a`; `A2` remains partial and `A4`, `A5`, `A7` remain deferred.
+- 2026-06-24: Hardened storage in `551dbce`; extracted domain helpers to `units.ts` in `f9aa322`; added domain tests and raised branch coverage from about 72 percent to about 78 percent in `b110241`; deferred `HYG9` and `HYG10`.
+- 2026-06-24: Synced docs in `b5debab` and `233923b`; fixed `H4`, `H6`, and `H8` in `d8dc359`; closed `H5` as a misdiagnosis; deferred `H1`, `H2`, `H3`, and `H7`.

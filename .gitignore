@@ -6,5 +6,5 @@ vite.config.js
 vite.config.d.ts
 .DS_Store
 coverage/
-claude/*
-agents/*
+test-results/
+.claude/settings.local.json

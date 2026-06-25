@@ -5,7 +5,6 @@ dist
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
-.ds_store
 .DS_Store
 *.log
 *.lock

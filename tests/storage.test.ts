@@ -120,7 +120,7 @@ describe('workspace storage migration', () => {
     expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, items: [] })
     expect(normalized.boards[0]).toMatchObject({ id: 'board', name: 'Imported cutting board', construction: 'end' })
     expect(normalized.boards[0]?.strips).toHaveLength(1)
-    expect(normalized.woods.find(wood => wood.id === 'mystery')).toBeDefined()
+    expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
     expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
   })
 })

@@ -31,35 +31,34 @@ Keep the status markers current. If this file drifts away from the code, it stop
 ### What is already done
 
 - All P0 correctness issues `C1` through `C5`
-- Performance items `P1` and `P2`
+- Performance items `P1`, `P2`, `P3`, and `P4`
 - CI and infra items `CI1` through `CI4`, plus the `CI6` keep-as-advisory decision
 - Security items `SEC1`, `SEC2`, and `SEC5`
 - Tooling items `TOOL1` through `TOOL3`
-- Hygiene items `HYG1` through `HYG8`, `HYG11`, and `HYG13`
-- Accessibility items `A1`, `A3`, and `A6`
+- Hygiene items `HYG1` through `HYG11`, and `HYG13`
+- Accessibility items `A1`, `A2`, `A3`, and `A6`
 - Documentation items `DOC1` through `DOC5`
-- Test item `TEST6`
+- Test items `TEST4`, `TEST6`, and `TEST7`
 - High-priority UX/correctness items `H1`, `H2`, `H3`, `H4`, `H6`, `H7`, and `H8`
 
 ### What is partially done
 
-- `A2`: Escape handling, focus-on-open, focus-restore, and backdrop-close are done; full Tab focus-trap still remains
-- `TEST3`: persistence and `C1` coverage are in place; `downloadData`, `validColor`, and bad-JSON cases still remain
-- `TEST4`: 3 of the remaining domain export cases are covered
+- `TEST3`: only `downloadData` (a thin Blob/anchor wrapper, four mocks, low value) remains uncovered
 
 ### What is intentionally deferred or closed
 
-- Design-owner decisions: `A7`
-- Infra with ripple effects: `SEC3`, `SEC4`, `P4`
-- Lower-value cleanup: `P3`, `A4`, `A5`, `HYG9`, `HYG10`, `HYG12`
-- Verify during a real publish: `CI5`
+- Design-owner decisions: `A7` (darkening brand colors)
+- Infra that needs a build/registry this sandbox can't reach: `SEC3` (unprivileged nginx port change), `SEC4` (digest pinning)
+- Involved UX features for their own pass: `A4` (board keyboard reorder), `A5` (tap-to-enlarge restructure)
+- Subjective: `HYG12` (comment trimming)
+- Verify during a real publish: `CI5` (`id-token` need)
 - Misdiagnosis closed: `H5`
 
 ### Suggested next pass
 
-1. `A2` full Tab focus-trap in the modals
-2. Remaining test gaps (`TEST3`, `TEST4`, `TEST7`)
-3. Lower-value cleanup (`P3`, `HYG9`, `HYG10`)
+1. `A4` keyboard reorder on the assembled board
+2. `SEC3` unprivileged nginx (with the port change threaded through Dockerfile/compose/docs) once a Docker build can be validated
+3. `A7` contrast, with the owner
 
 ## P0 Critical Correctness
 
@@ -178,19 +177,20 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Resolution: Passed already-computed `build` and `metrics` into helpers.
 - Commit: `ec699e5`
 
-### P3 `⊘`
+### P3 `☑`
 
-- Problem: `previewPattern` regenerates fresh ids every render while the preview dialog is open.
+- Problem: `previewPattern` regenerated fresh ids every render while the preview dialog was open.
 - Location: `src/components/BoardDesigner.tsx`
-- Decision: Deferred as marginal.
-- Notes: A clean memo is awkward because the preview depends on `sliceCount` after an early return, and hooks must stay above that return. The gain is limited because this is a transient modal.
+- Resolution: Added a `previewProject` `useMemo` (above the early return, keyed on `project`/`woods`/`pendingPattern`) and removed the per-render `previewPattern` call, so the preview's `preview-*` ids and derived strips are stable while the dialog is open.
+- Commit: `4f6c5ed`
 
-### P4 `⊘`
+### P4 `☑`
 
-- Problem: Service worker uses a network-first strategy with an unbounded, manually versioned cache.
+- Problem: Service worker used network-first for everything, re-fetching even immutable hashed assets.
 - Location: `public/sw.js`
-- Decision: Deferred as its own offline-behavior change.
-- Notes: Moving to cache-first for `/assets/` affects update and eviction semantics and needs manual offline verification.
+- Resolution: Content-hashed `/assets/` are served cache-first (instant, offline); HTML, manifest, and the service worker stay network-first so updates land.
+- Notes: Behavior change verified by review; could not run an offline browser test in this sandbox.
+- Commit: `8b842dc`
 
 ## P2 Accessibility
 
@@ -201,13 +201,12 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Resolution: They are now focusable `role="button"` elements with `aria-label`, `aria-pressed`, Enter/Space activation, and arrow-key nudge support; `Shift` applies a coarse movement and motion is clamped to the room.
 - Commit: `8b0537a`
 
-### A2 `◐`
+### A2 `☑`
 
 - Problem: Dialog keyboard behavior was incomplete.
-- Location: `src/components/BoardDesigner.tsx`
-- Done so far: `PatternPreviewDialog` handles Escape; both modals focus the dialog on open, restore focus to the trigger on close, and close on direct backdrop click.
-- Remaining: Full Tab focus-trap that cycles within the dialog.
-- Commit: `8b0537a`
+- Location: `src/components/useModalDialog.ts`, `src/components/BoardDesigner.tsx`
+- Resolution: Escape, focus-on-open, focus-restore, backdrop-close, and now a full Tab focus-trap (cycles within the dialog) are extracted into a shared `useModalDialog` hook adopted by both modals.
+- Commits: `8b0537a`, then focus-trap in the `useModalDialog` extraction.
 
 ### A3 `☑`
 
@@ -409,18 +408,19 @@ Keep the status markers current. If this file drifts away from the code, it stop
 - Resolution: Extracted `toBoardFeet`, `nonNegative`, `sum`, `clampAngle`, and the generic angle-only `clamp`, then updated three modules to import them.
 - Commit: `f9aa322`
 
-### HYG9 `⊘`
+### HYG9 `☑`
 
-- Problem: Several UI `Field` and `format` helpers are near-duplicates.
-- Location: `src/components/*`
-- Decision: Deferred.
-- Notes: The three `Field` implementations differ in meaningful ways, and a shared version is better verified in the running UI than by static checks alone.
+- Problem: Three near-identical labelled-number `Field` components.
+- Location: `src/components/fields.tsx`
+- Resolution: Extracted one `NumberField` (supporting `min`/`step`), adopted by the board designer, shop planner, and milling allowances. (`format` is only duplicated within BoardDesigner among components; the domain copies were consolidated separately in HYG8.)
+- Commit: `4f6c5ed`
 
-### HYG10 `⊘`
+### HYG10 `☑`
 
-- Problem: `useContainerWidth` and `useElementSize` are near-duplicate hooks.
-- Location: `src/components/*`
-- Decision: Deferred as low-value cleanup.
+- Problem: `useContainerWidth` and `useElementSize` duplicated the same ResizeObserver wiring with divergent effect deps.
+- Location: `src/components/useContainerWidth.ts`
+- Resolution: `useContainerWidth` is now a width-only convenience over `useElementSize`.
+- Commit: `68f097d`
 
 ### HYG11 `☑`
 
@@ -492,16 +492,14 @@ Keep the status markers current. If this file drifts away from the code, it stop
 
 ### TEST3 `◐`
 
-- Gap: `storage.ts` still lacks coverage for `downloadData`, `validColor` rejection, and bad-JSON to `starterData` fallback.
-- Already done: `C1` regression coverage, `saveData`/`loadData` round-trip coverage, and the quota-error path.
-- Commits: `8bc115f`, `9c798de`
+- Already done: `C1` regression, `saveData`/`loadData` round-trip, quota-error path, `validColor` rejection (covered by the malformed-records test), and bad-JSON / non-object to `starterData` fallback.
+- Remaining: only `downloadData` (a thin Blob/anchor wrapper needing four browser-API mocks; low value).
+- Commits: `8bc115f`, `9c798de`, bad-JSON fallback in the TEST3/4/7 commit.
 
-### TEST4 `◐`
+### TEST4 `☑`
 
-- Gap: Remaining domain export coverage is still incomplete.
-- Already done: `pickSpeciesPair`, `evenStripCount`, and `fitPxPerMm` are now covered, including fallback and clamp branches.
-- Remaining: `calculateWoodUsage` per-species internals plus `projectPolygon` and `pointsAttribute`.
-- Commit: `b110241`
+- Resolution: `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm` (fallback/clamp branches), `calculateWoodUsage` per-species split + skip-unknown-wood branch, and `projectPolygon`/`pointsAttribute` are now covered. Domain branch coverage rose from ~72% to ~80%; coverage floors ratcheted up.
+- Commits: `b110241`, TEST3/4/7 commit.
 
 ### TEST5 `☐`
 

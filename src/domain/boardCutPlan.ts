@@ -1,5 +1,6 @@
 import type { BoardProject, WoodSpecies } from '../types'
 import { calculateBuildDimensions, resolveAllowances } from './boardAllowances'
+import type { BuildDimensions } from './boardAllowances'
 import { CUBIC_MM_PER_BOARD_FOOT, calculateEndGrainMetrics } from './boardGeometry'
 
 export type CutStage = 'rip' | 'crosscut' | 'trim'
@@ -57,8 +58,8 @@ export function generateCuttingBoardPlan(project: BoardProject, woods: readonly 
   const build = calculateBuildDimensions(project)
   const metrics = calculateEndGrainMetrics(project)
   const allowance = resolveAllowances(project)
-  const stock = aggregateStock(project, woods)
-  const cuts = project.construction === 'end' ? endGrainCuts(project, build.stripRoughWidths, metrics.crosscutCount) : edgeGrainCuts(project, build.stripRoughWidths)
+  const stock = aggregateStock(project, woods, build)
+  const cuts = project.construction === 'end' ? endGrainCuts(project, build.stripRoughWidths, metrics.crosscutCount, metrics.sliceCount) : edgeGrainCuts(project, build)
   const warnings = project.construction === 'end' ? [...metrics.errors] : []
 
   if (project.construction === 'end' && Math.abs(metrics.faceShift) > 1e-9) {
@@ -81,8 +82,7 @@ export function generateCuttingBoardPlan(project: BoardProject, woods: readonly 
   }
 }
 
-function aggregateStock(project: BoardProject, woods: readonly WoodSpecies[]): StockRequirement[] {
-  const build = calculateBuildDimensions(project)
+function aggregateStock(project: BoardProject, woods: readonly WoodSpecies[], build: BuildDimensions): StockRequirement[] {
   const byKey = new Map<string, StockRequirement>()
 
   project.strips.forEach((strip, index) => {
@@ -115,8 +115,7 @@ function aggregateStock(project: BoardProject, woods: readonly WoodSpecies[]): S
   return [...byKey.values()]
 }
 
-function edgeGrainCuts(project: BoardProject, roughWidths: readonly number[]): CutListItem[] {
-  const build = calculateBuildDimensions(project)
+function edgeGrainCuts(project: BoardProject, build: BuildDimensions): CutListItem[] {
   const allowance = resolveAllowances(project)
   const cuts: CutListItem[] = project.strips.map((strip, index) => ({
     id: `rip-${index + 1}`,
@@ -126,18 +125,18 @@ function edgeGrainCuts(project: BoardProject, roughWidths: readonly number[]): C
     passes: 1,
     speciesId: strip.speciesId,
     sourceLength: build.length.rough,
-    sourceWidth: roughWidths[index] ?? strip.width,
+    sourceWidth: build.stripRoughWidths[index] ?? strip.width,
     sourceThickness: build.thickness.rough,
     targetWidth: strip.width,
     trailingAngle: 0,
-    note: `Leave ${format((roughWidths[index] ?? strip.width) - strip.width)} mm total width allowance before final sizing.`,
+    note: `Leave ${format((build.stripRoughWidths[index] ?? strip.width) - strip.width)} mm total width allowance before final sizing.`,
   }))
   if (allowance.lengthTrim > 0) cuts.push({ id: 'trim-length', stage: 'trim', label: 'Square both ends', quantity: 1, passes: 2, note: `Remove ${format(allowance.lengthTrim)} mm total to reach ${format(project.length)} mm.` })
   if (allowance.widthTrim > 0) cuts.push({ id: 'trim-width', stage: 'trim', label: 'Square outside edges', quantity: 1, passes: 2, note: `Remove ${format(allowance.widthTrim)} mm total after glue-up.` })
   return cuts
 }
 
-function endGrainCuts(project: BoardProject, roughWidths: readonly number[], crosscutCount: number): CutListItem[] {
+function endGrainCuts(project: BoardProject, roughWidths: readonly number[], crosscutCount: number, sliceCount: number): CutListItem[] {
   const allowance = resolveAllowances(project)
   const cuts: CutListItem[] = project.strips.map((strip, index) => ({
     id: `rip-${index + 1}`,
@@ -157,7 +156,7 @@ function endGrainCuts(project: BoardProject, roughWidths: readonly number[], cro
     id: 'crosscut-slices',
     stage: 'crosscut',
     label: 'Crosscut turned slices',
-    quantity: calculateEndGrainMetrics(project).sliceCount,
+    quantity: sliceCount,
     passes: crosscutCount,
     sourceLength: project.endGrain.sourceLength,
     sourceThickness: project.endGrain.stockThickness,

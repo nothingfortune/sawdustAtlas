@@ -27,6 +27,16 @@
 3. Flip the Status mark and add a one-line note (commit SHA or rationale) in the item.
 4. Keep `pnpm lint && pnpm test && pnpm build` green before each commit.
 
+## Status at a glance (2026-06-24)
+
+**Done (☑):** all P0 correctness (C1–C5) · perf P1–P2 · CI1–CI4 + CI6 decision · SEC1, SEC2, SEC5 · TOOL1–TOOL3 · all dead-code/hygiene (HYG1–HYG8, HYG11, HYG13) · A1, A3, A6 · DOC1–DOC5 · TEST6 · H4, H6, H8. Suite **67 → 87 tests**, lint/build green, domain branch coverage ~72% → ~78%.
+
+**Partial (◐):** A2 (focus/Escape/restore done; full Tab focus-trap remaining) · TEST3 (persistence + C1 covered; `downloadData`/`validColor`/bad-JSON remaining) · TEST4 (3 of ~5 exports covered).
+
+**Deferred / closed (⊘):** larger UX features — H1 (destructive-action guard), H2 (multi-level undo), H3 (import snapshot); needs-analysis — H7 (angle-shift double count); design-owner call — A7 (contrast); infra with ripple — SEC3 (unprivileged nginx port change), SEC4 (digest pinning), P4 (SW cache strategy); marginal — P3, A4, A5, HYG9, HYG10, HYG12; verify-on-publish — CI5 (id-token). **H5 closed as a misdiagnosis** (`Number('') === 0`, no NaN bug). Each row above carries the rationale.
+
+**Suggested next pass:** H2 multi-level undo (unlocks H3), then H7 with a board-feet fixture, then A2 focus-trap.
+
 ---
 
 ## P0 — Critical correctness (data loss / crashes) — all hand-verified
@@ -45,14 +55,14 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **H1** | ☐ | Destructive arrangement buttons (`Randomize`/`Mirror`/`Repeat`) discard the user's strips instantly with no preview, recoverable only via weak undo. | `src/components/BoardDesigner.tsx`, `src/domain/boardPatterns.ts` | Route destructive actions through the existing before/after confirm; visually separate destructive vs non-destructive arrangements. |
-| **H2** | ☐ | Undo is single-level, no redo, doesn't snapshot active-project selection, and lives far from the editing actions. | `src/App.tsx` (`undoData`, `commitData`) | Bounded undo stack (~10) + `Cmd/Ctrl+Z`; snapshot active ids alongside data. |
-| **H3** | ☐ | Import replaces the entire workspace; pre-import state survives only in volatile in-memory undo (lost on reload). | `src/App.tsx` import path | Auto-snapshot pre-import state to a separate `localStorage` key. |
-| **H4** | ☐ | `randomize`/`duplicate`/`mirror` mint new ids for **every** strip, so `StripList` keys all change and the list remounts (lost focus). | `src/components/BoardDesigner.tsx`, `src/domain/boardPatterns.ts` | Preserve ids for reorder/randomize; only mint ids for genuinely new strips. |
-| **H5** | ☐ | Cleared numeric inputs store `Number('')` → `NaN` into live state until a reload rescues it. | `BoardDesigner` Field, `ShopPlanner.tsx:186`, `MillingAllowances.tsx:23` | Guard with `Number(v) || 0` (or validate on change). |
-| **H6** | ☐ | `ShopPlanner` selection isn't reset when switching projects → inspector silently empties / points at a stale item. | `src/components/ShopPlanner.tsx` | Reset selection on `project.id` change. |
-| **H7** | ☐ | Angle shift is double-counted, inflating `removedBoardFeet`/`plannedWaste` for angled designs (added on already-padded widths in two places). | `src/domain/boardAllowances.ts:83`, `src/domain/boardCutPlan.ts:92` | Share one helper so the shift is applied once. |
-| **H8** | ☐ | `ShopPlanner.beginDrag` attaches `window` pointer listeners in a closure capturing `zoom`/`project` (stale after zoom/project change mid-drag); no `pointercancel`, leaks if unmounted mid-drag. | `src/components/ShopPlanner.tsx:40-46` | Read live values via ref; add `pointercancel`; prefer element-scoped pointer capture. |
+| **H1** | ⊘ | Destructive arrangement buttons fire instantly. **Deferred:** a genuine UX feature (route `Randomize`/`Mirror`/`Repeat` through the before/after confirm + visually separate destructive vs non-destructive), best designed with the owner. H4 already removes the worst side effect (id churn). | `src/components/BoardDesigner.tsx` | Deferred (UX feature). |
+| **H2** | ⊘ | Single-level undo, no redo, far from the editing actions. **Deferred:** a bounded undo stack + `Cmd/Z` + active-id snapshots is a sizable feature touching `App`'s whole state model (intertwined with the `dataRef` cleanup); out of scope for this remediation sweep. | `src/App.tsx` | Deferred (feature). |
+| **H3** | ⊘ | Import replaces the workspace with only volatile undo. **Deferred:** auto-snapshot to a separate key pairs naturally with the H2 undo rework; the import confirm + C4 honest-save already mitigate data loss. | `src/App.tsx` | Deferred (with H2). |
+| **H4** | ☑ | (`d8dc359`) `randomizeArrangement` now reorders strips in place, preserving ids so `StripList` rows move rather than remount. (`duplicate`/`mirror` already correctly mint ids only for the *new* appended copies.) | `src/components/BoardDesigner.tsx` | Done. |
+| **H5** | ⊘ | **N/A — not reproduced.** Every `Field` uses `Number(event.target.value)`, and `Number('') === 0` (not `NaN`); a cleared input becomes `0`, which is valid state. No NaN ever reaches the model. Closed as a misdiagnosis. | `src/components/*` | Closed (not a bug). |
+| **H6** | ☑ | (`d8dc359`) `ShopPlanner` clears its selection when the active project id changes (render-time reset), so the inspector no longer references an item from the previous plan. | `src/components/ShopPlanner.tsx` | Done. |
+| **H7** | ⊘ | Possible double-counted angle shift in rough-stock volume. **Deferred:** the two sites (`boardAllowances` rough volume vs `boardCutPlan` BOM width) are parallel computations, not obviously one inflated number; confirming/fixing needs a careful geometry derivation and a fixture that pins the expected board-feet — worth its own focused, test-first pass. | `src/domain/boardAllowances.ts`, `src/domain/boardCutPlan.ts` | Deferred (needs analysis). |
+| **H8** | ☑ | (`d8dc359`) Drag reads live zoom via an effect-synced ref (a pinch mid-drag no longer uses a stale zoom) and tears down on `pointercancel`. (Full element-scoped capture left as a larger refactor.) | `src/components/ShopPlanner.tsx` | Done. |
 
 ---
 
@@ -168,3 +178,4 @@
 | 2026-06-24 | nginx security headers + gzip (`c21604a`); CI type-check, coverage gate, container smoke test, corepack cleanup (`60abe3b`); CI5/CI6/SEC3/SEC4 deferred/decided. |
 | 2026-06-24 | a11y: jsx-a11y enforced + dialog focus/Escape + keyboard shop objects + reduced-motion (`8b0537a`); A2 partial, A4/A5/A7 deferred. |
 | 2026-06-24 | Storage sanitize/guard (`551dbce`); domain helpers → units.ts (`f9aa322`); domain tests added, branch coverage ~72%→~78% (`b110241`); HYG9/HYG10 deferred. Suite 76→87 green. |
+| 2026-06-24 | Docs synced: derived bond offsets + howTo index rename (`b5debab`), plan/readme (`233923b`). H4/H6/H8 fixed (`d8dc359`); H5 closed as misdiagnosis; H1/H2/H3/H7 deferred. Added status-at-a-glance summary. |

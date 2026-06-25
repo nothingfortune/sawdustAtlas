@@ -103,8 +103,8 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **TOOL1** | ☐ | Every dependency pinned to `"latest"` — manifest carries zero version intent; grouped-`*` Dependabot can float majors. | `package.json` | Pin to the lockfile-resolved versions (React 19, TS 6.0.3, Vite 8.0.16, ESLint 10.5.0, Vitest 4.1.9, …). |
-| **TOOL2** | ☐ | Node version stated three ways: `.nvmrc`=24, `engines.node`=">=20.19", `Dockerfile`=`node:22-alpine`. | `.nvmrc`, `package.json`, `Dockerfile` | Standardize on Node 24. |
+| **TOOL1** | ☑ | Every dependency pinned to `"latest"` — manifest carries zero version intent; grouped-`*` Dependabot can float majors. | `package.json` | Pin to the lockfile-resolved versions (React 19, TS 6.0.3, Vite 8.0.16, ESLint 10.5.0, Vitest 4.1.9, …). |
+| **TOOL2** | ☑ | Node version stated three ways: `.nvmrc`=24, `engines.node`=">=20.19", `Dockerfile`=`node:22-alpine`. | `.nvmrc`, `package.json`, `Dockerfile` | Standardize on Node 24. |
 | **TOOL3** | ☑ | `loadData`/`saveData` were untestable without a DOM env. **Resolved** with an in-memory `localStorage` stub (`vi.stubGlobal`) — more deterministic than jsdom and adds no dependency (jsdom 29 + vitest 4 didn't wire a working `localStorage`). `8bc115f` | `tests/storage.test.ts` | Done. `downloadData` (document/Blob/URL) still needs coverage → TEST3. |
 | **TOOL4** | ☐ | `tsconfig.app.json` lacks `composite: true` though referenced as a project. | `tsconfig.app.json` | Add `composite: true`. |
 | **TOOL5** | ☐ | No formatter config despite multi-file TS/MD and a contributor workflow. | repo root | Add `.editorconfig` (+ optional Prettier). |
@@ -115,19 +115,19 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **HYG1** | ☐ | Dead file — `SliceOrderList` imported nowhere (~111 lines). | `src/components/SliceOrderList.tsx` | Delete. |
-| **HYG2** | ☐ | Dead prop/branch — `WoodLibraryEditor.onUse` never passed by its only caller. | `src/components/WoodLibraryEditor.tsx` | Remove `onUse` + its button branch + dead CSS. |
-| **HYG3** | ☐ | Vestigial `selectedSlice` state (only ever `0`). | `src/components/BoardDesigner.tsx` | Remove state + clamp + prop threading. |
-| **HYG4** | ☐ | `CutStage` declares `'stock-prep'`/`'surface'` members never produced. | `src/domain/boardCutPlan.ts:5` | Remove unused union members. |
-| **HYG5** | ☐ | `test-results/.last-run.json` tracked + not gitignored (churns every run; committed "passed" artifact). | `test-results/`, `.gitignore` | `git rm --cached`; add `test-results/` to `.gitignore`. |
-| **HYG6** | ☐ | `.gitignore` `claude/*` matches nothing (dir is `.claude/`); dead `agents/*`. | `.gitignore` | Fix to `.claude/settings.local.json`; drop dead pattern. |
-| **HYG7** | ☐ | `.dockerignore` lists both `.ds_store` and `.DS_Store`. | `.dockerignore` | Drop the lowercase dup. |
+| **HYG1** | ☑ | Dead file — `SliceOrderList` imported nowhere (~111 lines). | `src/components/SliceOrderList.tsx` | Delete. |
+| **HYG2** | ☑ | Dead prop/branch — `WoodLibraryEditor.onUse` never passed by its only caller. | `src/components/WoodLibraryEditor.tsx` | Remove `onUse` + its button branch + dead CSS. |
+| **HYG3** | ☑ | Vestigial `selectedSlice` state (only ever `0`). | `src/components/BoardDesigner.tsx` | Remove state + clamp + prop threading. |
+| **HYG4** | ☑ | `CutStage` declares `'stock-prep'`/`'surface'` members never produced. | `src/domain/boardCutPlan.ts:5` | Remove unused union members. |
+| **HYG5** | ☑ | `test-results/.last-run.json` tracked + not gitignored (churns every run; committed "passed" artifact). | `test-results/`, `.gitignore` | `git rm --cached`; add `test-results/` to `.gitignore`. |
+| **HYG6** | ☑ | `.gitignore` `claude/*` matches nothing (dir is `.claude/`); dead `agents/*`. | `.gitignore` | Fix to `.claude/settings.local.json`; drop dead pattern. |
+| **HYG7** | ☑ | `.dockerignore` lists both `.ds_store` and `.DS_Store`. | `.dockerignore` | Drop the lowercase dup. |
 | **HYG8** | ☐ | Duplicated domain helpers (`toBoardFeet`, `clampAngle`, `nonNegative`, `sum`) across three files. | `src/domain/*` | Extract `src/domain/units.ts`. |
 | **HYG9** | ☐ | Duplicated UI `Field`/`format` helpers across three components. | `src/components/*` | Extract a shared `ui` module. |
 | **HYG10** | ☐ | Near-duplicate hooks `useContainerWidth`/`useElementSize` with divergent deps. | `src/components/*` | Unify. |
 | **HYG11** | ☑ | Stale dated review committed as a tracked doc. | `docs/reviews/REVIEW-2026-06-24-develop.md` | Replaced by this living tracker. |
 | **HYG12** | ☐ | Pervasive over-commenting (generated-code tell). | `src/components/BoardDesigner.tsx`, `src/components/board/*` | Trim self-evident comments opportunistically. |
-| **HYG13** | ☐ | `.claude/settings.local.json` tracked (per-developer local file). | `.claude/` | Untrack + gitignore. |
+| **HYG13** | ☑ | `.claude/settings.local.json` tracked (per-developer local file). | `.claude/` | Untrack + gitignore. |
 
 ---
 
@@ -163,3 +163,4 @@
 |------|--------|
 | 2026-06-24 | Tracker opened; folded in `REVIEW-2026-06-24-develop.md` + fresh audit; baseline green (67 tests). |
 | 2026-06-24 | P0 C1–C5 fixed test-first (`9c798de`,`6b3df17`,`2a4f1a9`,`8bc115f`,`ed2cb7a`); TEST6 + storage persistence coverage added; suite 67→76 green. |
+| 2026-06-24 | Dead code removed (`555eadc`); repo hygiene + ignore rules (`8ffeb4a`); Node 24 reconcile (`fa7fe7c`); deps pinned off "latest" (`5d56f68`). |

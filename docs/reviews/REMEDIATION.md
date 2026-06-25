@@ -33,11 +33,11 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **C1** | ☐ | Negative `trailingAngle` is floored to `0` on every load **and** export (`finiteNumber` does `Math.max(0, value)`), silently flattening chevron/herringbone/mirrored-bevel designs. `normalizeData` runs inside `downloadData` too, so backups are corrupted. | `src/storage.ts:50,122-123`, `:133` | Add a sign-preserving `signedFinite()` coercion; use it for angles/offsets, keep `Math.max(0, …)` only for true dimensions. Regression test: negative angle survives a normalize round-trip. |
-| **C2** | ☐ | Volume-conservation check fails on legitimately angled strips: `buildEndGrainTemplate` computes `rightWidth` **unclamped** while `calculateStripVolumes` clamps `Math.max(0, …)`, so the two diverge when an angled face closes and `calculateEndGrainMetrics` reports "conservation failed" on valid geometry. | `src/domain/boardGeometry.ts:72` vs `:194` | Align the clamp (or suppress the conservation assertion when `template.errors` is non-empty). Extend the conservation fuzz loop to include angled strips. |
-| **C3** | ☐ | Cut plan reads `project.allowances.*` raw, bypassing `resolveAllowances`; on a partial/missing `allowances` it throws `TypeError` or emits `NaN mm` notes while dimensions use defaults — cut list and dimensions silently disagree. | `src/domain/boardCutPlan.ts:77,133,134,165,171` | Compute `resolveAllowances(project)` once, thread it through the file. Test: partial-allowances project produces a finite, defaulted plan. |
-| **C4** | ☐ | `saveData` has no error handling; autosave effect can throw `QuotaExceededError`/`SecurityError` while the UI unconditionally shows "Saved in this browser" → silent data loss. | `src/storage.ts:128-130`, `src/App.tsx` save indicator | Wrap in try/catch returning a success boolean; surface an honest "couldn't save — storage full" state. Test under jsdom with a throwing storage stub. |
-| **C5** | ☐ | `applySliceOrder` does `order.map(i => states[i]).filter(Boolean)` with no dedupe/length guarantee, so a bad order (`[0,0,1]`) duplicates one slice and drops others, desyncing the parallel `rowOrder/rowFlips/rowRotations/rowOffsets` arrays. Latent today; corruption trap. | `src/domain/boardSlices.ts:56-62` | Run the result through the same dedupe-and-backfill as `normalizeOrder` (or assert a permutation of `0..n-1`). Test with malformed orders. |
+| **C1** | ☑ | Negative `trailingAngle` floored to `0` on every load/export, flattening chevron/herringbone designs. **Fixed:** added sign-preserving `signedFinite()` for angles/offsets, kept flooring for dimensions; regression tests cover both signed fields. `9c798de` | `src/storage.ts` | Done. |
+| **C2** | ☑ | Spurious "conservation failed" piled onto strips that already report `closes or crosses`. **Fixed:** only assert conservation when the design is otherwise valid; added a 120-case angled fuzz (also TEST6) proving valid angled designs conserve. `6b3df17` | `src/domain/boardGeometry.ts` | Done. |
+| **C3** | ☑ | Cut plan read `project.allowances.*` raw → crash/`NaN` on partial allowances. **Fixed:** threaded `resolveAllowances` through all five reads; test with a board that has no allowances. `2a4f1a9` | `src/domain/boardCutPlan.ts` | Done. |
+| **C4** | ☑ | `saveData` could throw while the UI claimed "Saved". **Fixed:** `saveData` returns a success boolean; App shows an honest "Not saved — export a backup" warning; tests use an in-memory `localStorage` stub for the round-trip and quota-error paths. `8bc115f` | `src/storage.ts`, `src/App.tsx` | Done. |
+| **C5** | ☑ | `applySliceOrder` didn't dedupe/backfill, so a malformed order desynced the parallel arrays. **Fixed:** reuse `normalizeOrder` so the result is always a permutation of `0..count-1`. `ed2cb7a` | `src/domain/boardSlices.ts` | Done. |
 
 ---
 
@@ -105,7 +105,7 @@
 |----|:--:|------|----------|--------------|
 | **TOOL1** | ☐ | Every dependency pinned to `"latest"` — manifest carries zero version intent; grouped-`*` Dependabot can float majors. | `package.json` | Pin to the lockfile-resolved versions (React 19, TS 6.0.3, Vite 8.0.16, ESLint 10.5.0, Vitest 4.1.9, …). |
 | **TOOL2** | ☐ | Node version stated three ways: `.nvmrc`=24, `engines.node`=">=20.19", `Dockerfile`=`node:22-alpine`. | `.nvmrc`, `package.json`, `Dockerfile` | Standardize on Node 24. |
-| **TOOL3** | ☐ | Vitest has no `jsdom` environment, so `loadData`/`saveData`/`downloadData` are untestable. | `vite.config.ts` | Add `environment: 'jsdom'` (or per-file `// @vitest-environment jsdom`). |
+| **TOOL3** | ☑ | `loadData`/`saveData` were untestable without a DOM env. **Resolved** with an in-memory `localStorage` stub (`vi.stubGlobal`) — more deterministic than jsdom and adds no dependency (jsdom 29 + vitest 4 didn't wire a working `localStorage`). `8bc115f` | `tests/storage.test.ts` | Done. `downloadData` (document/Blob/URL) still needs coverage → TEST3. |
 | **TOOL4** | ☐ | `tsconfig.app.json` lacks `composite: true` though referenced as a project. | `tsconfig.app.json` | Add `composite: true`. |
 | **TOOL5** | ☐ | No formatter config despite multi-file TS/MD and a contributor workflow. | repo root | Add `.editorconfig` (+ optional Prettier). |
 
@@ -149,10 +149,10 @@
 |----|:--:|------|--------------|
 | **TEST1** | ☐ | Live slice drag-reorder math (`DraggableAssembledBoard`: `targetFromX`/`orderWithKeyAt`/tap-vs-drag threshold) untested — largest untested logic. | Extract the pure math and unit-test it. |
 | **TEST2** | ☐ | `usePinchPan` transform math untested. | Extract + test scale clamp / pan offset / single-pointer pass-through. |
-| **TEST3** | ☐ | `storage.ts` branches untested (migration, malformed input, bad-JSON fallback, `validColor`) incl. **C1 regression**. | Add under jsdom env. |
+| **TEST3** | ◐ | `storage.ts` branches: C1 regression + `saveData`/`loadData` round-trip + quota-error path now covered (`8bc115f`, `9c798de`). Still open: `downloadData`, `validColor` rejection, bad-JSON → `starterData` fallback. | Add remaining cases. |
 | **TEST4** | ☐ | `calculateWoodUsage` internals, `pickSpeciesPair`, `evenStripCount`, `fitPxPerMm`, `projectPolygon` uncovered. | Add targeted tests. |
 | **TEST5** | ☐ | No CI container smoke test. | Covered by CI3. |
-| **TEST6** | ☐ | Conservation fuzz loop only covers `trailingAngle: 0`. | Extend to angled strips (covers C2). |
+| **TEST6** | ☑ | Conservation fuzz loop only covered `trailingAngle: 0`. **Fixed:** added a 120-case angled fuzz alongside C2. `6b3df17` | Done. |
 | **TEST7** | ☐ | Weak/tautological assertions. | `tests/storage.test.ts:62` (`toBeDefined`), `tests/boardGeometry.test.ts:47-48` (literal-vs-literal). |
 
 ---
@@ -162,3 +162,4 @@
 | Date | Change |
 |------|--------|
 | 2026-06-24 | Tracker opened; folded in `REVIEW-2026-06-24-develop.md` + fresh audit; baseline green (67 tests). |
+| 2026-06-24 | P0 C1–C5 fixed test-first (`9c798de`,`6b3df17`,`2a4f1a9`,`8bc115f`,`ed2cb7a`); TEST6 + storage persistence coverage added; suite 67→76 green. |

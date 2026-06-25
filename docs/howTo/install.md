@@ -21,7 +21,7 @@ That command only needs to be done once. After that, SawdustAtlas starts on its 
 ## Step 1 — Install Docker Desktop
 
 1. Go to **https://www.docker.com/products/docker-desktop/**.
-2. Download the version for your computer (Windows or Mac). If you have a newer Mac and are unsure, choose the **Apple Silicon** version; if that does not work, the **Intel** version will.
+2. Download the version for your computer. On a Mac, choose **Apple Silicon** for a newer Mac (M1/M2/M3/M4 and later) or **Intel** for an older Mac — if you are unsure, click the Apple menu &rarr; **About This Mac** to see your chip. SawdustAtlas runs on both, as well as on Windows.
 3. Open the downloaded file and follow the installer like any other program.
 4. Start **Docker Desktop**. The first time, it may ask you to accept an agreement and may take a minute to start.
 5. **Wait until Docker Desktop says it is running** (you will see a green "running" indicator). Do not continue until it does.

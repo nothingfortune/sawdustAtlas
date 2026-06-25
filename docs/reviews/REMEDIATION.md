@@ -71,13 +71,13 @@
 
 | ID | Status | Item | Location | Fix approach |
 |----|:--:|------|----------|--------------|
-| **A1** | ☐ | Top-view shop objects are non-semantic `div`s (`onPointerDown` only, no `role`/`tabIndex`/`aria-label`/keyboard) — inaccessible to keyboard/AT. | `src/components/ShopPlanner.tsx:95,97` | Make them focusable buttons; add keyboard select/nudge. |
-| **A2** | ☐ | Modals set `aria-modal` but don't trap/move/restore focus; `PatternPreviewDialog` has **no** Escape handler. | `src/components/BoardDesigner.tsx` (PreviewPopout, PatternPreviewDialog `:302`) | Focus-on-open + focus trap + restore; add Escape to the pattern dialog. |
-| **A3** | ☐ | No automated a11y linting. | `eslint.config.js` | Add `eslint-plugin-jsx-a11y` (catches most of A1/A2 regressions). |
-| **A4** | ☐ | `DraggableAssembledBoard` has no keyboard path to reorder/rotate (unlike `StripList`). | `src/components/BoardDesigner.tsx` | Add keyboard reorder + documented rotate key. |
-| **A5** | ☐ | `studio-tap` `role="button"` wraps interactive slice `<g role="button">` (nested interactive controls). | `src/components/BoardDesigner.tsx` | Make "tap to enlarge" a discrete corner affordance. |
-| **A6** | ☐ | No `prefers-reduced-motion`; terse `R/F/N` `aria-label`s. | `src/styles.css`, slice labels | Add reduced-motion media query; expand aria-labels. |
-| **A7** | ☐ | Small-text colors (`.studio-note` `#7a8079`, `.eyebrow` `#a15f35`) near AA threshold. | `src/styles.css` | Audit against WCAG AA; darken if needed. |
+| **A1** | ☑ | (`8b0537a`) Top-view shop objects are now focusable `role="button"` elements with `aria-label`/`aria-pressed`, Enter/Space select, and arrow-key nudge (Shift = coarse) clamped to the room. | `src/components/ShopPlanner.tsx` | Done. |
+| **A2** | ◐ | (`8b0537a`) `PatternPreviewDialog` now handles Escape; both modals focus the dialog on open, restore focus to the trigger on close, and close on a direct backdrop click. **Remaining:** full Tab focus-trap (cycle within dialog). | `src/components/BoardDesigner.tsx` | Focus-trap still to do. |
+| **A3** | ☑ | (`8b0537a`) Added `eslint-plugin-jsx-a11y` (recommended, as **errors**); cleared all 8 flagged issues. Guards regressions in CI going forward. | `eslint.config.js` | Done. |
+| **A4** | ⊘ | `DraggableAssembledBoard` has no keyboard reorder/rotate. **Deferred:** involved (drag math + a documented rotate key + focus handling on an SVG `<g>` grid); wants its own change. `StripList` already has arrow-key reorder. | `src/components/BoardDesigner.tsx` | Deferred. |
+| **A5** | ⊘ | `studio-tap` nests interactive controls. **Deferred:** jsx-a11y did not flag it and restructuring the tap-to-enlarge affordance is a UX change better made with the designer. | `src/components/BoardDesigner.tsx` | Deferred. |
+| **A6** | ☑ | (`8b0537a`) Added a `prefers-reduced-motion: reduce` media query that neutralizes animations/transitions. (aria-label expansion folded into A1/A2 where relevant.) | `src/styles.css` | Done. |
+| **A7** | ⊘ | Small-text colors near the AA threshold. **Deferred:** darkening brand colors is a design decision for the owner (a designer); flagged for a measured contrast pass rather than an arbitrary change. | `src/styles.css` | Deferred (design decision). |
 
 ---
 
@@ -166,3 +166,4 @@
 | 2026-06-24 | Dead code removed (`555eadc`); repo hygiene + ignore rules (`8ffeb4a`); Node 24 reconcile (`fa7fe7c`); deps pinned off "latest" (`5d56f68`). |
 | 2026-06-24 | Perf: memoized BoardDesigner pipeline (`13b583b`) and de-duped cut-plan recomputation (`ec699e5`); P3/P4 deferred with rationale. |
 | 2026-06-24 | nginx security headers + gzip (`c21604a`); CI type-check, coverage gate, container smoke test, corepack cleanup (`60abe3b`); CI5/CI6/SEC3/SEC4 deferred/decided. |
+| 2026-06-24 | a11y: jsx-a11y enforced + dialog focus/Escape + keyboard shop objects + reduced-motion (`8b0537a`); A2 partial, A4/A5/A7 deferred. |

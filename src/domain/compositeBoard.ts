@@ -1,4 +1,4 @@
-import type { AssemblyCell, CompositeBoard, RipPanel, SourcePanel } from '../types'
+import type { AssemblyCell, CompositeBoard, DerivedPanel, RipPanel, SourcePanel } from '../types'
 import { CUBIC_MM_PER_BOARD_FOOT, nonNegative } from './units'
 
 export type BoardRegistry = Map<string, CompositeBoard>
@@ -12,10 +12,26 @@ export interface Piece {
   bySpecies: Record<string, number>
 }
 
-export function panelPieces(panel: SourcePanel, _registry: BoardRegistry): Piece[] {
-  if (panel.kind === 'rip') return ripPanelPieces(panel)
-  // Derived panels resolve from a source board; rendering is added in Task 5.
-  return []
+export function panelPieces(panel: SourcePanel, registry: BoardRegistry): Piece[] {
+  return panel.kind === 'rip' ? ripPanelPieces(panel) : derivedPanelPieces(panel, registry)
+}
+
+function derivedPanelPieces(panel: DerivedPanel, registry: BoardRegistry): Piece[] {
+  const source = registry.get(panel.sourceBoardId)
+  if (!source) return []
+  const size = assembledSize(source, registry)
+  const sourceVolume = boardVolumeBySpecies(source, registry)
+  const count = Math.max(0, Math.floor(panel.crosscut.count))
+  const width = nonNegative(panel.crosscut.stripWidthMm)
+  const bySpecies: Record<string, number> = {}
+  for (const [species, volume] of Object.entries(sourceVolume)) {
+    bySpecies[species] = count > 0 ? volume / count : 0
+  }
+  const pieces: Piece[] = []
+  for (let index = 0; index < count; index += 1) {
+    pieces.push({ panelId: panel.id, index, widthMm: width, heightMm: size.widthMm, thicknessMm: size.thicknessMm, bySpecies: { ...bySpecies } })
+  }
+  return pieces
 }
 
 function ripPanelPieces(panel: RipPanel): Piece[] {

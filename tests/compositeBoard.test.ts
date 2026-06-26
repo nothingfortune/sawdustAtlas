@@ -97,3 +97,32 @@ describe('boardDependsOn (cycle guard)', () => {
     expect(boardDependsOn(c, 'Z', reg)).toBe(false)
   })
 })
+
+describe('panelPieces (derived panel)', () => {
+  it('renders the source board then crosscuts it into N pieces, splitting material evenly', () => {
+    const source = boardWith({ id: 'A', panels: [ripPanel()] }) // maple 30000 + walnut 10000 over 2 placed pieces
+    const reg = new Map([['A', source]])
+    const panel = derivedPanel('A', { crosscut: { stripWidthMm: 20, kerfMm: 3, count: 4 } })
+    const pieces = panelPieces(panel, reg)
+    expect(pieces).toHaveLength(4)
+    expect(pieces[0]).toMatchObject({ widthMm: 20, heightMm: 25 }) // source width = 25
+    expect(pieces[0]?.bySpecies).toEqual({ maple: 30000 / 4, walnut: 10000 / 4 })
+  })
+
+  it('yields no pieces when the source board is missing from the registry', () => {
+    expect(panelPieces(derivedPanel('missing'), new Map())).toEqual([])
+  })
+
+  it('conserves material up a derived chain: re-cutting a board keeps total volume', () => {
+    const source = boardWith({ id: 'A', panels: [ripPanel()] })
+    const reg = new Map([['A', source]])
+    const child = boardWith({
+      id: 'B', panels: [derivedPanel('A', { id: 'dp', crosscut: { stripWidthMm: 20, kerfMm: 3, count: 4 } })],
+      rows: 4, cols: 1,
+      cells: [0, 1, 2, 3].map(i => cell({ panelId: 'dp', pieceIndex: i })),
+    })
+    reg.set('B', child)
+    // placing all 4 derived pieces reconstitutes the source board's material
+    expect(boardVolumeBySpecies(child, reg)).toEqual({ maple: 30000, walnut: 10000 })
+  })
+})

@@ -62,15 +62,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | ⚪ | PLAT-006 | Project duplicate, rename, archive, delete | Planned | Next | Destructive actions require confirmation; archived projects remain recoverable. |
 | ⚪ | PLAT-007 | Search, tags, and recent projects | Planned | Later | Projects can be filtered by name, type, wood species, and tags. |
 | 🟡 | PLAT-008 | Accessible keyboard operation | Partial | Now | Navigation is labeled; all canvas operations need keyboard equivalents and visible focus states. |
-
-### Workshop Layout Planner
-
-|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
-| --- | --- | --- | --- | --- | --- |
-| 🟢 | SHOP-001 | Rectangular room with real dimensions | Complete | Now | Width and depth are stored in millimeters and rendered to scale. |
-| 🟢 | SHOP-002 | Place and drag shop objects | Complete | Now | Machines, benches, storage, and doors can be added and moved within room bounds. |
-| 🟢 | SHOP-003 | Edit object dimensions and rotation | Complete | Now | Width, depth, name, duplicate, delete, and 0/90/180/270-degree rotation are supported. |
-| 🟡 | SHOP-004 | Working-clearance zones | Partial | Next | General and directional infeed/outfeed/side zones are visible and rotate with equipment; add distinct operator zones and collision warnings. |
+ | General and directional infeed/outfeed/side zones are visible and rotate with equipment; add distinct operator zones and collision warnings. |
 | 🟡 | SHOP-005 | Custom object library | Partial | Next | Catalog and arbitrary placed objects support category, dimensions, color, and clearance; add reusable user presets, notes, photos, and directional clearance profiles. |
 | ⚪ | SHOP-006 | Snap, guides, and precise placement | Planned | Next | Configurable grid snap, edge/center guides, coordinate entry, nudge controls, and alignment tools. |
 | ⚪ | SHOP-007 | Collision and clearance warnings | Planned | Next | Distinguish physical overlap from working-zone conflicts; warnings identify involved objects. |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellFromPointer, clearCell, cycleTransform, emptyCells, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
+import { cellFromPointer, clearCell, cycleTransform, emptyCells, moveCell, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
 import type { AssemblyCell } from '../src/types'
 
 const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
@@ -67,5 +67,26 @@ describe('cellFromPointer (2D hit test)', () => {
   })
   it('returns -1 when outside every cell', () => {
     expect(cellFromPointer(rects, 100, 100)).toBe(-1)
+  })
+})
+
+describe('moveCell (drag to move / swap)', () => {
+  it('moves a piece into an empty cell', () => {
+    const cells = placeCell(emptyCells(1, 2), 0, cell({ pieceIndex: 1 }))
+    const after = moveCell(cells, 0, 1)
+    expect(after[0]).toBeNull()
+    expect(after[1]).toEqual(cell({ pieceIndex: 1 }))
+  })
+  it('swaps when the target is occupied', () => {
+    let cells = placeCell(emptyCells(1, 2), 0, cell({ pieceIndex: 1 }))
+    cells = placeCell(cells, 1, cell({ pieceIndex: 2 }))
+    const after = moveCell(cells, 0, 1)
+    expect(after[0]).toEqual(cell({ pieceIndex: 2 }))
+    expect(after[1]).toEqual(cell({ pieceIndex: 1 }))
+  })
+  it('is a no-op for from===to or out-of-range', () => {
+    const cells = placeCell(emptyCells(1, 2), 0, cell())
+    expect(moveCell(cells, 0, 0)).toEqual(cells)
+    expect(moveCell(cells, 0, 9)).toEqual(cells)
   })
 })

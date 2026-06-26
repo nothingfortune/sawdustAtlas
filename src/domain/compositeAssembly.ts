@@ -55,3 +55,12 @@ export function cellFromPointer(rects: readonly CellRect[], clientX: number, cli
   }
   return -1
 }
+
+export function moveCell(cells: Cell[], from: number, to: number): Cell[] {
+  if (from === to || from < 0 || to < 0 || from >= cells.length || to >= cells.length) return cells
+  const next = cells.slice()
+  const moved = next[from] ?? null
+  next[from] = next[to] ?? null
+  next[to] = moved
+  return next
+}

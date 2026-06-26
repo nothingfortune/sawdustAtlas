@@ -1,4 +1,4 @@
-export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances'
+export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances' | 'composites'
 
 export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
 export type FeedDirection = 0 | 90 | 180 | 270

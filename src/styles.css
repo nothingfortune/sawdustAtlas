@@ -126,6 +126,44 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .wood-delete svg { width:13px; }
 .wood-price { text-align:right; }
 
+/* Composite boards section */
+.composite-empty { display:grid; place-items:center; align-content:center; gap:16px; min-height:calc(100vh - 63px); color:#747b74; }
+.composite-board { display:flex; flex-direction:column; height:calc(100vh - 63px); overflow:hidden; }
+.composite-head { display:flex; align-items:center; gap:10px; padding:12px 20px; background:var(--paper); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.composite-name { border:0; background:transparent; font-weight:700; font-size:16px; flex:1; min-width:120px; padding:4px 0; }
+.composite-body { flex:1; display:flex; min-height:0; overflow:hidden; }
+.panel-rail { width:220px; flex:none; background:#f8f6f0; border-right:1px solid var(--line); overflow-y:auto; display:flex; flex-direction:column; }
+.panel-card { border-bottom:1px solid var(--line); padding:12px; }
+.panel-card-head { width:100%; border:0; background:transparent; text-align:left; padding:0; display:flex; flex-direction:column; gap:2px; cursor:pointer; }
+.panel-card-head:hover { color:var(--green); }
+.panel-card-name { font-weight:600; font-size:12px; }
+.panel-card-meta { font:9px 'DM Mono'; color:#8a8d85; text-transform:uppercase; letter-spacing:.06em; }
+.crosscut-stepper { display:flex; align-items:center; gap:6px; margin:8px 0 4px; font-size:11px; color:#5d6b60; }
+.crosscut-stepper .icon-button { width:26px; height:26px; flex:none; }
+.piece-tray { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.piece-chip { display:flex; flex-direction:column; align-items:center; gap:2px; border:1px solid var(--line); background:white; padding:4px 6px; border-radius:2px; font:9px 'DM Mono'; cursor:pointer; }
+.piece-chip:hover { border-color:#9da696; background:#fffaf1; }
+.piece-chip.is-selected { border-color:var(--green); background:#e8f0ea; outline:2px solid var(--green); outline-offset:-1px; }
+.add-panel { background:#f3f1ea; display:flex; flex-direction:column; gap:8px; margin-top:auto; border-bottom:0; }
+.add-panel select { width:100%; border:1px solid var(--line); background:white; padding:9px 8px; font:inherit; font-size:11px; border-radius:2px; }
+.assembly-canvas { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; background:#dddcd5; }
+.assembly-canvas .pinch-viewport { flex:1; min-height:0; }
+.assembly-canvas .canvas-controls { position:static; transform:none; background:#fff; border-top:1px solid var(--line); padding:8px 12px; display:flex; gap:8px; box-shadow:none; }
+.cell-clear-row { display:flex; flex-wrap:wrap; gap:4px; padding:6px 12px; background:#f8f6f0; border-top:1px solid var(--line); }
+.composite-summary { width:260px; flex:none; background:#f8f6f0; border-left:1px solid var(--line); overflow-y:auto; padding:16px; }
+.composite-summary h3 { margin:0 0 6px; font-size:13px; }
+.composite-summary section { margin-bottom:20px; }
+.composite-summary table { border-collapse:collapse; font-size:11px; width:100%; }
+.composite-summary td { padding:3px 6px 3px 0; }
+.composite-summary td:last-child { text-align:right; font-family:'DM Mono'; color:#6d786f; }
+.composite-summary p { margin:0; color:#8a8d85; font-size:11px; }
+.cut-stage { margin-top:8px; }
+.cut-stage h4 { margin:0 0 5px; font-size:12px; }
+.cut-stage ol { margin:0; padding-left:16px; font-size:10px; line-height:1.6; color:#3a4439; }
+.panel-drawer { position:fixed; top:63px; right:0; bottom:0; width:min(420px,90vw); background:#f8f6f0; border-left:1px solid var(--line); overflow-y:auto; z-index:30; box-shadow:-8px 0 24px #00000030; padding:0 0 20px; }
+.panel-drawer-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); position:sticky; top:0; background:#f8f6f0; z-index:1; }
+.panel-name { border:0; background:transparent; font-weight:700; font-size:15px; flex:1; min-width:0; padding:2px 0; }
+
 /* Touch ergonomics: enlarge hit targets on coarse (finger) pointers only. */
 @media (pointer: coarse) {
   .button { min-height:44px; }
@@ -156,6 +194,9 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .zoom-reset { min-height:42px; padding:9px 15px; }
   .color-field input { height:42px; }
   .panel-fab { padding:15px 22px; }
+  .piece-chip { min-height:44px; min-width:44px; }
+  .crosscut-stepper .icon-button { min-width:44px; min-height:44px; width:44px; height:44px; }
+  .cell-clear-row .icon-button { min-width:44px; min-height:44px; }
 }
 
 /* Portrait: editor panels become slide-over drawers; canvas goes full-width. */

@@ -1,24 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
-import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
+import { Boxes, Grid2X2, Home, Import, Layers, Menu, PanelLeftClose, Redo2, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
+import { CompositeBoards } from './components/composite/CompositeBoards'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
 
-interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
+interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string; activeComposite: string }
 
 export default function App() {
   const [data, setData] = useState<AtlasData>(loadData)
   const [view, setView] = useState<View>('home')
   const [activeShop, setActiveShop] = useState(data.shops[0]?.id ?? '')
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
+  const [activeComposite, setActiveComposite] = useState(data.composites[0]?.id ?? '')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
@@ -40,20 +42,21 @@ export default function App() {
     const current = dataRef.current
     const next = updater(current)
     if (next === current) return
-    setHistory(past => record(past, { data: current, activeShop, activeBoard }))
+    setHistory(past => record(past, { data: current, activeShop, activeBoard, activeComposite }))
     dataRef.current = next
     setData(next)
   }
   // Step the undo or redo stack, restoring the data AND the active selection that
   // was current at that point (so undoing a delete re-selects what came back).
   const applyHistory = (step: typeof undoHistory) => {
-    const result = step(history, { data: dataRef.current, activeShop, activeBoard })
+    const result = step(history, { data: dataRef.current, activeShop, activeBoard, activeComposite })
     if (!result) return
     setHistory(result.history)
     dataRef.current = result.restored.data
     setData(result.restored.data)
     setActiveShop(result.restored.activeShop)
     setActiveBoard(result.restored.activeBoard)
+    setActiveComposite(result.restored.activeComposite)
   }
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
     // applyHistory is recreated each render from these values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, activeShop, activeBoard])
+  }, [history, activeShop, activeBoard, activeComposite])
 
   const updateShop = (project: ShopProject) => commitData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
   const updateBoard = (project: BoardProject) => commitData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
@@ -121,6 +124,18 @@ export default function App() {
     }
     commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
   }
+  const createComposite = () => {
+    const project: CompositeBoard = { id: createId(), name: 'Untitled composite', panels: [], rows: 1, cols: 1, cells: [null], updatedAt: new Date().toISOString() }
+    commitData(current => ({ ...current, composites: [...current.composites, project] })); setActiveComposite(project.id); setView('composites')
+  }
+  const updateComposite = (project: CompositeBoard) => commitData(current => ({ ...current, composites: current.composites.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p) }))
+  const deleteComposite = (id: string) => {
+    const project = data.composites.find(p => p.id === id)
+    if (!project || !window.confirm(`Delete composite "${project.name}"?`)) return
+    const remaining = data.composites.filter(p => p.id !== id)
+    commitData(current => ({ ...current, composites: current.composites.filter(p => p.id !== id) }))
+    if (activeComposite === id) setActiveComposite(remaining[0]?.id ?? '')
+  }
 
   async function importFile(file?: File) {
     if (!file) return
@@ -156,6 +171,7 @@ export default function App() {
         <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
         <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
         <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
+        <NavButton active={view === 'composites'} icon={<Layers />} label="Composite boards" open={sidebarOpen} onClick={() => setView('composites')} />
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
@@ -169,7 +185,7 @@ export default function App() {
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
+        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'composites' ? 'Composite boards' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
           {saveOk
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
@@ -185,6 +201,17 @@ export default function App() {
         {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} />}
         {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
+        {view === 'composites' && (
+          <CompositeBoards
+            projects={data.composites}
+            project={data.composites.find(p => p.id === activeComposite)}
+            woods={data.woods}
+            onSelect={setActiveComposite}
+            onCreate={createComposite}
+            onChange={updateComposite}
+            onDelete={deleteComposite}
+          />
+        )}
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />

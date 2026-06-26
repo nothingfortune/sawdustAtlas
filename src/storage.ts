@@ -1,4 +1,4 @@
-import type { AtlasData, BoardProject, BuildAllowances, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
+import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, SourcePanel, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -34,6 +34,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
+    composites: records(data.composites).map(normalizeComposite),
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
     boards: boards.map((board): BoardProject => ({
@@ -76,6 +77,63 @@ function normalizeBlockedZone(zone: ShopBlockedZone): ShopBlockedZone {
     y: finiteNumber(zone.y, 0),
     width: Math.max(1, finiteNumber(zone.width, 600)),
     depth: Math.max(1, finiteNumber(zone.depth, 600)),
+  }
+}
+
+function normalizeComposite(raw: Record<string, unknown>): CompositeBoard {
+  const rows = Math.max(1, Math.floor(finiteNumber(raw['rows'], 1)))
+  const cols = Math.max(1, Math.floor(finiteNumber(raw['cols'], 1)))
+  // Map the raw array directly (not via `records`, which drops null entries and
+  // would collapse a sparse grid) so empty cells keep their position.
+  const rawCells = Array.isArray(raw['cells']) ? raw['cells'] : []
+  return {
+    id: stringValue(raw['id'], createId()),
+    name: stringValue(raw['name'], 'Composite board'),
+    rows,
+    cols,
+    updatedAt: stringValue(raw['updatedAt'], new Date().toISOString()),
+    panels: records(raw['panels']).map(normalizeSourcePanel),
+    cells: Array.from({ length: rows * cols }, (_, i) => normalizeCell(rawCells[i])),
+  }
+}
+
+function normalizeSourcePanel(raw: Record<string, unknown>): SourcePanel {
+  const crosscut = (raw['crosscut'] ?? {}) as Record<string, unknown>
+  const base = {
+    id: stringValue(raw['id'], createId()),
+    name: stringValue(raw['name'], 'Panel'),
+    construction: raw['construction'] === 'end' ? 'end' as const : 'edge' as const,
+    crosscut: {
+      stripWidthMm: finiteNumber(crosscut['stripWidthMm'], 25),
+      kerfMm: finiteNumber(crosscut['kerfMm'], 3),
+      count: Math.max(0, Math.floor(finiteNumber(crosscut['count'], 1))),
+    },
+  }
+  if (raw['kind'] === 'derived') {
+    return { ...base, kind: 'derived', sourceBoardId: stringValue(raw['sourceBoardId'], '') }
+  }
+  return {
+    ...base,
+    kind: 'rip',
+    thicknessMm: finiteNumber(raw['thicknessMm'], 38),
+    strips: records(raw['strips']).map(strip => ({
+      id: stringValue(strip['id'], createId()),
+      speciesId: stringValue(strip['speciesId'], 'walnut'),
+      width: finiteNumber(strip['width'], 38),
+      trailingAngle: signedFinite(strip['trailingAngle'], 0),
+    })),
+  }
+}
+
+function normalizeCell(raw: unknown): AssemblyCell | null {
+  if (!isRecord(raw) || typeof raw['panelId'] !== 'string') return null
+  const rotateRaw = finiteNumber(raw['rotate'], 0)
+  const rotate = ([0, 90, 180, 270].includes(rotateRaw) ? rotateRaw : 0) as 0 | 90 | 180 | 270
+  return {
+    panelId: raw['panelId'],
+    pieceIndex: Math.max(0, Math.floor(finiteNumber(raw['pieceIndex'], 0))),
+    rotate,
+    flip: raw['flip'] === true,
   }
 }
 

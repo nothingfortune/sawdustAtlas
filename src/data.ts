@@ -15,6 +15,7 @@ export const starterData: AtlasData = {
   schemaVersion: 1,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
+  composites: [],
   shops: [{
     id: createId(), name: 'My workshop', width: 7300, depth: 4300, gridSize: 300, updatedAt: new Date().toISOString(),
     blockedZones: [

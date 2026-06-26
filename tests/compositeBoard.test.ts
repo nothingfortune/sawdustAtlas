@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { assembledSize, boardVolumeBySpecies, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
+import { assembledSize, boardDependsOn, boardVolumeBySpecies, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
-import type { AssemblyCell, CompositeBoard, RipPanel } from '../src/types'
+import type { AssemblyCell, CompositeBoard, DerivedPanel, RipPanel } from '../src/types'
+
+const derivedPanel = (sourceBoardId: string, over: Partial<DerivedPanel> = {}): DerivedPanel => ({
+  id: 'd', name: 'Derived', kind: 'derived', construction: 'end', sourceBoardId,
+  crosscut: { stripWidthMm: 20, kerfMm: 3, count: 3 }, ...over,
+})
 
 const ripPanel = (over: Partial<RipPanel> = {}): RipPanel => ({
   id: 'A',
@@ -74,5 +79,21 @@ describe('material accounting', () => {
       { speciesId: 'maple', boardFeet: 30000 / CUBIC_MM_PER_BOARD_FOOT },
       { speciesId: 'walnut', boardFeet: 10000 / CUBIC_MM_PER_BOARD_FOOT },
     ])
+  })
+})
+
+describe('boardDependsOn (cycle guard)', () => {
+  it('is true for itself', () => {
+    const b = boardWith({ id: 'X' })
+    expect(boardDependsOn(b, 'X', new Map())).toBe(true)
+  })
+
+  it('detects a transitive dependency through derived panels', () => {
+    const a = boardWith({ id: 'A', panels: [ripPanel()] })
+    const b = boardWith({ id: 'B', panels: [derivedPanel('A')] })
+    const c = boardWith({ id: 'C', panels: [derivedPanel('B')] })
+    const reg = new Map([['A', a], ['B', b], ['C', c]])
+    expect(boardDependsOn(c, 'A', reg)).toBe(true)
+    expect(boardDependsOn(c, 'Z', reg)).toBe(false)
   })
 })

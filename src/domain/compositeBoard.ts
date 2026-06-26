@@ -112,3 +112,14 @@ export function materialBySpecies(board: CompositeBoard, registry: BoardRegistry
     .map(([speciesId, volume]) => ({ speciesId, boardFeet: volume / CUBIC_MM_PER_BOARD_FOOT }))
     .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
 }
+
+export function boardDependsOn(board: CompositeBoard, candidateId: string, registry: BoardRegistry): boolean {
+  if (board.id === candidateId) return true
+  for (const panel of board.panels) {
+    if (panel.kind !== 'derived') continue
+    if (panel.sourceBoardId === candidateId) return true
+    const source = registry.get(panel.sourceBoardId)
+    if (source && boardDependsOn(source, candidateId, registry)) return true
+  }
+  return false
+}

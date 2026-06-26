@@ -1,3 +1,6 @@
+import { formatLength } from '../../domain/lengthUnits'
+import { useUnitSystem } from '../unitSystem'
+
 // A self-contained cross-section callout showing the wedge that must be trimmed
 // when angled strips leave the two outer faces unequal (faceShift). Derived
 // entirely from the template's face widths — no shared coordinate space needed.
@@ -10,6 +13,7 @@ export function FaceShiftWedge({ leftFaceWidth, rightFaceWidth, finishedWidth, s
   const t = Math.max(1, stockThickness)
   const maxW = Math.max(leftFaceWidth, rightFaceWidth, 1)
   const shift = Math.abs(rightFaceWidth - leftFaceWidth)
+  const { lengthUnit } = useUnitSystem()
   const outline = `0,0 ${t},0 ${t},${rightFaceWidth} 0,${leftFaceWidth}`
   const wedge = `0,${finishedWidth} 0,${leftFaceWidth} ${t},${rightFaceWidth} ${t},${finishedWidth}`
 
@@ -25,6 +29,6 @@ export function FaceShiftWedge({ leftFaceWidth, rightFaceWidth, finishedWidth, s
       <polygon points={wedge} fill="url(#wedge-hatch)" stroke="#b9512f" strokeWidth="0.6" strokeDasharray="3 2" vectorEffect="non-scaling-stroke"/>
       <line x1={0} y1={finishedWidth} x2={t} y2={finishedWidth} stroke="#7a302b" strokeWidth="0.8" strokeDasharray="3 2" vectorEffect="non-scaling-stroke"/>
     </svg>
-    <span>Trim wedge <b>{Number(shift.toFixed(1))} mm</b> to square the panel to {Number(finishedWidth.toFixed(1))} mm.</span>
+    <span>Trim wedge <b>{formatLength(shift, lengthUnit)}</b> to square the panel to {formatLength(finishedWidth, lengthUnit)}.</span>
   </div>
 }

@@ -1,9 +1,12 @@
 import { buildTicks, niceTickStep } from '../../domain/boardScale'
+import { formatLengthValue } from '../../domain/lengthUnits'
+import { useUnitSystem } from '../unitSystem'
 
 // A dimension ruler drawn in the board's mm coordinate space. Tick lines use
 // non-scaling strokes (stay 1px) and labels are counter-scaled by 1/pxPerMm so
 // text stays a constant on-screen size regardless of the board scale.
 export function Ruler({ dimMm, pxPerMm, orientation }: { dimMm: number; pxPerMm: number; orientation: 'top' | 'left' }) {
+  const { lengthUnit } = useUnitSystem()
   if (!(pxPerMm > 0) || !(dimMm > 0)) return null
   const step = niceTickStep(pxPerMm)
   const ticks = buildTicks(dimMm, step)
@@ -19,7 +22,7 @@ export function Ruler({ dimMm, pxPerMm, orientation }: { dimMm: number; pxPerMm:
       {ticks.map((value, index) => <g key={value}>
         <line x1={value} y1={0} x2={value} y2={-tick} vectorEffect="non-scaling-stroke"/>
         {showLabel(index) && <g transform={`translate(${value} ${-tick - gap}) scale(${k})`}>
-          <text textAnchor={index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle'}>{Math.round(value)}</text>
+          <text textAnchor={index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle'}>{formatLengthValue(value, lengthUnit)}</text>
         </g>}
       </g>)}
     </g>
@@ -30,7 +33,7 @@ export function Ruler({ dimMm, pxPerMm, orientation }: { dimMm: number; pxPerMm:
     {ticks.map((value, index) => <g key={value}>
       <line x1={0} y1={value} x2={-tick} y2={value} vectorEffect="non-scaling-stroke"/>
       {showLabel(index) && <g transform={`translate(${-tick - gap} ${value}) scale(${k})`}>
-        <text textAnchor="end" dominantBaseline="middle">{Math.round(value)}</text>
+        <text textAnchor="end" dominantBaseline="middle">{formatLengthValue(value, lengthUnit)}</text>
       </g>}
     </g>)}
   </g>

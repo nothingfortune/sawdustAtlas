@@ -8,6 +8,8 @@ import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domai
 import type { ShopObjectDefinition } from '../domain/shopObjects'
 import { getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../domain/shopGeometry'
 import type { Point2D } from '../domain/shopGeometry'
+import { formatDimensions, formatLength, formatLengthValue } from '../domain/lengthUnits'
+import { useUnitSystem } from './unitSystem'
 
 interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void; onDelete: (id: string) => void }
 
@@ -25,6 +27,7 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
 }
 
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
+  const { lengthUnit } = useUnitSystem()
   const [selected, setSelected] = useState<string>('')
   const [zoom, setZoom] = useState(.74)
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
@@ -226,7 +229,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     <div className={`tool-panel left-panel${leftOpen ? ' open' : ''}`}>
       <button className="drawer-close" onClick={() => setLeftOpen(false)} aria-label="Close objects panel"><X/></button>
       <h3>Objects</h3><p>Click to add to your floor plan.</p>
-      <div className="template-list">{SHOP_OBJECT_TEMPLATES.map(template => <button key={template.name} onClick={() => addItem(template)}><span style={{ background: template.color }}><ObjectIcon kind={template.kind}/></span><div><b>{template.name}</b><small>{template.width} × {template.depth} mm</small></div><Plus/></button>)}</div>
+      <div className="template-list">{SHOP_OBJECT_TEMPLATES.map(template => <button key={template.name} onClick={() => addItem(template)}><span style={{ background: template.color }}><ObjectIcon kind={template.kind}/></span><div><b>{template.name}</b><small>{formatDimensions([template.width, template.depth], lengthUnit)}</small></div><Plus/></button>)}</div>
       <div className="panel-section custom-object-form">
         <h3>Add custom object</h3><p>Define anything that is not in the catalog.</p>
         <TextField label="Name" value={customObject.name} onChange={name => setCustomObject(current => ({ ...current, name }))}/>
@@ -247,7 +250,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <div className="panel-title-row"><div><h3>Floor shape</h3><p>Draw rectangular out-of-bounds areas directly on the floor.</p></div><button className={`selection-chip ${drawMode ? 'active' : ''}`} onClick={() => { setDrawMode(active => !active); setSelected('') }}>{drawMode ? 'Drawing' : 'Draw'}</button></div>
         <div className="zone-list">
           {project.blockedZones.map(blockedZone => <button className={`blocked-zone-card ${zone?.id === blockedZone.id ? 'selected' : ''}`} onClick={() => { setSelected(`zone:${blockedZone.id}`); setRightOpen(true) }} key={blockedZone.id}>
-            <span><b>{blockedZone.name}</b><small>{blockedZone.width} × {blockedZone.depth} mm</small></span>
+            <span><b>{blockedZone.name}</b><small>{formatDimensions([blockedZone.width, blockedZone.depth], lengthUnit)}</small></span>
             <Ban/>
           </button>)}
           {project.blockedZones.length === 0 && <p className="zone-help">No no-go zones yet. Turn on draw mode and drag on the floor plan to define unusable areas.</p>}
@@ -260,7 +263,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       {viewMode === 'top'
         ? <>
           <div className="canvas-controls"><button onClick={() => setZoom(z => Math.max(.35, z - .1))}>−</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(z => Math.min(1.25, z + .1))}>+</button></div>
-          {drawMode && <div className="draw-zone-banner">Drag on the floor to mark unusable area. Rectangles smaller than 120 mm are ignored.</div>}
+          {drawMode && <div className="draw-zone-banner">Drag on the floor to mark unusable area. Rectangles smaller than {formatLength(120, lengthUnit)} are ignored.</div>}
           <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
             <div ref={canvasRef} className={`room-canvas ${drawMode ? 'drawing' : ''}`} onPointerDown={event => drawMode ? beginZoneDraw(event) : setSelected('')} style={canvasStyle}>
               <FloorGridLayer project={project}/>
@@ -268,12 +271,12 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
               <FeedClearanceLayer project={project}/>
               {project.items.map(candidate => {
                 const overlapsBlockedZone = blockedConflicts.some(conflict => conflict.item.id === candidate.id)
-                return <div key={candidate.id} role="button" tabIndex={0} aria-label={`${candidate.name}, ${candidate.width} by ${candidate.depth} millimetres`} aria-pressed={item?.id === candidate.id} className={`shop-object ${item?.id === candidate.id ? 'selected' : ''} ${overlapsBlockedZone ? 'warning' : ''}`} onPointerDown={event => { if (drawMode) return; event.stopPropagation(); beginItemDrag(event, candidate) }} onKeyDown={event => onObjectKeyDown(event, candidate)} style={{ left: candidate.x * SCALE, top: candidate.y * SCALE, width: candidate.width * SCALE, height: candidate.depth * SCALE, transform: `rotate(${candidate.rotation}deg)`, background: candidate.color }}>
+                return <div key={candidate.id} role="button" tabIndex={0} aria-label={`${candidate.name}, ${formatDimensions([candidate.width, candidate.depth], lengthUnit)}`} aria-pressed={item?.id === candidate.id} className={`shop-object ${item?.id === candidate.id ? 'selected' : ''} ${overlapsBlockedZone ? 'warning' : ''}`} onPointerDown={event => { if (drawMode) return; event.stopPropagation(); beginItemDrag(event, candidate) }} onKeyDown={event => onObjectKeyDown(event, candidate)} style={{ left: candidate.x * SCALE, top: candidate.y * SCALE, width: candidate.width * SCALE, height: candidate.depth * SCALE, transform: `rotate(${candidate.rotation}deg)`, background: candidate.color }}>
                   {candidate.clearance > 0 && <span className="clearance" style={{ inset: -candidate.clearance * SCALE }}/>}
-                  <span className="object-name">{candidate.name}<small>{candidate.width} × {candidate.depth} mm</small></span>
+                  <span className="object-name">{candidate.name}<small>{formatDimensions([candidate.width, candidate.depth], lengthUnit)}</small></span>
                 </div>
               })}
-              <span className="dimension width-dimension">{project.width} mm</span><span className="dimension depth-dimension">{project.depth} mm</span>
+              <span className="dimension width-dimension">{formatLength(project.width, lengthUnit)}</span><span className="dimension depth-dimension">{formatLength(project.depth, lengthUnit)}</span>
             </div>
           </div>
         </>
@@ -321,6 +324,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
 }
 
 function FloorGridLayer({ project }: { project: ShopProject }) {
+  const { lengthUnit } = useUnitSystem()
   const xs = gridSeries(project.width, project.gridSize)
   const ys = gridSeries(project.depth, project.gridSize)
   const labelEvery = project.gridSize >= 500 ? 1 : 2
@@ -328,8 +332,8 @@ function FloorGridLayer({ project }: { project: ShopProject }) {
   return <svg className="floor-grid-layer" viewBox={`0 0 ${project.width} ${project.depth}`} preserveAspectRatio="none" aria-hidden="true">
     {xs.map((x, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={x} y1={0} x2={x} y2={project.depth} key={`x-${x}`}/>)}
     {ys.map((y, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={0} y1={y} x2={project.width} y2={y} key={`y-${y}`}/>)}
-    {xs.filter((_, index) => index % labelEvery === 0 && index > 0).map(x => <text className="grid-label" x={x - 12} y={95} key={`xlabel-${x}`}>{x}</text>)}
-    {ys.filter((_, index) => index % labelEvery === 0 && index > 0).map(y => <text className="grid-label" x={28} y={y - 18} key={`ylabel-${y}`}>{y}</text>)}
+    {xs.filter((_, index) => index % labelEvery === 0 && index > 0).map(x => <text className="grid-label" x={x - 12} y={95} key={`xlabel-${x}`}>{formatLengthValue(x, lengthUnit)}</text>)}
+    {ys.filter((_, index) => index % labelEvery === 0 && index > 0).map(y => <text className="grid-label" x={28} y={y - 18} key={`ylabel-${y}`}>{formatLengthValue(y, lengthUnit)}</text>)}
   </svg>
 }
 

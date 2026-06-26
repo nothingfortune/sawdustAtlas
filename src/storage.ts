@@ -34,6 +34,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
+    composites: [],
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
     boards: boards.map((board): BoardProject => ({

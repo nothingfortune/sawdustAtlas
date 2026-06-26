@@ -45,6 +45,50 @@ export interface BoardStrip {
   trailingAngle: number
 }
 
+export interface CrosscutSpec {
+  stripWidthMm: number
+  kerfMm: number
+  count: number
+}
+
+export interface RipPanel {
+  id: string
+  name: string
+  kind: 'rip'
+  construction: 'edge' | 'end'
+  thicknessMm: number
+  strips: BoardStrip[]
+  crosscut: CrosscutSpec
+}
+
+export interface DerivedPanel {
+  id: string
+  name: string
+  kind: 'derived'
+  construction: 'edge' | 'end'
+  sourceBoardId: string
+  crosscut: CrosscutSpec
+}
+
+export type SourcePanel = RipPanel | DerivedPanel
+
+export interface AssemblyCell {
+  panelId: string
+  pieceIndex: number
+  rotate: 0 | 90 | 180 | 270
+  flip: boolean
+}
+
+export interface CompositeBoard {
+  id: string
+  name: string
+  panels: SourcePanel[]
+  rows: number
+  cols: number
+  cells: (AssemblyCell | null)[]
+  updatedAt: string
+}
+
 export interface EndGrainSettings {
   sourceLength: number
   stockThickness: number
@@ -87,4 +131,5 @@ export interface AtlasData {
   woods: WoodSpecies[]
   /** Shop-wide milling allowances (machine setup) applied to every board. */
   allowances: BuildAllowances
+  composites: CompositeBoard[]
 }

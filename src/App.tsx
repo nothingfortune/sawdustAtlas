@@ -8,9 +8,11 @@ import { BoardDesigner } from './components/BoardDesigner'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
+import { UnitSystemProvider } from './components/unitSystem'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
+import type { LengthUnit } from './domain/lengthUnits'
 
 interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
 
@@ -22,6 +24,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
+  const [lengthUnit, setLengthUnit] = useState<LengthUnit>('metric')
   // Workspace captured before the last import, recoverable across reloads.
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   const importRef = useRef<HTMLInputElement>(null)
@@ -147,7 +150,10 @@ export default function App() {
     setPreImport(null)
   }
 
-  return <div className="app-shell">
+  const toggleLengthUnit = () => setLengthUnit(current => current === 'metric' ? 'imperial' : 'metric')
+
+  return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
+    <div className="app-shell">
     <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
       <div className="brand"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</div>
       <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
@@ -156,6 +162,7 @@ export default function App() {
         <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
         <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
         <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
+        <NavButton active={lengthUnit === 'imperial'} icon={<Ruler />} label="Preston's Button" open={sidebarOpen} onClick={toggleLengthUnit} />
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
@@ -188,7 +195,8 @@ export default function App() {
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
-  </div>
+    </div>
+  </UnitSystemProvider>
 }
 
 function NavButton({ active, icon, label, open, onClick }: { active: boolean, icon: ReactNode, label: string, open: boolean, onClick: () => void }) {

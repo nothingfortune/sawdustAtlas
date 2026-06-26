@@ -56,7 +56,7 @@ describe('workspace storage migration', () => {
 
   it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
     const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
-    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'schemaVersion', 'shops', 'woods'])
+    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'schemaVersion', 'shops', 'woods'])
   })
 
   it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
@@ -122,6 +122,33 @@ describe('workspace storage migration', () => {
     expect(normalized.boards[0]?.strips).toHaveLength(1)
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
     expect(normalized.woods.find(wood => wood.id === 'walnut')).toMatchObject({ color: '#8c6a48', pricePerBoardFoot: 0 })
+  })
+
+  it('defaults composites to an empty array for legacy saves', () => {
+    const legacy = { shops: [], boards: [] } as unknown as AtlasData
+    expect(normalizeData(legacy).composites).toEqual([])
+  })
+
+  it('round-trips a composite board with rip and derived panels', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{
+        id: 'B', name: 'Final', rows: 1, cols: 2, updatedAt: '2026-06-25T00:00:00.000Z',
+        panels: [
+          { id: 'A', name: 'Base', kind: 'rip', construction: 'edge', thicknessMm: 20,
+            strips: [{ id: 's1', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
+            crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } },
+          { id: 'dp', name: 'Recut', kind: 'derived', construction: 'end', sourceBoardId: 'A',
+            crosscut: { stripWidthMm: 20, kerfMm: 3, count: 3 } },
+        ],
+        cells: [{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null],
+      }],
+    } as unknown as Partial<AtlasData>)
+    const board = normalizeData({ composites: data.composites } as Partial<AtlasData>).composites[0]
+    expect(board?.panels).toHaveLength(2)
+    expect(board?.panels[0]?.kind).toBe('rip')
+    expect(board?.panels[1]).toMatchObject({ kind: 'derived', sourceBoardId: 'A' })
+    expect(board?.cells).toEqual([{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null])
   })
 })
 

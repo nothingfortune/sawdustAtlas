@@ -99,10 +99,16 @@ export function AssemblyCanvas({
   // Single-pointer handlers. usePinchPan only engages on a 2nd pointer, so taps/drags
   // on the SVG pass through; the pinch handlers on the wrapper div see the same events.
   const onPointerDown = (e: ReactPointerEvent) => {
-    if (e.isPrimary === false) return
+    // Fix #1: when a second pointer arrives (pinch), cancel any pending single-finger drag
+    // so the primary finger's eventual pointerup cannot fire moveCell mid-pinch.
+    if (e.isPrimary === false) { setDrag(null); return }
     const idx = cellFromPointer(cellRectsClient(), e.clientX, e.clientY)
     if (idx < 0) return
     setDrag({ from: idx, startX: e.clientX, startY: e.clientY, moved: false })
+    // Fix #2: capture the primary pointer so move/up fire even when the finger drifts
+    // outside the SVG. Capture is per-pointerId; usePinchPan on the wrapper div captures
+    // the 2nd pointerId independently, so pinch is unaffected.
+    e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   const onPointerMove = (e: ReactPointerEvent) => {
@@ -114,6 +120,8 @@ export function AssemblyCanvas({
   }
 
   const onPointerUp = (e: ReactPointerEvent) => {
+    // Defensive release in case the browser didn't auto-release on pointerup.
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
     const d = drag
     setDrag(null)
     if (!d) return
@@ -153,7 +161,7 @@ export function AssemblyCanvas({
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
-            onPointerCancel={() => setDrag(null)}
+            onPointerCancel={(e) => { e.currentTarget.releasePointerCapture?.(e.pointerId); setDrag(null) }}
             role="group"
             aria-label="Composite board assembly grid"
           >

@@ -2,6 +2,7 @@ import type { CompositeBoard, SourcePanel, WoodSpecies } from '../../types'
 import { panelPieces } from '../../domain/compositeBoard'
 import { buildRegistry, pieceKey, selectableSourceBoardIds } from '../../domain/compositeAssembly'
 import { CompositePieceFace } from './CompositePieceFace'
+import { WoodPatterns } from '../board/WoodPatterns'
 import { createId } from '../../id'
 
 export interface PanelRailProps {
@@ -51,6 +52,15 @@ export function PanelRail({ board, boards, woods, selectedPieceKey, onSelectPiec
       ),
     })
 
+  // Fix #3: remove a panel and null-out every cell that referenced it so no
+  // dangling (panelId, pieceIndex) references remain in the assembly grid.
+  const removePanel = (panelId: string) =>
+    onChangeBoard({
+      ...board,
+      panels: board.panels.filter(p => p.id !== panelId),
+      cells: board.cells.map(c => (c && c.panelId === panelId ? null : c)),
+    })
+
   const candidates = selectableSourceBoardIds(boards, board.id)
 
   return (
@@ -59,12 +69,19 @@ export function PanelRail({ board, boards, woods, selectedPieceKey, onSelectPiec
         const pieces = panelPieces(panel, registry)
         return (
           <div className="panel-card" key={panel.id}>
-            <button className="panel-card-head" onClick={() => onEditPanel(panel.id)}>
-              <span className="panel-card-name">{panel.name}</span>
-              <span className="panel-card-meta">
-                {panel.kind === 'rip' ? `${panel.strips.length} strips` : 'derived'}
-              </span>
-            </button>
+            <div className="panel-card-head-row">
+              <button className="panel-card-head" onClick={() => onEditPanel(panel.id)}>
+                <span className="panel-card-name">{panel.name}</span>
+                <span className="panel-card-meta">
+                  {panel.kind === 'rip' ? `${panel.strips.length} strips` : 'derived'}
+                </span>
+              </button>
+              <button
+                className="icon-button"
+                aria-label={`Remove panel ${panel.name}`}
+                onClick={() => removePanel(panel.id)}
+              >✕</button>
+            </div>
             <div className="crosscut-stepper">
               <button
                 className="icon-button"
@@ -94,6 +111,9 @@ export function PanelRail({ board, boards, woods, selectedPieceKey, onSelectPiec
                       height={40}
                       preserveAspectRatio="xMidYMid meet"
                     >
+                      {/* Fix #4: rip-panel pieces reference url(#long-<id>)/#end-<id> patterns;
+                          render the defs here so the chips show wood fills instead of empty. */}
+                      <WoodPatterns woods={woods} />
                       <CompositePieceFace
                         piece={piece}
                         panel={panel}

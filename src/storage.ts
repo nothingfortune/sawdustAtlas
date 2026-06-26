@@ -1,4 +1,4 @@
-import type { AtlasData, BoardProject, BuildAllowances, EndGrainSettings, ShopItem, ShopProject, WoodSpecies } from './types'
+import type { AtlasData, BoardProject, BuildAllowances, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -61,8 +61,21 @@ function normalizeShop(shop: Record<string, unknown>): ShopProject {
     name: stringValue(shop['name'], 'Imported workshop'),
     width: finiteNumber(shop['width'], 6000),
     depth: finiteNumber(shop['depth'], 6000),
+    gridSize: finiteNumber(shop['gridSize'], 300) || 300,
+    blockedZones: records(shop['blockedZones']).map(zone => normalizeBlockedZone(zone as unknown as ShopBlockedZone)),
     updatedAt: stringValue(shop['updatedAt'], new Date().toISOString()),
     items: records(shop['items']).map(item => normalizeShopItem(item as unknown as ShopItem)),
+  }
+}
+
+function normalizeBlockedZone(zone: ShopBlockedZone): ShopBlockedZone {
+  return {
+    id: stringValue(zone.id, createId()),
+    name: stringValue(zone.name, 'No-go zone'),
+    x: finiteNumber(zone.x, 0),
+    y: finiteNumber(zone.y, 0),
+    width: Math.max(1, finiteNumber(zone.width, 600)),
+    depth: Math.max(1, finiteNumber(zone.depth, 600)),
   }
 }
 

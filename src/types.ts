@@ -21,11 +21,22 @@ export interface ShopItem {
   color: string
 }
 
+export interface ShopBlockedZone {
+  id: string
+  name: string
+  x: number
+  y: number
+  width: number
+  depth: number
+}
+
 export interface ShopProject {
   id: string
   name: string
   width: number
   depth: number
+  gridSize: number
+  blockedZones: ShopBlockedZone[]
   items: ShopItem[]
   updatedAt: string
 }

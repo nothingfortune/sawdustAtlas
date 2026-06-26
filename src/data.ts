@@ -16,7 +16,11 @@ export const starterData: AtlasData = {
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
   shops: [{
-    id: createId(), name: 'My workshop', width: 7300, depth: 4300, updatedAt: new Date().toISOString(),
+    id: createId(), name: 'My workshop', width: 7300, depth: 4300, gridSize: 300, updatedAt: new Date().toISOString(),
+    blockedZones: [
+      { id: createId(), name: 'Lumber corner return', x: 0, y: 0, width: 850, depth: 1250 },
+      { id: createId(), name: 'Water heater chase', x: 6440, y: 0, width: 860, depth: 760 },
+    ],
     items: [
       { id: createId(), name: 'Table saw', kind: 'machine', x: 2850, y: 2200, width: 1070, depth: 970, height: 890, rotation: 0, clearance: 600, feedDirection: 0, infeedClearance: 2440, outfeedClearance: 2440, sideClearance: 300, color: '#d8863b' },
       { id: createId(), name: 'Workbench', kind: 'bench', x: 700, y: 600, width: 1830, depth: 760, height: 900, rotation: 0, clearance: 450, feedDirection: null, infeedClearance: 0, outfeedClearance: 0, sideClearance: 0, color: '#66826d' },

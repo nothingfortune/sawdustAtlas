@@ -110,7 +110,7 @@ export default function App() {
   }
 
   const createShop = () => {
-    const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, items: [], updatedAt: new Date().toISOString() }
+    const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, gridSize: 300, blockedZones: [], items: [], updatedAt: new Date().toISOString() }
     commitData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
   }
   const createBoard = () => {

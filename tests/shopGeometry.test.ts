@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../src/domain/shopGeometry'
+import { getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../src/domain/shopGeometry'
 import type { Point2D } from '../src/domain/shopGeometry'
-import type { ShopItem } from '../src/types'
+import type { ShopBlockedZone, ShopItem } from '../src/types'
 
 const item: ShopItem = {
   id: 'saw',
@@ -19,6 +19,15 @@ const item: ShopItem = {
   outfeedClearance: 1800,
   sideClearance: 200,
   color: '#123456',
+}
+
+const blockedZone: ShopBlockedZone = {
+  id: 'blocked',
+  name: 'Water heater',
+  x: 900,
+  y: 750,
+  width: 600,
+  depth: 450,
 }
 
 describe('shop geometry', () => {
@@ -40,6 +49,20 @@ describe('shop geometry', () => {
 
   it('preserves a four-corner footprint for angled rendering', () => {
     expect(getShopItemFootprint({ ...item, rotation: 90 })).toHaveLength(4)
+  })
+
+  it('builds a rectangular footprint for blocked floor zones', () => {
+    expect(getBlockedZoneFootprint(blockedZone)).toEqual([
+      { x: 900, y: 750 },
+      { x: 1500, y: 750 },
+      { x: 1500, y: 1200 },
+      { x: 900, y: 1200 },
+    ])
+  })
+
+  it('detects when an item footprint overlaps a blocked zone', () => {
+    expect(polygonsOverlap(getShopItemFootprint(item), getBlockedZoneFootprint(blockedZone))).toBe(true)
+    expect(polygonsOverlap(getShopItemFootprint({ ...item, x: 2000, y: 1800 }), getBlockedZoneFootprint(blockedZone))).toBe(false)
   })
 
   it('projects height upward without changing projected x', () => {

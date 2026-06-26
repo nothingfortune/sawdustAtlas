@@ -29,3 +29,14 @@ export function resizeGrid(cells: Cell[], oldCols: number, newRows: number, newC
   }
   return next
 }
+
+const TRANSFORM_CYCLE: Array<{ rotate: 0 | 90 | 180 | 270; flip: boolean }> = [
+  { rotate: 0, flip: false }, { rotate: 90, flip: false }, { rotate: 180, flip: false }, { rotate: 270, flip: false },
+  { rotate: 0, flip: true }, { rotate: 90, flip: true }, { rotate: 180, flip: true }, { rotate: 270, flip: true },
+]
+
+export function cycleTransform(cell: AssemblyCell): AssemblyCell {
+  const i = TRANSFORM_CYCLE.findIndex(s => s.rotate === cell.rotate && s.flip === cell.flip)
+  const next = TRANSFORM_CYCLE[(i + 1) % TRANSFORM_CYCLE.length] ?? TRANSFORM_CYCLE[0]!
+  return { ...cell, rotate: next.rotate, flip: next.flip }
+}

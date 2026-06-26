@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clearCell, emptyCells, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
+import { clearCell, cycleTransform, emptyCells, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
 import type { AssemblyCell } from '../src/types'
 
 const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
@@ -34,5 +34,19 @@ describe('grid cell operations', () => {
     // shrink back to 1 col: r1,c1 is out of bounds (cols=1) -> dropped
     const shrunk = resizeGrid(cells, 2, 2, 1)
     expect(shrunk).toEqual([null, null])
+  })
+})
+
+describe('cycleTransform (tap to rotate/flip)', () => {
+  it('cycles rotations then flips then wraps, preserving identity', () => {
+    let c = cell({ panelId: 'B', pieceIndex: 3, rotate: 0, flip: false })
+    const seen: Array<{ rotate: number; flip: boolean }> = []
+    for (let i = 0; i < 8; i += 1) { c = cycleTransform(c); seen.push({ rotate: c.rotate, flip: c.flip }) }
+    expect(seen).toEqual([
+      { rotate: 90, flip: false }, { rotate: 180, flip: false }, { rotate: 270, flip: false },
+      { rotate: 0, flip: true }, { rotate: 90, flip: true }, { rotate: 180, flip: true }, { rotate: 270, flip: true },
+      { rotate: 0, flip: false },
+    ])
+    expect(c).toMatchObject({ panelId: 'B', pieceIndex: 3 })
   })
 })

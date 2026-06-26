@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assembledSize, boardDependsOn, boardVolumeBySpecies, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
+import { assembledSize, boardDependsOn, boardVolumeBySpecies, compositeCutPlan, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { AssemblyCell, CompositeBoard, DerivedPanel, RipPanel } from '../src/types'
 
@@ -124,5 +124,24 @@ describe('panelPieces (derived panel)', () => {
     reg.set('B', child)
     // placing all 4 derived pieces reconstitutes the source board's material
     expect(boardVolumeBySpecies(child, reg)).toEqual({ maple: 30000, walnut: 10000 })
+  })
+})
+
+describe('compositeCutPlan', () => {
+  it('orders source boards before boards that derive from them', () => {
+    const source = boardWith({ id: 'A', name: 'Base', panels: [ripPanel()] })
+    const child = boardWith({ id: 'B', name: 'Final', panels: [derivedPanel('A', { id: 'dp' })], cells: [cell({ panelId: 'dp', pieceIndex: 0 }), cell({ panelId: 'dp', pieceIndex: 1 })] })
+    const reg = new Map([['A', source], ['B', child]])
+    const plan = compositeCutPlan(child, reg)
+    expect(plan.stages.map(s => s.boardId)).toEqual(['A', 'B'])
+    expect(plan.stages[1]?.steps.some(s => s.includes('Final'))).toBe(false)
+    expect(plan.stages[1]?.steps.some(s => /crosscut finished board "Base"/i.test(s))).toBe(true)
+  })
+
+  it('a rip-only board is a single stage with a crosscut step and an assembly step', () => {
+    const plan = compositeCutPlan(boardWith(), new Map())
+    expect(plan.stages).toHaveLength(1)
+    expect(plan.stages[0]?.steps.some(s => /crosscut into 4 pieces/i.test(s))).toBe(true)
+    expect(plan.stages[0]?.steps.some(s => /Assemble 2×1 grid/i.test(s))).toBe(true)
   })
 })

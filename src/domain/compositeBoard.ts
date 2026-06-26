@@ -139,3 +139,46 @@ export function boardDependsOn(board: CompositeBoard, candidateId: string, regis
   }
   return false
 }
+
+export interface CutPlanStage {
+  boardId: string
+  boardName: string
+  steps: string[]
+}
+
+export interface CompositeCutPlan {
+  stages: CutPlanStage[]
+}
+
+export function compositeCutPlan(board: CompositeBoard, registry: BoardRegistry): CompositeCutPlan {
+  const stages: CutPlanStage[] = []
+  const visited = new Set<string>()
+  const addBoard = (current: CompositeBoard): void => {
+    if (visited.has(current.id)) return
+    visited.add(current.id)
+    for (const panel of current.panels) {
+      if (panel.kind === 'derived') {
+        const source = registry.get(panel.sourceBoardId)
+        if (source) addBoard(source)
+      }
+    }
+    stages.push({ boardId: current.id, boardName: current.name, steps: boardSteps(current, registry) })
+  }
+  addBoard(board)
+  return { stages }
+}
+
+function boardSteps(board: CompositeBoard, registry: BoardRegistry): string[] {
+  const steps: string[] = []
+  for (const panel of board.panels) {
+    if (panel.kind === 'rip') {
+      steps.push(`Rip panel "${panel.name}": glue ${panel.strips.length} strips, then crosscut into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide, ${panel.crosscut.kerfMm}mm kerf).`)
+    } else {
+      const source = registry.get(panel.sourceBoardId)
+      steps.push(`Derived panel "${panel.name}": crosscut finished board "${source?.name ?? panel.sourceBoardId}" into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide).`)
+    }
+  }
+  const placed = board.cells.filter((c): c is AssemblyCell => c !== null).length
+  steps.push(`Assemble ${board.rows}×${board.cols} grid: place ${placed} pieces, then glue up.`)
+  return steps
+}

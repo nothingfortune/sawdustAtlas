@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clearCell, cycleTransform, emptyCells, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
+import { cellFromPointer, clearCell, cycleTransform, emptyCells, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
 import type { AssemblyCell } from '../src/types'
 
 const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
@@ -48,5 +48,24 @@ describe('cycleTransform (tap to rotate/flip)', () => {
       { rotate: 0, flip: false },
     ])
     expect(c).toMatchObject({ panelId: 'B', pieceIndex: 3 })
+  })
+})
+
+describe('cellFromPointer (2D hit test)', () => {
+  const rects = [
+    { index: 0, left: 0, top: 0, right: 10, bottom: 10 },
+    { index: 1, left: 10, top: 0, right: 20, bottom: 10 },
+    { index: 2, left: 0, top: 10, right: 10, bottom: 20 },
+  ]
+  it('returns the index of the containing cell', () => {
+    expect(cellFromPointer(rects, 5, 5)).toBe(0)
+    expect(cellFromPointer(rects, 15, 5)).toBe(1)
+    expect(cellFromPointer(rects, 5, 15)).toBe(2)
+  })
+  it('is half-open on right/bottom edges', () => {
+    expect(cellFromPointer(rects, 10, 0)).toBe(1) // x=10 belongs to cell 1, not 0
+  })
+  it('returns -1 when outside every cell', () => {
+    expect(cellFromPointer(rects, 100, 100)).toBe(-1)
   })
 })

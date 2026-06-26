@@ -40,3 +40,18 @@ export function cycleTransform(cell: AssemblyCell): AssemblyCell {
   const next = TRANSFORM_CYCLE[(i + 1) % TRANSFORM_CYCLE.length] ?? TRANSFORM_CYCLE[0]!
   return { ...cell, rotate: next.rotate, flip: next.flip }
 }
+
+export interface CellRect {
+  index: number
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+export function cellFromPointer(rects: readonly CellRect[], clientX: number, clientY: number): number {
+  for (const r of rects) {
+    if (clientX >= r.left && clientX < r.right && clientY >= r.top && clientY < r.bottom) return r.index
+  }
+  return -1
+}

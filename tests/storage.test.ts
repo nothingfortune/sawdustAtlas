@@ -106,7 +106,7 @@ describe('workspace storage migration', () => {
   it('repairs malformed nested import records instead of throwing away the backup', () => {
     const legacy = {
       woods: [null, { id: 'walnut', name: 'Walnut', color: 'brown', accent: '#87614a', pricePerBoardFoot: -5 }],
-      shops: [{ id: 'shop', name: '', width: Number.NaN }],
+      shops: [{ id: 'shop', name: '', width: Number.NaN, blockedZones: [null, { width: 0, depth: 200 }] }],
       boards: [{
         id: 'board',
         name: '',
@@ -117,7 +117,9 @@ describe('workspace storage migration', () => {
     } as unknown as AtlasData
 
     const normalized = normalizeData(legacy)
-    expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, items: [] })
+    expect(normalized.shops[0]).toMatchObject({ id: 'shop', name: 'Imported workshop', width: 6000, depth: 6000, gridSize: 300, items: [] })
+    expect(normalized.shops[0]?.blockedZones).toHaveLength(1)
+    expect(normalized.shops[0]?.blockedZones[0]).toMatchObject({ name: 'No-go zone', width: 1, depth: 200 })
     expect(normalized.boards[0]).toMatchObject({ id: 'board', name: 'Imported cutting board', construction: 'end' })
     expect(normalized.boards[0]?.strips).toHaveLength(1)
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })

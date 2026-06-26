@@ -1,5 +1,5 @@
 import type { AssemblyCell, CompositeBoard, RipPanel, SourcePanel } from '../types'
-import { nonNegative } from './units'
+import { CUBIC_MM_PER_BOARD_FOOT, nonNegative } from './units'
 
 export type BoardRegistry = Map<string, CompositeBoard>
 
@@ -86,4 +86,29 @@ export function assembledSize(board: CompositeBoard, registry: BoardRegistry): A
     lengthMm = Math.max(lengthMm, colHeight)
   }
   return { lengthMm, widthMm, thicknessMm }
+}
+
+export function boardVolumeBySpecies(board: CompositeBoard, registry: BoardRegistry): Record<string, number> {
+  const pieceMap = buildPieceMap(board, registry)
+  const totals: Record<string, number> = {}
+  for (const placed of board.cells) {
+    if (!placed) continue
+    const piece = pieceFor(placed, pieceMap)
+    if (!piece) continue
+    for (const [species, volume] of Object.entries(piece.bySpecies)) {
+      totals[species] = (totals[species] ?? 0) + volume
+    }
+  }
+  return totals
+}
+
+export interface SpeciesUsage {
+  speciesId: string
+  boardFeet: number
+}
+
+export function materialBySpecies(board: CompositeBoard, registry: BoardRegistry): SpeciesUsage[] {
+  return Object.entries(boardVolumeBySpecies(board, registry))
+    .map(([speciesId, volume]) => ({ speciesId, boardFeet: volume / CUBIC_MM_PER_BOARD_FOOT }))
+    .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
 }

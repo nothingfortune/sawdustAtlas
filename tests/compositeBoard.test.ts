@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { assembledSize, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
+import { assembledSize, boardVolumeBySpecies, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
+import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { AssemblyCell, CompositeBoard, RipPanel } from '../src/types'
 
 const ripPanel = (over: Partial<RipPanel> = {}): RipPanel => ({
@@ -53,5 +54,25 @@ describe('assembledSize', () => {
   it('ignores empty (null) cells', () => {
     const size = assembledSize(boardWith({ cells: [cell({ pieceIndex: 0 }), null] }), new Map())
     expect(size).toEqual({ lengthMm: 40, widthMm: 25, thicknessMm: 20 })
+  })
+})
+
+describe('material accounting', () => {
+  it('sums placed-piece volume by species (mm^3)', () => {
+    // 2x1 grid places pieces 0 and 1 of the rip panel; each piece is maple 15000 + walnut 5000
+    expect(boardVolumeBySpecies(boardWith(), new Map())).toEqual({ maple: 30000, walnut: 10000 })
+  })
+
+  it('conserves: placing all crosscut pieces equals the whole panel material', () => {
+    const board = boardWith({ rows: 4, cols: 1, cells: [0, 1, 2, 3].map(i => cell({ pieceIndex: i })) })
+    const vol = boardVolumeBySpecies(board, new Map())
+    expect(vol).toEqual({ maple: 4 * 30 * 25 * 20, walnut: 4 * 10 * 25 * 20 })
+  })
+
+  it('reports board-feet per species, sorted', () => {
+    expect(materialBySpecies(boardWith(), new Map())).toEqual([
+      { speciesId: 'maple', boardFeet: 30000 / CUBIC_MM_PER_BOARD_FOOT },
+      { speciesId: 'walnut', boardFeet: 10000 / CUBIC_MM_PER_BOARD_FOOT },
+    ])
   })
 })

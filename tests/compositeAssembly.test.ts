@@ -90,3 +90,30 @@ describe('moveCell (drag to move / swap)', () => {
     expect(moveCell(cells, 0, 9)).toEqual(cells)
   })
 })
+
+import { buildRegistry, selectableSourceBoardIds } from '../src/domain/compositeAssembly'
+import type { CompositeBoard, DerivedPanel } from '../src/types'
+
+const board = (id: string, panels: CompositeBoard['panels'] = []): CompositeBoard => ({
+  id, name: id, panels, rows: 1, cols: 1, cells: [null], updatedAt: '2026-06-25T00:00:00.000Z',
+})
+const derived = (sourceBoardId: string): DerivedPanel => ({
+  id: 'd-' + sourceBoardId, name: 'd', kind: 'derived', construction: 'edge', sourceBoardId,
+  crosscut: { stripWidthMm: 20, kerfMm: 3, count: 2 },
+})
+
+describe('registry + cycle-guarded selection', () => {
+  it('buildRegistry maps boards by id', () => {
+    const reg = buildRegistry([board('A'), board('B')])
+    expect(reg.get('A')?.id).toBe('A')
+    expect(reg.size).toBe(2)
+  })
+  it('selectableSourceBoardIds excludes self and boards that depend on current', () => {
+    const a = board('A')
+    const b = board('B', [derived('A')]) // B depends on A
+    const c = board('C')
+    const ids = selectableSourceBoardIds([a, b, c], 'A')
+    // A can't source itself; B depends on A (would cycle); C is fine
+    expect(ids.sort()).toEqual(['C'])
+  })
+})

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellFromPointer, clearCell, cycleTransform, emptyCells, moveCell, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
+import { cellFromPointer, clearCell, cycleTransform, emptyCells, moveCell, pieceKey, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
 import type { AssemblyCell } from '../src/types'
 
 const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
@@ -92,6 +92,12 @@ describe('moveCell (drag to move / swap)', () => {
 })
 
 import { buildRegistry, selectableSourceBoardIds } from '../src/domain/compositeAssembly'
+
+describe('pieceKey', () => {
+  it('formats panelId and pieceIndex into a colon-separated string', () => {
+    expect(pieceKey('A', 2)).toBe('A:2')
+  })
+})
 import type { CompositeBoard, DerivedPanel } from '../src/types'
 
 const board = (id: string, panels: CompositeBoard['panels'] = []): CompositeBoard => ({

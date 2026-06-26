@@ -76,3 +76,7 @@ export function selectableSourceBoardIds(boards: readonly CompositeBoard[], curr
     .filter(b => b.id !== currentId && !boardDependsOn(b, currentId, registry))
     .map(b => b.id)
 }
+
+export function pieceKey(panelId: string, pieceIndex: number): string {
+  return `${panelId}:${pieceIndex}`
+}

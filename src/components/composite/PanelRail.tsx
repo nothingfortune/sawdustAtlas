@@ -1,6 +1,6 @@
 import type { CompositeBoard, SourcePanel, WoodSpecies } from '../../types'
 import { panelPieces } from '../../domain/compositeBoard'
-import { buildRegistry, selectableSourceBoardIds } from '../../domain/compositeAssembly'
+import { buildRegistry, pieceKey, selectableSourceBoardIds } from '../../domain/compositeAssembly'
 import { CompositePieceFace } from './CompositePieceFace'
 import { createId } from '../../id'
 
@@ -12,10 +12,6 @@ export interface PanelRailProps {
   onSelectPiece: (key: string | null) => void
   onChangeBoard: (board: CompositeBoard) => void
   onEditPanel: (panelId: string) => void
-}
-
-export function pieceKey(panelId: string, pieceIndex: number): string {
-  return `${panelId}:${pieceIndex}`
 }
 
 export function PanelRail({ board, boards, woods, selectedPieceKey, onSelectPiece, onChangeBoard, onEditPanel }: PanelRailProps) {

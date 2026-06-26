@@ -15,6 +15,7 @@ export function PanelEditorDrawer({ panel, woods, onChange, onClose }: {
       kerfMm: patch.kerfMm ?? panel.crosscut.kerfMm,
       count: patch.count ?? panel.crosscut.count,
     }
+    // Two identical-looking arms let TS narrow 'panel' to each union variant.
     if (panel.kind === 'rip') onChange({ ...panel, crosscut })
     else onChange({ ...panel, crosscut })
   }

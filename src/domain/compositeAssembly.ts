@@ -68,3 +68,19 @@ export function moveCell(cells: Cell[], from: number, to: number): Cell[] {
 export function pieceKey(panelId: string, pieceIndex: number): string {
   return `${panelId}:${pieceIndex}`
 }
+
+// Explicit per-piece orientation controls. rotate ∈ {0,90,180,270} × flip spans
+// all 8 dihedral orientations; flipY (vertical mirror) = horizontal flip + 180°.
+const ROT: Array<0 | 90 | 180 | 270> = [0, 90, 180, 270]
+export function rotateRight(cell: AssemblyCell): AssemblyCell {
+  return { ...cell, rotate: ROT[(ROT.indexOf(cell.rotate) + 1) % 4] ?? 0 }
+}
+export function rotateLeft(cell: AssemblyCell): AssemblyCell {
+  return { ...cell, rotate: ROT[(ROT.indexOf(cell.rotate) + 3) % 4] ?? 0 }
+}
+export function flipX(cell: AssemblyCell): AssemblyCell {
+  return { ...cell, flip: !cell.flip }
+}
+export function flipY(cell: AssemblyCell): AssemblyCell {
+  return { ...cell, flip: !cell.flip, rotate: ROT[(ROT.indexOf(cell.rotate) + 2) % 4] ?? 0 }
+}

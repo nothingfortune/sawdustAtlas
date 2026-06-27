@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellFromPointer, clearCell, cycleTransform, emptyCells, moveCell, pieceKey, placeCell, resizeGrid } from '../src/domain/compositeAssembly'
+import { cellFromPointer, clearCell, cycleTransform, emptyCells, flipX, flipY, moveCell, pieceKey, placeCell, resizeGrid, rotateLeft, rotateRight } from '../src/domain/compositeAssembly'
 import type { AssemblyCell } from '../src/types'
 
 const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
@@ -94,5 +94,22 @@ describe('moveCell (drag to move / swap)', () => {
 describe('pieceKey', () => {
   it('formats panelId and pieceIndex into a colon-separated string', () => {
     expect(pieceKey('A', 2)).toBe('A:2')
+  })
+})
+
+describe('explicit transforms', () => {
+  it('rotateRight/Left step by ±90 and wrap', () => {
+    expect(rotateRight(cell({ rotate: 270 })).rotate).toBe(0)
+    expect(rotateLeft(cell({ rotate: 0 })).rotate).toBe(270)
+  })
+  it('flipX toggles the horizontal mirror only', () => {
+    expect(flipX(cell({ flip: false, rotate: 90 }))).toMatchObject({ flip: true, rotate: 90 })
+  })
+  it('flipY mirrors vertically = flip + 180', () => {
+    expect(flipY(cell({ flip: false, rotate: 0 }))).toMatchObject({ flip: true, rotate: 180 })
+    expect(flipY(cell({ flip: false, rotate: 90 }))).toMatchObject({ flip: true, rotate: 270 })
+  })
+  it('preserves identity', () => {
+    expect(rotateRight(cell({ panelId: 'P', pieceIndex: 3 }))).toMatchObject({ panelId: 'P', pieceIndex: 3 })
   })
 })

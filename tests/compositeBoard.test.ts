@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan } from '../src/domain/compositeBoard'
+import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan, boardFaceSize, maxWafers } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
@@ -18,38 +18,47 @@ const composite = (over: Partial<CompositeBoard> = {}): CompositeBoard => ({
   updatedAt: '2026-06-27T00:00:00.000Z', ...over,
 })
 
-describe('panelPieces — slice along an axis', () => {
-  it('X (crosscut) → end-grain wafer face = boardWidth × thickness, ordered strips', () => {
+describe('panelPieces — slice a donor face (axis = orientation only)', () => {
+  it('crosscut (X): footprint = slice × faceWidth, grain follows the donor, capped by yield', () => {
     const p = panelPieces(panelX(), [board()])
     expect(p).toHaveLength(4)
-    expect(p[0]).toMatchObject({ widthMm: 40, heightMm: 20, thicknessMm: 25, grain: 'end' })
-    expect(p[0]?.strips).toEqual([{ speciesId: 'maple', widthMm: 30 }, { speciesId: 'walnut', widthMm: 10 }])
-    expect(p[0]?.bySpecies).toEqual({ maple: 30 * 20 * 25, walnut: 10 * 20 * 25 })
+    expect(p[0]).toMatchObject({ widthMm: 25, heightMm: 40, thicknessMm: 20, grain: 'edge', axis: 'x', faceLengthMm: 300, faceWidthMm: 40, sliceOffsetMm: 0, sliceMm: 25 })
+    expect(p[1]?.sliceOffsetMm).toBe(28) // slice + kerf
+    expect(p[0]?.bySpecies).toEqual({ maple: 15000, walnut: 5000 })
   })
-  it('Y (rip) → long-grain strip face = boardLength × slice, dominant species', () => {
+  it('rip (Y): footprint = faceLength × slice, same grain, count capped to the donor width', () => {
     const p = panelPieces(panelX({ cut: { axis: 'y', stripWidthMm: 25, kerfMm: 3, count: 3 } }), [board()])
-    expect(p[0]).toMatchObject({ widthMm: 300, heightMm: 25, thicknessMm: 20, grain: 'long' })
-    expect(p[0]?.bySpecies).toEqual({ maple: 300 * 25 * 20 })
+    expect(p).toHaveLength(1) // a 40mm-wide donor yields only one 25mm rip strip
+    expect(p[0]).toMatchObject({ widthMm: 300, heightMm: 25, thicknessMm: 20, grain: 'edge', axis: 'y' })
+    expect(p[0]?.bySpecies).toEqual({ maple: 112500, walnut: 37500 })
   })
   it('returns [] for a missing board', () => { expect(panelPieces(panelX({ boardId: 'gone' }), [board()])).toEqual([]) })
+})
+
+describe('boardFaceSize + maxWafers', () => {
+  it('edge donor face = length × Σ strips', () => { expect(boardFaceSize(board())).toEqual({ lengthMm: 300, widthMm: 40 }) })
+  it('caps wafers by the cut-axis dimension of the donor', () => {
+    expect(maxWafers(board(), { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 99 })).toBe(10) // (300+3)/28
+    expect(maxWafers(board(), { axis: 'y', stripWidthMm: 25, kerfMm: 3, count: 99 })).toBe(1)  // (40+3)/28
+  })
 })
 
 describe('placedFootprint', () => {
   it('swaps for 90/270', () => {
     const [p] = panelPieces(panelX(), [board()])
-    expect(placedFootprint(p!, w(0))).toEqual({ widthMm: 40, heightMm: 20 })
-    expect(placedFootprint(p!, w(0, { rotate: 90 }))).toEqual({ widthMm: 20, heightMm: 40 })
+    expect(placedFootprint(p!, w(0))).toEqual({ widthMm: 25, heightMm: 40 })
+    expect(placedFootprint(p!, w(0, { rotate: 90 }))).toEqual({ widthMm: 40, heightMm: 25 })
   })
 })
 
 describe('croppedLayout + assembledSize — 4-sided crop', () => {
   it('crops X to the narrowest row (centered) and stacks rows', () => {
     const layout = croppedLayout(composite(), [board()])
-    // row1 width 120, row2 width 80 → target 80; row1 wafers kept 20/40/20
-    expect(layout.widthMm).toBe(80)
-    expect(layout.rows[0]?.placed.map(p => p.keptWidthMm)).toEqual([20, 40, 20])
-    expect(layout.rows[1]?.placed.map(p => p.keptWidthMm)).toEqual([40, 40])
-    expect(assembledSize(composite(), [board()])).toEqual({ lengthMm: 40, widthMm: 80, thicknessMm: 25 })
+    // wafer footprint 25×40; row1 width 75, row2 width 50 → target 50
+    expect(layout.widthMm).toBe(50)
+    expect(layout.rows[0]?.placed.map(p => p.keptWidthMm)).toEqual([12.5, 25, 12.5])
+    expect(layout.rows[1]?.placed.map(p => p.keptWidthMm)).toEqual([25, 25])
+    expect(assembledSize(composite(), [board()])).toEqual({ lengthMm: 80, widthMm: 50, thicknessMm: 20 })
   })
 })
 
@@ -82,13 +91,13 @@ describe('deskLayout — full footprints incl. empty rows', () => {
   it('keeps every row at its full (uncropped) footprint and carries trim', () => {
     const layout = deskLayout(composite(), [board()])
     expect(layout.rows.map(r => r.wafers.length)).toEqual([3, 2])
-    expect(layout.rows[0]?.wafers.map(w => w.footWidthMm)).toEqual([40, 40, 40])
-    expect(layout.rows[0]?.wafers[0]).toMatchObject({ footWidthMm: 40, footHeightMm: 20 })
-    // row1 (width 120) is wider than the narrowest row (80), so its outer wafers
+    expect(layout.rows[0]?.wafers.map(w => w.footWidthMm)).toEqual([25, 25, 25])
+    expect(layout.rows[0]?.wafers[0]).toMatchObject({ footWidthMm: 25, footHeightMm: 40 })
+    // row1 (width 75) is wider than the narrowest row (50), so its outer wafers
     // carry X trim; the desk reports the full footprint plus that trim.
-    expect(layout.rows[0]?.wafers[0]?.trimLeftMm).toBe(20)
-    expect(layout.maxRowWidthMm).toBe(120)
-    expect(layout.totalHeightMm).toBe(40)
+    expect(layout.rows[0]?.wafers[0]?.trimLeftMm).toBe(12.5)
+    expect(layout.maxRowWidthMm).toBe(75)
+    expect(layout.totalHeightMm).toBe(80)
   })
   it('reports an empty row as zero-height with no wafers', () => {
     const c = composite({ rows: [{ id: 'r1', wafers: [w(0)] }, { id: 'empty', wafers: [] }] })

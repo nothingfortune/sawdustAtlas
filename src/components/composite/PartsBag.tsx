@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { BoardProject, CompositeBoard, CompositeCut, WoodSpecies } from '../../types'
-import { panelPieces } from '../../domain/compositeBoard'
+import { maxWafers, panelPieces } from '../../domain/compositeBoard'
 import { pieceKey } from '../../domain/compositeAssembly'
 import { WaferFace } from './WaferFace'
+import { WoodPatterns } from '../board/WoodPatterns'
 import { NumberField } from '../fields'
 
 export interface PartsBagProps {
@@ -20,7 +21,7 @@ export interface PartsBagProps {
 
 const constructionLabel = (c: 'edge' | 'end') => (c === 'end' ? 'End grain' : 'Edge grain')
 
-export function PartsBag({ composite, boards, placedKeys, onChange, onAddInline, onPickBoard, onEditPanel, onPlaceWafer }: PartsBagProps) {
+export function PartsBag({ composite, boards, woods, placedKeys, onChange, onAddInline, onPickBoard, onEditPanel, onPlaceWafer }: PartsBagProps) {
   const [adding, setAdding] = useState(false)
 
   const updateCut = (panelId: string, patch: Partial<CompositeCut>) =>
@@ -43,6 +44,7 @@ export function PartsBag({ composite, boards, placedKeys, onChange, onAddInline,
       {composite.panels.map(panel => {
         const board = boards.find(b => b.id === panel.boardId)
         const pieces = panelPieces(panel, boards)
+        const cap = board ? maxWafers(board, panel.cut) : 0
         return (
           <section key={panel.id} className="panel-card">
             <div className="panel-card-head">
@@ -60,8 +62,8 @@ export function PartsBag({ composite, boards, placedKeys, onChange, onAddInline,
               <div className="cut-steppers">
                 <NumberField label="Slice" value={panel.cut.stripWidthMm} min={1} step={1} onChange={v => updateCut(panel.id, { stripWidthMm: v })} />
                 <label className="field count-field">
-                  <span>Count</span>
-                  <input type="number" min={0} step={1} value={panel.cut.count} aria-label="Wafer count" onChange={e => updateCut(panel.id, { count: Math.max(0, Math.round(Number(e.target.value))) })} />
+                  <span>Count <small className="count-max">/ {cap} max</small></span>
+                  <input type="number" min={0} max={cap} step={1} value={panel.cut.count} aria-label={`Wafer count (max ${cap} from this board)`} onChange={e => updateCut(panel.id, { count: Math.max(0, Math.min(cap, Math.round(Number(e.target.value)))) })} />
                 </label>
               </div>
             </div>
@@ -80,7 +82,8 @@ export function PartsBag({ composite, boards, placedKeys, onChange, onAddInline,
                     onClick={() => onPlaceWafer(panel.id, piece.index)}
                   >
                     <svg viewBox={`0 0 ${Math.max(1, piece.widthMm)} ${Math.max(1, piece.heightMm)}`} preserveAspectRatio="xMidYMid meet" style={{ aspectRatio: `${aspect}` }}>
-                      <WaferFace piece={piece} cell={{ panelId: panel.id, pieceIndex: piece.index, rotate: 0, flip: false }} />
+                      <defs><WoodPatterns woods={woods} /></defs>
+                      <WaferFace piece={piece} cell={{ panelId: panel.id, pieceIndex: piece.index, rotate: 0, flip: false }} board={board} />
                     </svg>
                   </button>
                 )

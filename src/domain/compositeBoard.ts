@@ -1,51 +1,78 @@
-import type { AssemblyCell, BoardProject, CompositeBoard, CompositePanel } from '../types'
+import type { AssemblyCell, BoardProject, CompositeBoard, CompositeCut, CompositePanel } from '../types'
 import { CUBIC_MM_PER_BOARD_FOOT, nonNegative } from './units'
-
-export interface StripBlock {
-  speciesId: string
-  widthMm: number
-}
+import { calculateEndGrainMetrics } from './boardGeometry'
 
 export interface Piece {
   panelId: string
+  boardId: string     // donor board this wafer is sliced from (for faithful render)
   index: number
-  widthMm: number     // wafer face width (mm)
-  heightMm: number    // wafer face height (mm)
-  thicknessMm: number // wafer depth = slice thickness (mm)
-  grain: 'end' | 'long'
-  strips: StripBlock[] // ordered blocks across the face width
+  widthMm: number     // drawn footprint width (mm)
+  heightMm: number    // drawn footprint height (mm)
+  thicknessMm: number // wafer depth = donor thickness (mm)
+  grain: 'edge' | 'end' // composite/donor grain — both cut axes preserve it
+  faceLengthMm: number  // donor face extent along X
+  faceWidthMm: number   // donor face extent along Y
+  axis: 'x' | 'y'       // cut orientation on the donor
+  sliceOffsetMm: number // band start along the cut axis, in donor-face coords
+  sliceMm: number       // band width
   bySpecies: Record<string, number> // per-wafer volume by species (mm^3)
 }
 
-// Slice a panel's source board into `count` wafers along the cut axis.
-// X (crosscut) → end-grain wafer face = boardWidth × thickness, depth = slice.
-// Y (rip)      → long-grain strip face = boardLength × slice, depth = thickness.
+export interface BoardFaceSize { lengthMm: number; widthMm: number }
+
+// The donor board's finished top-face extent. Edge: length × Σ strips. End: the
+// assembled end-grain face (finalLength × panelWidth from the end-grain metrics).
+export function boardFaceSize(board: BoardProject): BoardFaceSize {
+  if (board.construction === 'end') {
+    const m = calculateEndGrainMetrics(board)
+    return { lengthMm: nonNegative(m.finalLength), widthMm: nonNegative(m.panelWidth) }
+  }
+  const widthMm = board.strips.reduce((acc, s) => acc + nonNegative(s.width), 0)
+  return { lengthMm: nonNegative(board.length), widthMm }
+}
+
+// Most wafers the donor yields along the cut axis (a crosscut consumes the board
+// length; a rip consumes the width), one slice + kerf per cut.
+export function maxWafers(board: BoardProject, cut: CompositeCut): number {
+  const face = boardFaceSize(board)
+  const avail = cut.axis === 'x' ? face.lengthMm : face.widthMm
+  const step = nonNegative(cut.stripWidthMm) + nonNegative(cut.kerfMm)
+  if (step <= 0) return 0
+  return Math.max(0, Math.floor((avail + nonNegative(cut.kerfMm)) / step))
+}
+
+// Slice a panel's donor board into wafers along the cut axis. The axis only
+// changes orientation (crosscut vs rip), never the grain; every wafer mirrors a
+// `slice`-wide band of the donor's real face. Count is capped to the donor yield.
 export function panelPieces(panel: CompositePanel, boards: readonly BoardProject[]): Piece[] {
   const board = boards.find(b => b.id === panel.boardId)
   if (!board) return []
+  const face = boardFaceSize(board)
   const slice = nonNegative(panel.cut.stripWidthMm)
+  const kerf = nonNegative(panel.cut.kerfMm)
   const thickness = nonNegative(board.thickness)
-  const boardWidth = board.strips.reduce((acc, s) => acc + nonNegative(s.width), 0)
-  const count = Math.max(0, Math.floor(panel.cut.count))
+  const count = Math.min(Math.max(0, Math.floor(panel.cut.count)), maxWafers(board, panel.cut))
 
-  let widthMm: number, heightMm: number, depthMm: number, grain: 'end' | 'long'
-  let strips: StripBlock[], bySpecies: Record<string, number>
-  if (panel.cut.axis === 'x') {
-    widthMm = boardWidth; heightMm = thickness; depthMm = slice; grain = 'end'
-    strips = board.strips.map(s => ({ speciesId: s.speciesId, widthMm: nonNegative(s.width) }))
-    bySpecies = {}
-    for (const s of strips) bySpecies[s.speciesId] = (bySpecies[s.speciesId] ?? 0) + s.widthMm * thickness * slice
-  } else {
-    const length = nonNegative(board.length)
-    widthMm = length; heightMm = slice; depthMm = thickness; grain = 'long'
-    const dominant = [...board.strips].sort((a, b) => nonNegative(b.width) - nonNegative(a.width))[0]?.speciesId ?? board.strips[0]?.speciesId ?? 'walnut'
-    strips = [{ speciesId: dominant, widthMm: length }]
-    bySpecies = { [dominant]: length * slice * thickness }
-  }
+  // Donor face species split by strip width (an approximation for end-grain donors).
+  const totalStripW = board.strips.reduce((a, s) => a + nonNegative(s.width), 0)
+  const frac: Record<string, number> = {}
+  if (totalStripW > 0) for (const s of board.strips) frac[s.speciesId] = (frac[s.speciesId] ?? 0) + nonNegative(s.width) / totalStripW
 
   const pieces: Piece[] = []
   for (let index = 0; index < count; index += 1) {
-    pieces.push({ panelId: panel.id, index, widthMm, heightMm, thicknessMm: depthMm, grain, strips, bySpecies: { ...bySpecies } })
+    const widthMm = panel.cut.axis === 'x' ? slice : face.lengthMm
+    const heightMm = panel.cut.axis === 'x' ? face.widthMm : slice
+    const bandArea = slice * (panel.cut.axis === 'x' ? face.widthMm : face.lengthMm)
+    const vol = bandArea * thickness
+    const bySpecies: Record<string, number> = {}
+    for (const [sp, f] of Object.entries(frac)) bySpecies[sp] = f * vol
+    pieces.push({
+      panelId: panel.id, boardId: board.id, index,
+      widthMm, heightMm, thicknessMm: thickness, grain: board.construction,
+      faceLengthMm: face.lengthMm, faceWidthMm: face.widthMm,
+      axis: panel.cut.axis, sliceOffsetMm: index * (slice + kerf), sliceMm: slice,
+      bySpecies,
+    })
   }
   return pieces
 }
@@ -225,7 +252,10 @@ export function compositeCutPlan(board: CompositeBoard, boards: readonly BoardPr
   for (const panel of board.panels) {
     const src = boards.find(b => b.id === panel.boardId)
     const verb = panel.cut.axis === 'x' ? 'crosscut' : 'rip'
-    steps.push(`Panel "${src?.name ?? panel.boardId}": ${verb} into ${panel.cut.count} wafers (${panel.cut.stripWidthMm}mm wide, ${panel.cut.kerfMm}mm kerf) — needs ${panelSourceLengthMm(panel)}mm of source.`)
+    // Actual (yield-capped) wafer count — you can't slice more than the board has.
+    const n = panelPieces(panel, boards).length
+    const sourceMm = n * (nonNegative(panel.cut.stripWidthMm) + nonNegative(panel.cut.kerfMm))
+    steps.push(`Panel "${src?.name ?? panel.boardId}": ${verb} into ${n} wafers (${panel.cut.stripWidthMm}mm wide, ${panel.cut.kerfMm}mm kerf) — needs ${sourceMm}mm of source.`)
   }
   const size = assembledSize(board, boards)
   const placed = board.rows.reduce((a, r) => a + r.wafers.length, 0)

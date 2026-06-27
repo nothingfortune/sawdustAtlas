@@ -112,7 +112,7 @@ export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRo
                         title="Tap to rotate/flip · drag to reorder"
                       >
                         <svg viewBox={`0 0 ${Math.max(1, w.footWidthMm)} ${Math.max(1, w.footHeightMm)}`} preserveAspectRatio="none">
-                          <WaferFace piece={w.piece} cell={w.wafer} />
+                          <WaferFace piece={w.piece} cell={w.wafer} board={boards.find(b => b.id === w.piece.boardId)} />
                           <TrimMarks wafer={w} />
                         </svg>
                         <button

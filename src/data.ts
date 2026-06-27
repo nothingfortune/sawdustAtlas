@@ -1,4 +1,4 @@
-import type { AtlasData, WoodSpecies } from './types'
+import type { AtlasData, PricingSettings, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { createId } from './id'
 
@@ -11,10 +11,20 @@ export const defaultSpecies = [
   { id: 'white-oak', name: 'White oak', color: '#b39161', accent: '#d2b681', pricePerBoardFoot: 10.25 },
 ] satisfies [WoodSpecies, ...WoodSpecies[]]
 
+export const DEFAULT_PRICING: PricingSettings = {
+  materialMarkupPercent: 30,
+  laborRatePerHour: 60,
+  tierHours: { simple: 0.75, standard: 1.5, complex: 3 },
+  consumablesBase: 8,
+  consumablesPerBoardFoot: 3,
+  floor: { edge: 100, end: 200 },
+}
+
 export const starterData: AtlasData = {
   schemaVersion: 1,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
+  pricing: { ...DEFAULT_PRICING },
   composites: [],
   shops: [{
     id: createId(), name: 'My workshop', width: 7300, depth: 4300, gridSize: 300, updatedAt: new Date().toISOString(),

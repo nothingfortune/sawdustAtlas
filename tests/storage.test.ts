@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearPreImportSnapshot, loadData, loadPreImportSnapshot, normalizeData, savePreImportSnapshot, saveData } from '../src/storage'
+import { clearPreImportSnapshot, loadData, loadPreImportSnapshot, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
 // A deterministic in-memory localStorage so the persistence tests don't depend on
@@ -56,7 +56,7 @@ describe('workspace storage migration', () => {
 
   it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
     const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
-    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'schemaVersion', 'shops', 'woods'])
+    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'pricing', 'schemaVersion', 'shops', 'woods'])
   })
 
   it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
@@ -248,5 +248,33 @@ describe('pre-import snapshot (H3)', () => {
       throw new DOMException('quota exceeded', 'QuotaExceededError')
     })
     expect(() => savePreImportSnapshot(normalizeData({ shops: [], boards: [] } as unknown as AtlasData))).not.toThrow()
+  })
+})
+
+describe('pricing normalization', () => {
+  it('fills the default pricing block when absent', () => {
+    const normalized = normalizeData({ shops: [], boards: [] } as unknown as AtlasData)
+    expect(normalized.pricing.materialMarkupPercent).toBe(30)
+    expect(normalized.pricing.laborRatePerHour).toBe(60)
+    expect(normalized.pricing.tierHours).toEqual({ simple: 0.75, standard: 1.5, complex: 3 })
+    expect(normalized.pricing.consumablesBase).toBe(8)
+    expect(normalized.pricing.consumablesPerBoardFoot).toBe(3)
+    expect(normalized.pricing.floor).toEqual({ edge: 100, end: 200 })
+  })
+
+  it('merges saved pricing over defaults', () => {
+    const result = normalizePricing({ materialMarkupPercent: 45, floor: { end: 250 } })
+    expect(result.materialMarkupPercent).toBe(45)
+    expect(result.floor.end).toBe(250)
+    // unspecified values fall back to defaults
+    expect(result.floor.edge).toBe(100)
+    expect(result.laborRatePerHour).toBe(60)
+  })
+
+  it('coerces garbage values to non-negative defaults', () => {
+    const result = normalizePricing({ laborRatePerHour: -10, consumablesBase: 'x', tierHours: null })
+    expect(result.laborRatePerHour).toBe(60) // negative rejected → default
+    expect(result.consumablesBase).toBe(8)   // non-number → default
+    expect(result.tierHours).toEqual({ simple: 0.75, standard: 1.5, complex: 3 })
   })
 })

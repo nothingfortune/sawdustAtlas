@@ -114,6 +114,20 @@ export interface BuildAllowances {
   widthTrim: number
 }
 
+export interface PricingSettings {
+  /** Markup added on top of material cost (which already includes waste). */
+  materialMarkupPercent: number
+  laborRatePerHour: number
+  /** Estimated build hours per complexity tier; × laborRatePerHour = labor cost. */
+  tierHours: { simple: number; standard: number; complex: number }
+  /** Flat consumables fee (glue/finish/abrasives) regardless of size. */
+  consumablesBase: number
+  /** Additional consumables per rough board-foot. */
+  consumablesPerBoardFoot: number
+  /** Minimum sell price per construction, applied to the grand total. */
+  floor: { edge: number; end: number }
+}
+
 export interface BoardProject {
   id: string
   name: string
@@ -133,5 +147,7 @@ export interface AtlasData {
   woods: WoodSpecies[]
   /** Shop-wide milling allowances (machine setup) applied to every board. */
   allowances: BuildAllowances
+  /** Shop-wide pricing knobs (markup, labor, consumables, floor). */
+  pricing: PricingSettings
   composites: CompositeBoard[]
 }

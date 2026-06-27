@@ -1,5 +1,5 @@
-import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositeCut, CompositePanel, CompositeRow, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
-import { defaultSpecies, starterData } from './data'
+import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositeCut, CompositePanel, CompositeRow, EndGrainSettings, PricingSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
+import { DEFAULT_PRICING, defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
 import { createId } from './id'
@@ -56,6 +56,7 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
+    pricing: normalizePricing(data.pricing),
     composites,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
@@ -230,6 +231,33 @@ function normalizeAllowances(saved: (BuildAllowances & { drumSanding?: number })
     ripAllowance: merged.ripAllowance,
     lengthTrim: merged.lengthTrim,
     widthTrim: merged.widthTrim,
+  }
+}
+
+export function normalizePricing(saved: unknown): PricingSettings {
+  const s = isRecord(saved) ? saved : {}
+  const tiers = isRecord(s['tierHours']) ? s['tierHours'] : {}
+  const floor = isRecord(s['floor']) ? s['floor'] : {}
+
+  // For pricing, reject negative values (unlike finiteNumber which floors to 0).
+  const nonNegativeFinite = (value: unknown, fallback: number): number => {
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
+  }
+
+  return {
+    materialMarkupPercent: nonNegativeFinite(s['materialMarkupPercent'], DEFAULT_PRICING.materialMarkupPercent),
+    laborRatePerHour: nonNegativeFinite(s['laborRatePerHour'], DEFAULT_PRICING.laborRatePerHour),
+    tierHours: {
+      simple: nonNegativeFinite(tiers['simple'], DEFAULT_PRICING.tierHours.simple),
+      standard: nonNegativeFinite(tiers['standard'], DEFAULT_PRICING.tierHours.standard),
+      complex: nonNegativeFinite(tiers['complex'], DEFAULT_PRICING.tierHours.complex),
+    },
+    consumablesBase: nonNegativeFinite(s['consumablesBase'], DEFAULT_PRICING.consumablesBase),
+    consumablesPerBoardFoot: nonNegativeFinite(s['consumablesPerBoardFoot'], DEFAULT_PRICING.consumablesPerBoardFoot),
+    floor: {
+      edge: nonNegativeFinite(floor['edge'], DEFAULT_PRICING.floor.edge),
+      end: nonNegativeFinite(floor['end'], DEFAULT_PRICING.floor.end),
+    },
   }
 }
 

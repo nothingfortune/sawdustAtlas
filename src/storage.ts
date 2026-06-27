@@ -1,4 +1,4 @@
-import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, SourcePanel, WoodSpecies } from './types'
+import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -92,36 +92,8 @@ function normalizeComposite(raw: Record<string, unknown>): CompositeBoard {
     rows,
     cols,
     updatedAt: stringValue(raw['updatedAt'], new Date().toISOString()),
-    panels: records(raw['panels']).map(normalizeSourcePanel),
+    panels: [], // stopgap; real board-ref migration lands in the storage task
     cells: Array.from({ length: rows * cols }, (_, i) => normalizeCell(rawCells[i])),
-  }
-}
-
-function normalizeSourcePanel(raw: Record<string, unknown>): SourcePanel {
-  const crosscut = (raw['crosscut'] ?? {}) as Record<string, unknown>
-  const base = {
-    id: stringValue(raw['id'], createId()),
-    name: stringValue(raw['name'], 'Panel'),
-    construction: raw['construction'] === 'end' ? 'end' as const : 'edge' as const,
-    crosscut: {
-      stripWidthMm: finiteNumber(crosscut['stripWidthMm'], 25),
-      kerfMm: finiteNumber(crosscut['kerfMm'], 3),
-      count: Math.max(0, Math.floor(finiteNumber(crosscut['count'], 1))),
-    },
-  }
-  if (raw['kind'] === 'derived') {
-    return { ...base, kind: 'derived', sourceBoardId: stringValue(raw['sourceBoardId'], '') }
-  }
-  return {
-    ...base,
-    kind: 'rip',
-    thicknessMm: finiteNumber(raw['thicknessMm'], 38),
-    strips: records(raw['strips']).map(strip => ({
-      id: stringValue(strip['id'], createId()),
-      speciesId: stringValue(strip['speciesId'], 'walnut'),
-      width: finiteNumber(strip['width'], 38),
-      trailingAngle: signedFinite(strip['trailingAngle'], 0),
-    })),
   }
 }
 

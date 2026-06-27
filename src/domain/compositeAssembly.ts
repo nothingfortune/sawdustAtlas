@@ -1,5 +1,4 @@
-import type { AssemblyCell, CompositeBoard } from '../types'
-import { boardDependsOn, type BoardRegistry } from './compositeBoard'
+import type { AssemblyCell } from '../types'
 
 export type Cell = AssemblyCell | null
 
@@ -64,17 +63,6 @@ export function moveCell(cells: Cell[], from: number, to: number): Cell[] {
   next[from] = next[to] ?? null
   next[to] = moved
   return next
-}
-
-export function buildRegistry(boards: readonly CompositeBoard[]): BoardRegistry {
-  return new Map(boards.map(b => [b.id, b]))
-}
-
-export function selectableSourceBoardIds(boards: readonly CompositeBoard[], currentId: string): string[] {
-  const registry = buildRegistry(boards)
-  return boards
-    .filter(b => b.id !== currentId && !boardDependsOn(b, currentId, registry))
-    .map(b => b.id)
 }
 
 export function pieceKey(panelId: string, pieceIndex: number): string {

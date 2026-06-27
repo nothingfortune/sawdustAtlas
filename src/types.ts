@@ -62,26 +62,11 @@ export interface CrosscutSpec {
   count: number
 }
 
-export interface RipPanel {
+export interface CompositePanel {
   id: string
-  name: string
-  kind: 'rip'
-  construction: 'edge' | 'end'
-  thicknessMm: number
-  strips: BoardStrip[]
+  boardId: string
   crosscut: CrosscutSpec
 }
-
-export interface DerivedPanel {
-  id: string
-  name: string
-  kind: 'derived'
-  construction: 'edge' | 'end'
-  sourceBoardId: string
-  crosscut: CrosscutSpec
-}
-
-export type SourcePanel = RipPanel | DerivedPanel
 
 export interface AssemblyCell {
   panelId: string
@@ -93,7 +78,7 @@ export interface AssemblyCell {
 export interface CompositeBoard {
   id: string
   name: string
-  panels: SourcePanel[]
+  panels: CompositePanel[]
   rows: number
   cols: number
   cells: (AssemblyCell | null)[]

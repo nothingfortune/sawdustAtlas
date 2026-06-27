@@ -1,7 +1,5 @@
-import type { AssemblyCell, CompositeBoard, DerivedPanel, RipPanel, SourcePanel } from '../types'
+import type { AssemblyCell, BoardProject, CompositeBoard, CompositePanel } from '../types'
 import { CUBIC_MM_PER_BOARD_FOOT, nonNegative } from './units'
-
-export type BoardRegistry = Map<string, CompositeBoard>
 
 export interface Piece {
   panelId: string
@@ -10,42 +8,27 @@ export interface Piece {
   heightMm: number
   thicknessMm: number
   bySpecies: Record<string, number>
+  construction: 'edge' | 'end'
 }
 
-export function panelPieces(panel: SourcePanel, registry: BoardRegistry): Piece[] {
-  return panel.kind === 'rip' ? ripPanelPieces(panel) : derivedPanelPieces(panel, registry)
-}
-
-function derivedPanelPieces(panel: DerivedPanel, registry: BoardRegistry): Piece[] {
-  const source = registry.get(panel.sourceBoardId)
-  if (!source) return []
-  const size = assembledSize(source, registry)
-  const sourceVolume = boardVolumeBySpecies(source, registry)
-  const count = Math.max(0, Math.floor(panel.crosscut.count))
+// Resolve a panel's source board and crosscut it into `count` pieces. A piece's
+// width is the crosscut width; its height is the board's strip-stack cross-section.
+// Kerf is removed stock between pieces (accounted for in stock totals), not part
+// of a piece. Returns [] when the referenced board is missing.
+export function panelPieces(panel: CompositePanel, boards: readonly BoardProject[]): Piece[] {
+  const board = boards.find(b => b.id === panel.boardId)
+  if (!board) return []
   const width = nonNegative(panel.crosscut.stripWidthMm)
+  const thickness = nonNegative(board.thickness)
+  const stackHeight = board.strips.reduce((acc, strip) => acc + nonNegative(strip.width), 0)
   const bySpecies: Record<string, number> = {}
-  for (const [species, volume] of Object.entries(sourceVolume)) {
-    bySpecies[species] = count > 0 ? volume / count : 0
-  }
-  const pieces: Piece[] = []
-  for (let index = 0; index < count; index += 1) {
-    pieces.push({ panelId: panel.id, index, widthMm: width, heightMm: size.widthMm, thicknessMm: size.thicknessMm, bySpecies: { ...bySpecies } })
-  }
-  return pieces
-}
-
-function ripPanelPieces(panel: RipPanel): Piece[] {
-  const width = nonNegative(panel.crosscut.stripWidthMm)
-  const thickness = nonNegative(panel.thicknessMm)
-  const stackHeight = panel.strips.reduce((acc, strip) => acc + nonNegative(strip.width), 0)
-  const bySpecies: Record<string, number> = {}
-  for (const strip of panel.strips) {
+  for (const strip of board.strips) {
     bySpecies[strip.speciesId] = (bySpecies[strip.speciesId] ?? 0) + nonNegative(strip.width) * width * thickness
   }
   const count = Math.max(0, Math.floor(panel.crosscut.count))
   const pieces: Piece[] = []
   for (let index = 0; index < count; index += 1) {
-    pieces.push({ panelId: panel.id, index, widthMm: width, heightMm: stackHeight, thicknessMm: thickness, bySpecies: { ...bySpecies } })
+    pieces.push({ panelId: panel.id, index, widthMm: width, heightMm: stackHeight, thicknessMm: thickness, bySpecies: { ...bySpecies }, construction: board.construction })
   }
   return pieces
 }
@@ -63,9 +46,9 @@ export interface AssembledSize {
   thicknessMm: number
 }
 
-function buildPieceMap(board: CompositeBoard, registry: BoardRegistry): Map<string, Piece[]> {
+function buildPieceMap(board: CompositeBoard, boards: readonly BoardProject[]): Map<string, Piece[]> {
   const map = new Map<string, Piece[]>()
-  for (const panel of board.panels) map.set(panel.id, panelPieces(panel, registry))
+  for (const panel of board.panels) map.set(panel.id, panelPieces(panel, boards))
   return map
 }
 
@@ -73,8 +56,8 @@ function pieceFor(cell: AssemblyCell, pieceMap: Map<string, Piece[]>): Piece | u
   return pieceMap.get(cell.panelId)?.[cell.pieceIndex]
 }
 
-export function assembledSize(board: CompositeBoard, registry: BoardRegistry): AssembledSize {
-  const pieceMap = buildPieceMap(board, registry)
+export function assembledSize(board: CompositeBoard, boards: readonly BoardProject[]): AssembledSize {
+  const pieceMap = buildPieceMap(board, boards)
   let widthMm = 0
   let lengthMm = 0
   let thicknessMm = 0
@@ -104,8 +87,8 @@ export function assembledSize(board: CompositeBoard, registry: BoardRegistry): A
   return { lengthMm, widthMm, thicknessMm }
 }
 
-export function boardVolumeBySpecies(board: CompositeBoard, registry: BoardRegistry): Record<string, number> {
-  const pieceMap = buildPieceMap(board, registry)
+export function boardVolumeBySpecies(board: CompositeBoard, boards: readonly BoardProject[]): Record<string, number> {
+  const pieceMap = buildPieceMap(board, boards)
   const totals: Record<string, number> = {}
   for (const placed of board.cells) {
     if (!placed) continue
@@ -123,21 +106,10 @@ export interface SpeciesUsage {
   boardFeet: number
 }
 
-export function materialBySpecies(board: CompositeBoard, registry: BoardRegistry): SpeciesUsage[] {
-  return Object.entries(boardVolumeBySpecies(board, registry))
+export function materialBySpecies(board: CompositeBoard, boards: readonly BoardProject[]): SpeciesUsage[] {
+  return Object.entries(boardVolumeBySpecies(board, boards))
     .map(([speciesId, volume]) => ({ speciesId, boardFeet: volume / CUBIC_MM_PER_BOARD_FOOT }))
     .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
-}
-
-export function boardDependsOn(board: CompositeBoard, candidateId: string, registry: BoardRegistry): boolean {
-  if (board.id === candidateId) return true
-  for (const panel of board.panels) {
-    if (panel.kind !== 'derived') continue
-    if (panel.sourceBoardId === candidateId) return true
-    const source = registry.get(panel.sourceBoardId)
-    if (source && boardDependsOn(source, candidateId, registry)) return true
-  }
-  return false
 }
 
 export interface CutPlanStage {
@@ -150,35 +122,13 @@ export interface CompositeCutPlan {
   stages: CutPlanStage[]
 }
 
-export function compositeCutPlan(board: CompositeBoard, registry: BoardRegistry): CompositeCutPlan {
-  const stages: CutPlanStage[] = []
-  const visited = new Set<string>()
-  const addBoard = (current: CompositeBoard): void => {
-    if (visited.has(current.id)) return
-    visited.add(current.id)
-    for (const panel of current.panels) {
-      if (panel.kind === 'derived') {
-        const source = registry.get(panel.sourceBoardId)
-        if (source) addBoard(source)
-      }
-    }
-    stages.push({ boardId: current.id, boardName: current.name, steps: boardSteps(current, registry) })
-  }
-  addBoard(board)
-  return { stages }
-}
-
-function boardSteps(board: CompositeBoard, registry: BoardRegistry): string[] {
+export function compositeCutPlan(board: CompositeBoard, boards: readonly BoardProject[]): CompositeCutPlan {
   const steps: string[] = []
   for (const panel of board.panels) {
-    if (panel.kind === 'rip') {
-      steps.push(`Rip panel "${panel.name}": glue ${panel.strips.length} strips, then crosscut into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide, ${panel.crosscut.kerfMm}mm kerf).`)
-    } else {
-      const source = registry.get(panel.sourceBoardId)
-      steps.push(`Derived panel "${panel.name}": crosscut finished board "${source?.name ?? panel.sourceBoardId}" into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide).`)
-    }
+    const src = boards.find(b => b.id === panel.boardId)
+    steps.push(`Panel "${src?.name ?? panel.boardId}": crosscut into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide, ${panel.crosscut.kerfMm}mm kerf).`)
   }
   const placed = board.cells.filter((c): c is AssemblyCell => c !== null).length
   steps.push(`Assemble ${board.rows}×${board.cols} grid: place ${placed} pieces, then glue up.`)
-  return steps
+  return { stages: [{ boardId: board.id, boardName: board.name, steps }] }
 }

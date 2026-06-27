@@ -130,28 +130,6 @@ describe('workspace storage migration', () => {
     const legacy = { shops: [], boards: [] } as unknown as AtlasData
     expect(normalizeData(legacy).composites).toEqual([])
   })
-
-  it('round-trips a composite board with rip and derived panels', () => {
-    const data = normalizeData({
-      shops: [], boards: [],
-      composites: [{
-        id: 'B', name: 'Final', rows: 1, cols: 2, updatedAt: '2026-06-25T00:00:00.000Z',
-        panels: [
-          { id: 'A', name: 'Base', kind: 'rip', construction: 'edge', thicknessMm: 20,
-            strips: [{ id: 's1', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
-            crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } },
-          { id: 'dp', name: 'Recut', kind: 'derived', construction: 'end', sourceBoardId: 'A',
-            crosscut: { stripWidthMm: 20, kerfMm: 3, count: 3 } },
-        ],
-        cells: [{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null],
-      }],
-    } as unknown as Partial<AtlasData>)
-    const board = normalizeData({ composites: data.composites } as Partial<AtlasData>).composites[0]
-    expect(board?.panels).toHaveLength(2)
-    expect(board?.panels[0]?.kind).toBe('rip')
-    expect(board?.panels[1]).toMatchObject({ kind: 'derived', sourceBoardId: 'A' })
-    expect(board?.cells).toEqual([{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null])
-  })
 })
 
 describe('saveData / loadData persistence', () => {

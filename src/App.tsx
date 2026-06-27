@@ -156,9 +156,11 @@ export default function App() {
   const openBoard = (id: string) => { setActiveBoard(id); setBoardBackTo('gallery'); setBoardsMode('board') }
   const openComposite = (id: string) => { setActiveComposite(id); setBoardsMode('composite') }
   const editPanelBoard = (boardId: string) => { setActiveBoard(boardId); setBoardBackTo('composite'); setBoardsMode('board') }
-  const createBoardForPanel = (): string => {
+  // A composite is one construction throughout, so an inline panel board inherits
+  // the composite's grain — never the opposite, which the parts bag forbids.
+  const createBoardForPanel = (construction: 'edge' | 'end'): string => {
     const project: BoardProject = {
-      id: createId(), name: 'Untitled panel', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
+      id: createId(), name: 'Untitled panel', length: 450, thickness: 38, construction, strips: [], updatedAt: new Date().toISOString(),
       endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
       allowances: { ...data.allowances },
     }

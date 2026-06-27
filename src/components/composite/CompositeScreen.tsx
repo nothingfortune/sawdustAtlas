@@ -1,34 +1,90 @@
+import { useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
-import { assembledSize } from '../../domain/compositeBoard'
+import { addRow, addWaferToRow, pieceKey } from '../../domain/compositeAssembly'
+import { createId } from '../../id'
+import { PartsBag } from './PartsBag'
+import { AssemblyDesk } from './AssemblyDesk'
+import { FinalPreview } from './FinalPreview'
+import { CompositeSummary } from './CompositeSummary'
 
 export interface CompositeScreenProps {
   composite: CompositeBoard
   boards: BoardProject[]
   woods: WoodSpecies[]
   onChange: (composite: CompositeBoard) => void
-  onCreateBoardForPanel: () => string
+  onCreateBoardForPanel: (construction: 'edge' | 'end') => string
   onEditBoard: (boardId: string) => void
   onBack: () => void
 }
 
-// Placeholder shell for the row-based composite editor. The parts bag, assembly
-// desk, and final preview land in later tasks (AT7–AT11); this keeps the build
-// green and the composite reachable from the gallery in the meantime.
-export function CompositeScreen({ composite, boards, onBack }: CompositeScreenProps) {
-  const size = assembledSize(composite, boards)
-  const placed = composite.rows.reduce((sum, row) => sum + row.wafers.length, 0)
+const defaultCut = () => ({ axis: 'x' as const, stripWidthMm: 25, kerfMm: 3, count: 4 })
+
+export function CompositeScreen({ composite, boards, woods, onChange, onCreateBoardForPanel, onEditBoard, onBack }: CompositeScreenProps) {
+  const [activeRowId, setActiveRowId] = useState(composite.rows[0]?.id ?? '')
+  const effectiveRow = composite.rows.find(r => r.id === activeRowId) ?? composite.rows[0]
+  const effectiveRowId = effectiveRow?.id ?? ''
+
+  const placedKeys = new Set(composite.rows.flatMap(r => r.wafers.map(w => pieceKey(w.panelId, w.pieceIndex))))
+
+  const addPanel = (boardId: string) =>
+    onChange({ ...composite, panels: [...composite.panels, { id: createId(), boardId, cut: defaultCut() }] })
+
+  const onAddInline = () => {
+    const boardId = onCreateBoardForPanel(composite.construction)
+    addPanel(boardId)
+    onEditBoard(boardId)
+  }
+
+  const onPlaceWafer = (panelId: string, pieceIndex: number) => {
+    const cell = { panelId, pieceIndex, rotate: 0 as const, flip: false }
+    if (effectiveRowId) { onChange(addWaferToRow(composite, effectiveRowId, cell)); return }
+    // No rows yet — create one, place into it, and make it active.
+    const withRow = addRow(composite, 'below')
+    const newRow = withRow.rows[withRow.rows.length - 1]
+    if (!newRow) return
+    onChange(addWaferToRow(withRow, newRow.id, cell))
+    setActiveRowId(newRow.id)
+  }
+
   return (
     <div className="composite-screen">
       <header className="composite-screen-head">
-        <button type="button" className="backup-button" onClick={onBack}>← Back to boards</button>
-        <h2>{composite.name}</h2>
-        <span className="muted">{composite.construction === 'end' ? 'End grain' : 'Edge grain'}</span>
+        <button type="button" className="backup-button" onClick={onBack}><ArrowLeft size={15} /> Boards</button>
+        <input
+          className="composite-name"
+          aria-label="Composite name"
+          value={composite.name}
+          onChange={e => onChange({ ...composite, name: e.target.value })}
+        />
+        <span className="composite-badge">{composite.construction === 'end' ? 'End grain' : 'Edge grain'}</span>
       </header>
-      <p className="muted">
-        {composite.rows.length} row(s), {placed} wafer(s) placed · assembled{' '}
-        {Math.round(size.lengthMm)}×{Math.round(size.widthMm)}×{Math.round(size.thicknessMm)} mm
-      </p>
-      <p className="muted">The row-based assembly editor is being rebuilt.</p>
+
+      <div className="composite-body">
+        <PartsBag
+          composite={composite}
+          boards={boards}
+          woods={woods}
+          placedKeys={placedKeys}
+          onChange={onChange}
+          onAddInline={onAddInline}
+          onPickBoard={addPanel}
+          onEditPanel={onEditBoard}
+          onPlaceWafer={onPlaceWafer}
+        />
+        <AssemblyDesk
+          composite={composite}
+          boards={boards}
+          woods={woods}
+          activeRowId={effectiveRowId}
+          onSelectRow={setActiveRowId}
+          onChange={onChange}
+        />
+        <div className="composite-aside">
+          <FinalPreview composite={composite} boards={boards} woods={woods} />
+          <CompositeSummary composite={composite} boards={boards} woods={woods} />
+        </div>
+      </div>
     </div>
   )
 }

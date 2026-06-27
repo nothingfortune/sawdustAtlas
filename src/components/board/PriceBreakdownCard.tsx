@@ -11,7 +11,7 @@ export function PriceBreakdownCard({ price, roughBoardFeet, construction }: { pr
     <h4>Price breakdown</h4>
     <dl>
       <div><dt>Material ({formatNumber(roughBoardFeet)} bf)</dt><dd>{money(price.materialCost)}</dd></div>
-      <div><dt>Markup</dt><dd>+ {money(price.materialMarkup)}</dd></div>
+      <div><dt>Markup ({price.markupPercent}%)</dt><dd>+ {money(price.materialMarkup)}</dd></div>
       <div><dt>Labor — {TIER_LABEL[price.tier]}, {formatNumber(price.laborHours)} hr</dt><dd>+ {money(price.labor)}</dd></div>
       <div><dt>Consumables</dt><dd>+ {money(price.consumables)}</dd></div>
       <div className="price-subtotal"><dt>Subtotal</dt><dd>{money(price.subtotal)}</dd></div>

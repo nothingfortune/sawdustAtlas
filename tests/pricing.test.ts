@@ -58,6 +58,7 @@ describe('calculatePrice', () => {
   it('computes markup, labor, consumables, and subtotal', () => {
     // material 31.25, 2.5 bf, standard tier, end grain
     const p = calculatePrice({ materialCost: 31.25, roughBoardFeet: 2.5, construction: 'end', tier: 'standard', pricing })
+    expect(p.markupPercent).toBe(30)
     expect(p.materialMarkup).toBeCloseTo(9.375, 6)   // 31.25 * 0.30
     expect(p.laborHours).toBe(1.5)
     expect(p.labor).toBeCloseTo(90, 6)               // 1.5 * 60

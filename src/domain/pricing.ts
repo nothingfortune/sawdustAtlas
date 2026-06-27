@@ -41,7 +41,7 @@ export function calculatePrice(input: {
   const floor = construction === 'end' ? pricing.floor.end : pricing.floor.edge
   const floorAdjustment = Math.max(0, floor - subtotal)
   return {
-    tier, laborHours, materialCost, materialMarkup, labor, consumables,
+    tier, markupPercent: pricing.materialMarkupPercent, laborHours, materialCost, materialMarkup, labor, consumables,
     subtotal, floor, floorAdjustment, total: subtotal + floorAdjustment,
   }
 }

@@ -58,8 +58,8 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const finishedSize = formatDimensions([build.length.finished, build.width.finished, build.thickness.finished], lengthUnit)
     const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
       const roughWidth = build.stripRoughWidths[index] ?? strip.width
-      const price = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
-      return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * price
+      const pricePerBf = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
+      return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * pricePerBf
     }, 0)
     const estimatedCost = project.construction === 'end'
       ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)

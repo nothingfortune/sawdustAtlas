@@ -132,6 +132,7 @@ export type ComplexityTier = 'simple' | 'standard' | 'complex'
 
 export interface PriceBreakdown {
   tier: ComplexityTier
+  markupPercent: number
   laborHours: number
   materialCost: number
   materialMarkup: number

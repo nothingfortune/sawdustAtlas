@@ -238,12 +238,6 @@ export function normalizePricing(saved: unknown): PricingSettings {
   const s = isRecord(saved) ? saved : {}
   const tiers = isRecord(s['tierHours']) ? s['tierHours'] : {}
   const floor = isRecord(s['floor']) ? s['floor'] : {}
-
-  // For pricing, reject negative values (unlike finiteNumber which floors to 0).
-  const nonNegativeFinite = (value: unknown, fallback: number): number => {
-    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
-  }
-
   return {
     materialMarkupPercent: nonNegativeFinite(s['materialMarkupPercent'], DEFAULT_PRICING.materialMarkupPercent),
     laborRatePerHour: nonNegativeFinite(s['laborRatePerHour'], DEFAULT_PRICING.laborRatePerHour),
@@ -292,6 +286,12 @@ function finiteNumber(value: unknown, fallback: number): number {
 // meaningful and load-bearing — chevron/herringbone/mirrored bevels rely on it.
 function signedFinite(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+// For pricing fields: reject negatives outright (unlike finiteNumber which floors
+// them to 0). A stored negative price or rate is always a data error.
+function nonNegativeFinite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback
 }
 
 function validColor(value: unknown, fallback: string) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback }

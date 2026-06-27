@@ -21,6 +21,16 @@ describe('transforms', () => {
   it('cycleTransform walks the 8 states and preserves identity', () => {
     expect(cycleTransform(w({ rotate: 270, flip: true }))).toMatchObject({ rotate: 0, flip: false, panelId: 'A' })
   })
+  it('cycleTransform visits all 8 rotate/flip states in order and returns to start', () => {
+    const seen: string[] = []
+    let cell = w({ rotate: 0, flip: false })
+    for (let i = 0; i < 8; i += 1) { cell = cycleTransform(cell); seen.push(`${cell.rotate}${cell.flip ? 'F' : 'f'}`) }
+    expect(seen).toEqual(['90f', '180f', '270f', '0F', '90F', '180F', '270F', '0f'])
+  })
+  it('flipY composes a flip with a 180° turn (and back)', () => {
+    expect(flipY(w({ rotate: 0, flip: false }))).toMatchObject({ rotate: 180, flip: true })
+    expect(flipY(flipY(w({ rotate: 90, flip: false })))).toMatchObject({ rotate: 90, flip: false })
+  })
   it('pieceKey formats', () => { expect(pieceKey('A', 2)).toBe('A:2') })
 })
 

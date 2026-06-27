@@ -42,7 +42,7 @@ export function CroppedBoard({ composite, boards, woods, idPrefix }: FinalPrevie
           <clipPath id={clipId}><rect x={left} y={top} width={pr.keptWidthMm} height={row.heightMm} /></clipPath>
           <g clipPath={`url(#${clipId})`}>
             <g transform={`translate(${left - pr.trimLeftMm} ${top - pr.trimTopMm})`}>
-              <WaferFace piece={pr.piece} cell={pr.wafer} />
+              <WaferFace piece={pr.piece} cell={pr.wafer} board={boards.find(b => b.id === pr.piece.boardId)} />
             </g>
           </g>
         </g>

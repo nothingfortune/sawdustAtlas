@@ -1,15 +1,10 @@
-import type { AssemblyCell } from '../../types'
+import { useId } from 'react'
+import type { AssemblyCell, BoardProject } from '../../types'
 import type { DeskWafer, Piece } from '../../domain/compositeBoard'
 import { placedFootprint } from '../../domain/compositeBoard'
-
-// Running left edge of each item given its width. Module-level (not a render
-// body), so the prefix-sum accumulator isn't an in-component reassignment.
-function leftEdges(widths: number[]): number[] {
-  const lefts: number[] = []
-  let sum = 0
-  for (const w of widths) { lefts.push(sum); sum += w }
-  return lefts
-}
+import { buildEndGrainTemplate, calculateEndGrainMetrics } from '../../domain/boardGeometry'
+import { LongGrainFace } from '../board/LongGrainFace'
+import { AssembledBoard } from '../board/AssembledBoard'
 
 // Paint-server defs shared across every wafer SVG on the screen. SVG `url(#id)`
 // references resolve document-wide, so render this once at the screen root and
@@ -23,35 +18,45 @@ export function CompositeDefs() {
   )
 }
 
-// One wafer's face drawn in mm user units, sized to fill its placed footprint.
-// The face is the slice cross-section: ordered strip blocks across the natural
-// width (full natural height), filled end-grain (X cut) or long-grain (Y cut).
-// Rotation is about the footprint center; flip is a horizontal mirror of the face.
-export function WaferFace({ piece, cell }: { piece: Piece; cell: AssemblyCell }) {
+// The donor board's real top face, drawn in mm at [0..faceLength]×[0..faceWidth]:
+// the long-grain strip face for an edge board, the assembled end-grain template
+// for an end board. This is what makes a chevron donor produce chevron wafers.
+function DonorFace({ board, piece, idPrefix }: { board: BoardProject | undefined; piece: Piece; idPrefix: string }) {
+  if (!board) return <rect x={0} y={0} width={Math.max(1, piece.faceLengthMm)} height={Math.max(1, piece.faceWidthMm)} fill="#cdbfa8" />
+  if (board.construction === 'end') {
+    const template = buildEndGrainTemplate(board)
+    const metrics = calculateEndGrainMetrics(board)
+    return <AssembledBoard project={board} template={template} sliceCount={metrics.sliceCount} pxPerMm={1} labels={false} clipIdPrefix={`dn-${idPrefix}`} />
+  }
+  return <LongGrainFace strips={board.strips} lengthMm={Math.max(1, piece.faceLengthMm)} />
+}
+
+// One wafer: a `slice`-wide band of the donor board's real face, clipped to the
+// wafer footprint, with the per-wafer rotate/flip applied about the footprint
+// centre. The cut axis only chooses which way the band runs (crosscut vs rip).
+export function WaferFace({ piece, cell, board }: { piece: Piece; cell: AssemblyCell; board: BoardProject | undefined }) {
+  const uid = useId().replace(/:/g, '')
   const fp = placedFootprint(piece, cell)
-  const natW = Math.max(0, piece.widthMm)
-  const natH = Math.max(0, piece.heightMm)
-  // Compose about the footprint center: move to center, rotate, mirror, then back
-  // out by half the NATURAL face so the un-rotated face lands at its own origin.
+  const natW = Math.max(0.001, piece.widthMm)
+  const natH = Math.max(0.001, piece.heightMm)
   const transform =
     `translate(${fp.widthMm / 2} ${fp.heightMm / 2}) ` +
     `rotate(${cell.rotate}) ` +
     `scale(${cell.flip ? -1 : 1} 1) ` +
     `translate(${-natW / 2} ${-natH / 2})`
-  const fillKind = piece.grain === 'end' ? 'end' : 'long'
-
-  // Running left edges of each strip column across the natural width.
-  const widths = piece.strips.map(s => Math.max(0, s.widthMm))
-  const lefts = leftEdges(widths)
-  const columns = piece.strips.map((strip, i) => ({ key: i, x: lefts[i] ?? 0, w: widths[i] ?? 0, id: strip.speciesId }))
-
+  // The band's origin within the donor face: crosscut shifts along X, rip along Y.
+  const winX = piece.axis === 'x' ? piece.sliceOffsetMm : 0
+  const winY = piece.axis === 'y' ? piece.sliceOffsetMm : 0
+  const clipId = `wf-${uid}`
   return (
     <g transform={transform}>
-      {columns.length > 0
-        ? columns.map(c => (
-          <rect key={c.key} x={c.x} y={0} width={c.w} height={natH} fill={`url(#${fillKind}-${c.id})`} stroke="#0003" strokeWidth={0.3} />
-        ))
-        : <rect x={0} y={0} width={natW} height={natH} fill="#cdbfa8" stroke="#0003" strokeWidth={0.3} />}
+      <clipPath id={clipId}><rect x={0} y={0} width={natW} height={natH} /></clipPath>
+      <g clipPath={`url(#${clipId})`}>
+        <g transform={`translate(${-winX} ${-winY})`}>
+          <DonorFace board={board} piece={piece} idPrefix={uid} />
+        </g>
+      </g>
+      <rect x={0} y={0} width={natW} height={natH} fill="none" stroke="#0003" strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
     </g>
   )
 }

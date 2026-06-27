@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
+import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { addRow, addWaferToRow, pieceKey } from '../../domain/compositeAssembly'
 import { createId } from '../../id'
 import { PartsBag } from './PartsBag'
@@ -12,6 +12,7 @@ export interface CompositeScreenProps {
   composite: CompositeBoard
   boards: BoardProject[]
   woods: WoodSpecies[]
+  pricing: PricingSettings
   onChange: (composite: CompositeBoard) => void
   onCreateBoardForPanel: (construction: 'edge' | 'end') => string
   onEditBoard: (boardId: string) => void
@@ -20,7 +21,7 @@ export interface CompositeScreenProps {
 
 const defaultCut = () => ({ axis: 'x' as const, stripWidthMm: 25, kerfMm: 3, count: 4 })
 
-export function CompositeScreen({ composite, boards, woods, onChange, onCreateBoardForPanel, onEditBoard, onBack }: CompositeScreenProps) {
+export function CompositeScreen({ composite, boards, woods, pricing, onChange, onCreateBoardForPanel, onEditBoard, onBack }: CompositeScreenProps) {
   const [activeRowId, setActiveRowId] = useState(composite.rows[0]?.id ?? '')
   const effectiveRow = composite.rows.find(r => r.id === activeRowId) ?? composite.rows[0]
   const effectiveRowId = effectiveRow?.id ?? ''
@@ -82,7 +83,7 @@ export function CompositeScreen({ composite, boards, woods, onChange, onCreateBo
         />
         <div className="composite-aside">
           <FinalPreview composite={composite} boards={boards} woods={woods} />
-          <CompositeSummary composite={composite} boards={boards} woods={woods} />
+          <CompositeSummary composite={composite} boards={boards} woods={woods} pricing={pricing} />
         </div>
       </div>
     </div>

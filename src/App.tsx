@@ -276,6 +276,7 @@ export default function App() {
                 composite={composite}
                 boards={data.boards}
                 woods={data.woods}
+                pricing={data.pricing}
                 onChange={updateComposite}
                 onCreateBoardForPanel={createBoardForPanel}
                 onEditBoard={editPanelBoard}

@@ -1,15 +1,18 @@
-import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
+import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { assembledSize, compositeCutPlan, materialBySpecies, stockBySpecies } from '../../domain/compositeBoard'
 import { formatDimensions, formatNumber } from '../../domain/lengthUnits'
+import { calculatePrice, classifyComposite } from '../../domain/pricing'
+import { PriceBreakdownCard } from '../board/PriceBreakdownCard'
 import { useUnitSystem } from '../unitSystem'
 
 export interface CompositeSummaryProps {
   composite: CompositeBoard
   boards: BoardProject[]
   woods: WoodSpecies[]
+  pricing: PricingSettings
 }
 
-export function CompositeSummary({ composite, boards, woods }: CompositeSummaryProps) {
+export function CompositeSummary({ composite, boards, woods, pricing }: CompositeSummaryProps) {
   const { lengthUnit } = useUnitSystem()
   const size = assembledSize(composite, boards)
   const finished = materialBySpecies(composite, boards)
@@ -18,6 +21,8 @@ export function CompositeSummary({ composite, boards, woods }: CompositeSummaryP
   const woodById = new Map(woods.map(w => [w.id, w]))
   const stockMap = new Map(stock.map(s => [s.speciesId, s.boardFeet]))
   const estimatedCost = stock.reduce((sum, s) => sum + s.boardFeet * (woodById.get(s.speciesId)?.pricePerBoardFoot ?? 0), 0)
+  const totalBoardFeet = stock.reduce((sum, s) => sum + s.boardFeet, 0)
+  const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: totalBoardFeet, construction: composite.construction, tier: classifyComposite(), pricing })
 
   return (
     <section className="composite-summary" aria-label="Build summary">
@@ -25,7 +30,10 @@ export function CompositeSummary({ composite, boards, woods }: CompositeSummaryP
       <dl className="summary-stats">
         <div><dt>Finished size</dt><dd>{formatDimensions([size.lengthMm, size.widthMm, size.thicknessMm], lengthUnit)}</dd></div>
         <div><dt>Material estimate</dt><dd>${estimatedCost.toFixed(2)}</dd></div>
+        <div><dt>Price</dt><dd>${price.total.toFixed(2)}</dd></div>
       </dl>
+
+      <PriceBreakdownCard price={price} roughBoardFeet={totalBoardFeet} construction={composite.construction}/>
 
       <h4>Material by species</h4>
       <div className="plan-table">

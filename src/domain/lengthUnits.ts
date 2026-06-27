@@ -43,6 +43,14 @@ export function roundInchesToNearest32nd(inches: number): number {
   return Math.round(inches * IMPERIAL_DENOMINATOR) / IMPERIAL_DENOMINATOR
 }
 
+// Preston's Button: in imperial, snap committed lengths to the nearest half inch
+// so values stay short, round, and don't overflow the inputs. Metric is untouched.
+export function snapLengthMm(mm: number, unit: LengthUnit): number {
+  if (unit !== 'imperial') return mm
+  const half = MM_PER_INCH / 2
+  return Math.round(mm / half) * half
+}
+
 export function parseLengthInput(raw: string, unit: LengthUnit): number | null {
   if (unit === 'metric') {
     const value = Number(raw.trim())

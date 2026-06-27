@@ -29,9 +29,9 @@ import type { BoardPatternId } from '../domain/boardPatterns'
 import { convertMetricText, formatDimensions, formatLength, formatNumber } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 
-interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void }
+interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onMakeComposite: (board: BoardProject) => void; onBack: () => void }
 
-export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete }: Props) {
+export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete, onMakeComposite, onBack }: Props) {
   const { lengthUnit } = useUnitSystem()
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -126,7 +126,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   return <div className="board-layout">
     <div className="designer-toolbar">
       <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div><div className="toolbar-finished-size"><span>Finished</span><b>{finishedSize}</b></div></div>
-      <div className="toolbar-actions"><button className="button secondary" onClick={() => window.print()} aria-label="Print build sheet"><Printer/>Print build sheet</button><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
+      <div className="toolbar-actions"><button className="button secondary" onClick={onBack} aria-label="Back to boards">← Boards</button><button className="button secondary" onClick={() => onMakeComposite(project)} aria-label="Make a composite board from this design"><Layers3/>Make composite</button><button className="button secondary" onClick={() => window.print()} aria-label="Print build sheet"><Printer/>Print build sheet</button><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
     </div>
     <div className="board-main">
       <div className="board-canvas-area" ref={canvasRef}>

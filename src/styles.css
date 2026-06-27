@@ -158,6 +158,24 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .composite-summary td:last-child { text-align:right; font-family:'DM Mono'; color:#6d786f; }
 .composite-summary p { margin:0; color:#8a8d85; font-size:11px; }
 .cut-stage { margin-top:8px; }
+.composite-summary thead th { text-align:left; font:9px 'DM Mono'; text-transform:uppercase; letter-spacing:.06em; color:#8a8d85; padding:0 0 4px 0; }
+.composite-summary td:nth-child(2), .composite-summary th:nth-child(2) { text-align:right; font-family:'DM Mono'; }
+.transform-toolbar { display:flex; gap:6px; padding:8px 12px; background:#fff; border-bottom:1px solid var(--line); }
+.transform-toolbar .button { min-width:40px; font-size:16px; }
+.crosscut-dims { display:flex; gap:8px; }
+.count-field { flex:none; width:74px; margin-top:0; }
+.add-panel-menu { display:flex; flex-direction:column; gap:6px; }
+.add-panel-menu select { width:100%; border:1px solid var(--line); background:white; padding:9px 8px; font:inherit; font-size:11px; border-radius:2px; }
+.board-gallery { padding:24px; overflow-y:auto; height:calc(100vh - 63px); }
+.gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+.gallery-card { display:flex; flex-direction:column; gap:6px; align-items:flex-start; text-align:left; border:1px solid var(--line); background:white; padding:16px; border-radius:4px; cursor:pointer; min-height:96px; }
+.gallery-card:hover { border-color:#9da696; box-shadow:0 4px 14px #0000000f; }
+.gallery-new { align-items:center; justify-content:center; color:var(--green); border-style:dashed; }
+.gallery-plus { font-size:28px; line-height:1; }
+.gallery-name { font-weight:700; font-size:14px; }
+.gallery-meta { font:10px 'DM Mono'; color:#8a8d85; }
+.gallery-composite { background:#f6f1e8; }
+.gallery-badge { font:8px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#9a6a3a; background:#efe2cf; padding:2px 6px; border-radius:2px; }
 .cut-stage h4 { margin:0 0 5px; font-size:12px; }
 .cut-stage ol { margin:0; padding-left:16px; font-size:10px; line-height:1.6; color:#3a4439; }
 .panel-drawer { position:fixed; top:63px; right:0; bottom:0; width:min(420px,90vw); background:#f8f6f0; border-left:1px solid var(--line); overflow-y:auto; z-index:30; box-shadow:-8px 0 24px #00000030; padding:0 0 20px; }
@@ -169,6 +187,8 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .button { min-height:44px; }
   .icon-button { width:42px;height:42px; }
   .icon-button svg { width:18px; }
+  .piece-chip { min-height:46px; }
+  .crosscut-stepper .icon-button { width:40px;height:40px; }
   .field input, .field select, .inspector-heading input { min-height:42px;font-size:14px; }
   .construction-toggle button { padding:12px 10px; }
   .strip-row { grid-template-columns:30px 18px minmax(56px,1fr) 56px 18px 56px 12px 36px;gap:7px;padding:7px 6px; }

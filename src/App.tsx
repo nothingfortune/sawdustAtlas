@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
-import type { AtlasData, BoardProject, BuildAllowances, ShopProject, View, WoodSpecies } from './types'
+import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
+import { BoardGallery } from './components/BoardGallery'
+import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
@@ -21,6 +23,9 @@ export default function App() {
   const [view, setView] = useState<View>('home')
   const [activeShop, setActiveShop] = useState(data.shops[0]?.id ?? '')
   const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
+  const [activeComposite, setActiveComposite] = useState('')
+  const [boardsMode, setBoardsMode] = useState<'gallery' | 'board' | 'composite'>('gallery')
+  const [boardBackTo, setBoardBackTo] = useState<'gallery' | 'composite'>('gallery')
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
@@ -122,7 +127,30 @@ export default function App() {
       endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
       allowances: { ...data.allowances },
     }
-    commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards')
+    commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board')
+  }
+  // Composite handlers (composites live inside the Cutting Boards module).
+  const updateComposite = (project: CompositeBoard) => commitData(current => ({ ...current, composites: current.composites.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p) }))
+  const openBoard = (id: string) => { setActiveBoard(id); setBoardBackTo('gallery'); setBoardsMode('board') }
+  const openComposite = (id: string) => { setActiveComposite(id); setBoardsMode('composite') }
+  const editPanelBoard = (boardId: string) => { setActiveBoard(boardId); setBoardBackTo('composite'); setBoardsMode('board') }
+  const createBoardForPanel = (): string => {
+    const project: BoardProject = {
+      id: createId(), name: 'Untitled panel', length: 450, thickness: 38, construction: 'edge', strips: [], updatedAt: new Date().toISOString(),
+      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
+      allowances: { ...data.allowances },
+    }
+    commitData(current => ({ ...current, boards: [...current.boards, project] }))
+    return project.id
+  }
+  const makeComposite = (board: BoardProject) => {
+    const composite: CompositeBoard = {
+      id: createId(), name: `${board.name} composite`,
+      panels: [{ id: createId(), boardId: board.id, crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+      rows: 1, cols: 1, cells: [null], updatedAt: new Date().toISOString(),
+    }
+    commitData(current => ({ ...current, composites: [...current.composites, composite] }))
+    setActiveComposite(composite.id); setBoardsMode('composite')
   }
 
   async function importFile(file?: File) {
@@ -161,7 +189,7 @@ export default function App() {
         <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
         <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
         <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
-        <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
+        <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
@@ -188,9 +216,40 @@ export default function App() {
         </div>
       </header>
       <section className="workspace">
-        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { setActiveBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
+        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
         {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
-        {view === 'boards' && <BoardDesigner projects={data.boards} project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]} woods={data.woods} onSelect={setActiveBoard} onCreate={createBoard} onChange={updateBoard} onDelete={deleteBoard} />}
+        {view === 'boards' && boardsMode === 'gallery' && (
+          <BoardGallery boards={data.boards} composites={data.composites} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+        )}
+        {view === 'boards' && boardsMode === 'board' && (
+          <BoardDesigner
+            projects={data.boards}
+            project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]}
+            woods={data.woods}
+            onSelect={setActiveBoard}
+            onCreate={createBoard}
+            onChange={updateBoard}
+            onDelete={deleteBoard}
+            onMakeComposite={makeComposite}
+            onBack={() => setBoardsMode(boardBackTo)}
+          />
+        )}
+        {view === 'boards' && boardsMode === 'composite' && (() => {
+          const composite = data.composites.find(c => c.id === activeComposite)
+          return composite
+            ? (
+              <CompositeScreen
+                composite={composite}
+                boards={data.boards}
+                woods={data.woods}
+                onChange={updateComposite}
+                onCreateBoardForPanel={createBoardForPanel}
+                onEditBoard={editPanelBoard}
+                onBack={() => setBoardsMode('gallery')}
+              />
+            )
+            : <BoardGallery boards={data.boards} composites={data.composites} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+        })()}
         {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
       </section>

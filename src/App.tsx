@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -10,6 +10,7 @@ import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
+import { PricingSettings } from './components/PricingSettings'
 import { UnitSystemProvider } from './components/unitSystem'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
@@ -116,6 +117,12 @@ export default function App() {
     const allowances = { ...current.allowances, ...patch }
     return { ...current, allowances, boards: current.boards.map(board => ({ ...board, allowances })) }
   })
+  // Pricing is shop-wide: update the single global block. Unlike allowances it is
+  // read at compute time, so there is no write-through to individual boards.
+  const updatePricing = (patch: Partial<AtlasData['pricing']>) => commitData(current => ({
+    ...current,
+    pricing: { ...current.pricing, ...patch },
+  }))
   const deleteWood = (id: string) => {
     const wood = data.woods.find(candidate => candidate.id === id)
     if (!wood) return
@@ -218,6 +225,7 @@ export default function App() {
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
+        <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => setView('pricing')} />
       </nav>
       <div className="sidebar-bottom">
         <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
@@ -227,7 +235,7 @@ export default function App() {
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : 'Cutting boards'}</strong></div>
+        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
           {saveOk
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
@@ -277,6 +285,7 @@ export default function App() {
         })()}
         {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
+        {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />

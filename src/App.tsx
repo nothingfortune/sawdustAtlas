@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Grid2X2, Home, Import, Layers, Menu, PanelLeftClose, Redo2, Ruler, Save, Sparkles, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Boxes, Grid2X2, Home, Import, Layers, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -178,13 +178,11 @@ export default function App() {
         <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
         <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => setView('boards')} />
         <NavButton active={view === 'composites'} icon={<Layers />} label="Composite boards" open={sidebarOpen} onClick={() => setView('composites')} />
-        <NavButton active={lengthUnit === 'imperial'} icon={<Ruler />} label="Preston's Button" open={sidebarOpen} onClick={toggleLengthUnit} />
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
       </nav>
       <div className="sidebar-bottom">
-        {sidebarOpen && <div className="coming-soon"><Sparkles size={16} /><div><b>Notion sync</b><span>Planned integration</span></div></div>}
         <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
         <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
         {preImport && <button className="nav-button" aria-label="Restore the workspace from before the last import" onClick={restorePreImport}><Undo2 />{sidebarOpen && <span>Undo import</span>}</button>}
@@ -192,11 +190,14 @@ export default function App() {
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><span>SawdustAtlas</span><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'composites' ? 'Composite boards' : 'Cutting boards'}</strong></div>
+        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'composites' ? 'Composite boards' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
           {saveOk
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
             : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
+          <button className="backup-button" onClick={toggleLengthUnit} title="Toggle imperial / metric units">
+            <Ruler size={15} />{lengthUnit === 'imperial' ? "Preston's Button: on" : "Preston's Button"}
+          </button>
           <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
           <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
           <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>

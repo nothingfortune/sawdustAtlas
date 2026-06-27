@@ -20,6 +20,15 @@ export interface Piece {
 
 export interface BoardFaceSize { lengthMm: number; widthMm: number }
 
+// The donor board's finished thickness. For an end-grain board this is the
+// crosscut width (endGrain.sliceThickness) — project.thickness is stale/hidden in
+// the end-grain editor — so wafer volumes and the assembled thickness are right.
+export function boardThickness(board: BoardProject): number {
+  return board.construction === 'end'
+    ? nonNegative(board.endGrain.sliceThickness)
+    : nonNegative(board.thickness)
+}
+
 // The donor board's finished top-face extent. Edge: length × Σ strips. End: the
 // assembled end-grain face (finalLength × panelWidth from the end-grain metrics).
 export function boardFaceSize(board: BoardProject): BoardFaceSize {
@@ -50,7 +59,7 @@ export function panelPieces(panel: CompositePanel, boards: readonly BoardProject
   const face = boardFaceSize(board)
   const slice = nonNegative(panel.cut.stripWidthMm)
   const kerf = nonNegative(panel.cut.kerfMm)
-  const thickness = nonNegative(board.thickness)
+  const thickness = boardThickness(board)
   const count = Math.min(Math.max(0, Math.floor(panel.cut.count)), maxWafers(board, panel.cut))
 
   // Donor face species split by strip width (an approximation for end-grain donors).

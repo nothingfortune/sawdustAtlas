@@ -110,6 +110,28 @@ describe('deskLayout — full footprints incl. empty rows', () => {
   })
 })
 
+describe('end-grain donor thickness', () => {
+  // For an end-grain donor the finished thickness is endGrain.sliceThickness, not
+  // the stale project.thickness — so wafer volume/cost are not under-reported.
+  const endBoard = (over: Partial<BoardProject> = {}): BoardProject => board({
+    construction: 'end', thickness: 38,
+    endGrain: { sourceLength: 900, stockThickness: 20, sliceThickness: 45, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
+    strips: [{ id: 's1', speciesId: 'maple', width: 40, trailingAngle: 0 }, { id: 's2', speciesId: 'walnut', width: 40, trailingAngle: 0 }],
+    ...over,
+  })
+  it('uses endGrain.sliceThickness (45), not project.thickness (38)', () => {
+    const p = panelPieces(panelX({ cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 2 } }), [endBoard()])
+    expect(p.length).toBeGreaterThan(0)
+    expect(p[0]?.thicknessMm).toBe(45)
+  })
+  it('scales wafer volume by the slice thickness (45/38 more than the stale value)', () => {
+    const p = panelPieces(panelX({ cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 1 } }), [endBoard()])
+    const stale = panelPieces(panelX({ cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 1 } }), [endBoard({ endGrain: { sourceLength: 900, stockThickness: 20, sliceThickness: 38, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] } })])
+    const vol = (x: Record<string, number>) => Object.values(x).reduce((a, b) => a + b, 0)
+    expect(vol(p[0]!.bySpecies)).toBeCloseTo(vol(stale[0]!.bySpecies) * (45 / 38), 4)
+  })
+})
+
 describe('material — defensive branches', () => {
   it('stock skips wafers whose panel/piece is missing', () => {
     const c = composite({ rows: [{ id: 'r1', wafers: [w(0), { panelId: 'ghost', pieceIndex: 0, rotate: 0, flip: false }] }] })

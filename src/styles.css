@@ -215,6 +215,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .gallery-plus { font-size:28px; line-height:1; }
 .gallery-thumb-wrap { width:100%; height:84px; background:#f1efe8; border:1px solid var(--line); border-radius:3px; display:grid; place-items:center; overflow:hidden; padding:6px; }
 .gallery-thumb { max-width:100%; max-height:100%; }
+.gallery-thumb-wrap .cropped-board { max-width:100%; max-height:72px; }
 .thumb-empty { font:9px 'DM Mono'; color:#a4a89e; }
 .gallery-name { font-weight:700; font-size:14px; }
 .gallery-meta { font:10px 'DM Mono'; color:#8a8d85; }

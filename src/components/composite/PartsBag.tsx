@@ -58,8 +58,11 @@ export function PartsBag({ composite, boards, placedKeys, onChange, onAddInline,
                 <button type="button" className={panel.cut.axis === 'y' ? 'active' : ''} onClick={() => updateCut(panel.id, { axis: 'y' })}>Rip ↔</button>
               </div>
               <div className="cut-steppers">
-                <NumberField label="Slice (mm)" value={panel.cut.stripWidthMm} min={1} step={1} onChange={v => updateCut(panel.id, { stripWidthMm: v })} />
-                <NumberField label="Count" value={panel.cut.count} min={0} step={1} onChange={v => updateCut(panel.id, { count: Math.round(v) })} />
+                <NumberField label="Slice" value={panel.cut.stripWidthMm} min={1} step={1} onChange={v => updateCut(panel.id, { stripWidthMm: v })} />
+                <label className="field count-field">
+                  <span>Count</span>
+                  <input type="number" min={0} step={1} value={panel.cut.count} aria-label="Wafer count" onChange={e => updateCut(panel.id, { count: Math.max(0, Math.round(Number(e.target.value))) })} />
+                </label>
               </div>
             </div>
 

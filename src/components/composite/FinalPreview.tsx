@@ -24,8 +24,8 @@ export interface FinalPreviewProps {
 
 // The finished, 4-sided board: cropped rows butted with no gaps, each wafer drawn
 // at only its kept rect. Pure SVG with a viewBox so it scales to fill whatever
-// box it's given (inline panel or full-screen pop-out).
-function CroppedBoard({ composite, boards, woods, idPrefix }: FinalPreviewProps & { idPrefix: string }) {
+// box it's given (inline panel, gallery thumbnail, or full-screen pop-out).
+export function CroppedBoard({ composite, boards, woods, idPrefix }: FinalPreviewProps & { idPrefix: string }) {
   const layout = croppedLayout(composite, boards)
   if (!(layout.widthMm > 0) || !(layout.lengthMm > 0)) {
     return <p className="muted small">Place some wafers to see the finished board.</p>

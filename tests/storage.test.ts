@@ -130,6 +130,38 @@ describe('workspace storage migration', () => {
     const legacy = { shops: [], boards: [] } as unknown as AtlasData
     expect(normalizeData(legacy).composites).toEqual([])
   })
+
+  it('migrates a Phase-1 inline-strip composite panel into a board + reference', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{
+        id: 'c', name: 'Old', rows: 1, cols: 1, updatedAt: '2026-06-25T00:00:00.000Z',
+        panels: [{ id: 'p', name: 'Base', kind: 'rip', construction: 'edge', thicknessMm: 20,
+          strips: [{ id: 's', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
+          crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+        cells: [{ panelId: 'p', pieceIndex: 0, rotate: 0, flip: false }],
+      }],
+    } as unknown as Partial<AtlasData>)
+    const comp = data.composites[0]!
+    expect(comp.panels).toHaveLength(1)
+    const ref = comp.panels[0]!
+    expect(ref).toMatchObject({ id: 'p', crosscut: { stripWidthMm: 25, count: 4 } })
+    const migratedBoard = data.boards.find(b => b.id === ref.boardId)
+    expect(migratedBoard?.construction).toBe('edge')
+    expect(migratedBoard?.strips[0]).toMatchObject({ speciesId: 'walnut', width: 38 })
+    expect(migratedBoard?.thickness).toBe(20)
+  })
+
+  it('drops legacy derived panels and nulls their cells', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{ id: 'c', name: 'D', rows: 1, cols: 1, updatedAt: '',
+        panels: [{ id: 'd', name: 'Recut', kind: 'derived', construction: 'end', sourceBoardId: 'x', crosscut: { stripWidthMm: 20, kerfMm: 3, count: 2 } }],
+        cells: [{ panelId: 'd', pieceIndex: 0, rotate: 0, flip: false }] }],
+    } as unknown as Partial<AtlasData>)
+    expect(data.composites[0]!.panels).toEqual([])
+    expect(data.composites[0]!.cells).toEqual([null])
+  })
 })
 
 describe('saveData / loadData persistence', () => {

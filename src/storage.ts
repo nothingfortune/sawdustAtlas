@@ -1,4 +1,4 @@
-import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
+import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositePanel, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -31,28 +31,33 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
+  // Migrating Phase-1 composites can spawn new boards (their inline strips become
+  // real boards); collect them in a sink and append to the boards list.
+  const migratedBoards: BoardProject[] = []
+  const composites = records(data.composites).map(c => normalizeComposite(c, migratedBoards, allowances))
+  const normalizedBoards = boards.map((board): BoardProject => ({
+    id: stringValue(board['id'], createId()),
+    name: stringValue(board['name'], 'Imported cutting board'),
+    length: finiteNumber(board['length'], 450),
+    thickness: finiteNumber(board['thickness'], 38),
+    updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
+    construction: board['construction'] === 'end' ? 'end' : 'edge',
+    allowances,
+    strips: records(board['strips']).map(strip => ({
+      id: stringValue(strip['id'], createId()),
+      speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
+      width: finiteNumber(strip['width'], 38),
+      trailingAngle: signedFinite(strip['trailingAngle'], 0),
+    })),
+    endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
+  }))
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
-    composites: records(data.composites).map(normalizeComposite),
+    composites,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
-    boards: boards.map((board): BoardProject => ({
-      id: stringValue(board['id'], createId()),
-      name: stringValue(board['name'], 'Imported cutting board'),
-      length: finiteNumber(board['length'], 450),
-      thickness: finiteNumber(board['thickness'], 38),
-      updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
-      construction: board['construction'] === 'end' ? 'end' : 'edge',
-      allowances,
-      strips: records(board['strips']).map(strip => ({
-        id: stringValue(strip['id'], createId()),
-        speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
-        width: finiteNumber(strip['width'], 38),
-        trailingAngle: signedFinite(strip['trailingAngle'], 0),
-      })),
-      endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
-    })),
+    boards: [...normalizedBoards, ...migratedBoards],
   }
 }
 
@@ -80,20 +85,65 @@ function normalizeBlockedZone(zone: ShopBlockedZone): ShopBlockedZone {
   }
 }
 
-function normalizeComposite(raw: Record<string, unknown>): CompositeBoard {
+function normalizeComposite(raw: Record<string, unknown>, boardSink: BoardProject[], allowances: BuildAllowances): CompositeBoard {
   const rows = Math.max(1, Math.floor(finiteNumber(raw['rows'], 1)))
   const cols = Math.max(1, Math.floor(finiteNumber(raw['cols'], 1)))
-  // Map the raw array directly (not via `records`, which drops null entries and
-  // would collapse a sparse grid) so empty cells keep their position.
+  // Map the raw cells array directly (not via `records`, which drops null entries
+  // and would collapse a sparse grid) so empty cells keep their position.
   const rawCells = Array.isArray(raw['cells']) ? raw['cells'] : []
+  const droppedPanelIds = new Set<string>()
+  const panels: CompositePanel[] = []
+  for (const rawPanel of records(raw['panels'])) {
+    const crosscut = (rawPanel['crosscut'] ?? {}) as Record<string, unknown>
+    const cc = {
+      stripWidthMm: finiteNumber(crosscut['stripWidthMm'], 25),
+      kerfMm: finiteNumber(crosscut['kerfMm'], 3),
+      count: Math.max(0, Math.floor(finiteNumber(crosscut['count'], 1))),
+    }
+    const id = stringValue(rawPanel['id'], createId())
+    // New shape: a direct board reference.
+    if (typeof rawPanel['boardId'] === 'string') {
+      panels.push({ id, boardId: rawPanel['boardId'], crosscut: cc })
+      continue
+    }
+    // Legacy 'rip' (inline strips) → create a board and reference it.
+    if (rawPanel['kind'] === 'rip') {
+      const boardId = createId()
+      const thickness = finiteNumber(rawPanel['thicknessMm'], 38)
+      boardSink.push({
+        id: boardId,
+        name: stringValue(rawPanel['name'], 'Migrated panel'),
+        length: 300,
+        thickness,
+        construction: rawPanel['construction'] === 'end' ? 'end' : 'edge',
+        endGrain: normalizeEndGrain(undefined, thickness),
+        allowances,
+        strips: records(rawPanel['strips']).map(s => ({
+          id: stringValue(s['id'], createId()),
+          speciesId: stringValue(s['speciesId'], 'walnut'),
+          width: finiteNumber(s['width'], 38),
+          trailingAngle: signedFinite(s['trailingAngle'], 0),
+        })),
+        updatedAt: new Date().toISOString(),
+      })
+      panels.push({ id, boardId, crosscut: cc })
+      continue
+    }
+    // Legacy 'derived' (recursion) → dropped; its cells become null below.
+    droppedPanelIds.add(id)
+  }
+  const cells = Array.from({ length: rows * cols }, (_, i) => {
+    const c = normalizeCell(rawCells[i])
+    return c && !droppedPanelIds.has(c.panelId) ? c : null
+  })
   return {
     id: stringValue(raw['id'], createId()),
     name: stringValue(raw['name'], 'Composite board'),
     rows,
     cols,
+    panels,
+    cells,
     updatedAt: stringValue(raw['updatedAt'], new Date().toISOString()),
-    panels: [], // stopgap; real board-ref migration lands in the storage task
-    cells: Array.from({ length: rows * cols }, (_, i) => normalizeCell(rawCells[i])),
   }
 }
 

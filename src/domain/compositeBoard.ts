@@ -1,34 +1,42 @@
 import type { AssemblyCell, BoardProject, CompositeBoard, CompositePanel } from '../types'
 import { CUBIC_MM_PER_BOARD_FOOT, nonNegative } from './units'
 
+export interface StripBlock {
+  speciesId: string
+  widthMm: number
+}
+
 export interface Piece {
   panelId: string
   index: number
-  widthMm: number
-  heightMm: number
-  thicknessMm: number
+  widthMm: number    // wafer end-grain face width = board width (sum of strip widths)
+  heightMm: number   // wafer end-grain face height = board thickness
+  thicknessMm: number // wafer depth = crosscut slice thickness
+  strips: StripBlock[] // ordered strip blocks shown across the end-grain face
   bySpecies: Record<string, number>
-  construction: 'edge' | 'end'
 }
 
-// Resolve a panel's source board and crosscut it into `count` pieces. A piece's
-// width is the crosscut width; its height is the board's strip-stack cross-section.
-// Kerf is removed stock between pieces (accounted for in stock totals), not part
-// of a piece. Returns [] when the referenced board is missing.
+// Crosscut a panel's source board into `count` wafers. Crosscutting a glued strip
+// panel yields true end-grain wafers: each wafer's visible face is the board's
+// cross-section — boardWidth (sum of strip widths) × boardThickness — with each
+// strip an ordered end-grain block. The crosscut slice thickness is the wafer's
+// depth. Kerf is removed stock between slices (see stockBySpecies), not part of a
+// wafer. Returns [] when the referenced board is missing.
 export function panelPieces(panel: CompositePanel, boards: readonly BoardProject[]): Piece[] {
   const board = boards.find(b => b.id === panel.boardId)
   if (!board) return []
-  const width = nonNegative(panel.crosscut.stripWidthMm)
+  const slice = nonNegative(panel.crosscut.stripWidthMm)
   const thickness = nonNegative(board.thickness)
-  const stackHeight = board.strips.reduce((acc, strip) => acc + nonNegative(strip.width), 0)
+  const strips: StripBlock[] = board.strips.map(s => ({ speciesId: s.speciesId, widthMm: nonNegative(s.width) }))
+  const faceWidth = strips.reduce((acc, s) => acc + s.widthMm, 0)
   const bySpecies: Record<string, number> = {}
-  for (const strip of board.strips) {
-    bySpecies[strip.speciesId] = (bySpecies[strip.speciesId] ?? 0) + nonNegative(strip.width) * width * thickness
+  for (const s of strips) {
+    bySpecies[s.speciesId] = (bySpecies[s.speciesId] ?? 0) + s.widthMm * thickness * slice
   }
   const count = Math.max(0, Math.floor(panel.crosscut.count))
   const pieces: Piece[] = []
   for (let index = 0; index < count; index += 1) {
-    pieces.push({ panelId: panel.id, index, widthMm: width, heightMm: stackHeight, thicknessMm: thickness, bySpecies: { ...bySpecies }, construction: board.construction })
+    pieces.push({ panelId: panel.id, index, widthMm: faceWidth, heightMm: thickness, thicknessMm: slice, strips, bySpecies: { ...bySpecies } })
   }
   return pieces
 }

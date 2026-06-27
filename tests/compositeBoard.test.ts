@@ -20,33 +20,32 @@ const composite = (over: Partial<CompositeBoard> = {}): CompositeBoard => ({
   cells: [cell({ pieceIndex: 0 }), cell({ pieceIndex: 1 })], updatedAt: '2026-06-26T00:00:00.000Z', ...over,
 })
 
-describe('panelPieces (board-backed)', () => {
-  it('crosscuts an edge board into N pieces with the strip-stack cross-section', () => {
+describe('panelPieces (board-backed, true end-grain wafer)', () => {
+  it('crosscuts a board into wafers whose face is boardWidth × boardThickness, ordered strips', () => {
+    // strips maple30 + walnut10 (board width 40), thickness 20, crosscut slice 25mm x4
     const pieces = panelPieces(panel(), [board()])
     expect(pieces).toHaveLength(4)
-    expect(pieces[0]).toMatchObject({ panelId: 'A', index: 0, widthMm: 25, heightMm: 40, thicknessMm: 20, construction: 'edge' })
-    expect(pieces[0]?.bySpecies).toEqual({ maple: 30 * 25 * 20, walnut: 10 * 25 * 20 })
+    // wafer face = W(40) × T(20); slice thickness (25) is the wafer depth
+    expect(pieces[0]).toMatchObject({ panelId: 'A', index: 0, widthMm: 40, heightMm: 20, thicknessMm: 25 })
+    expect(pieces[0]?.strips).toEqual([{ speciesId: 'maple', widthMm: 30 }, { speciesId: 'walnut', widthMm: 10 }])
+    expect(pieces[0]?.bySpecies).toEqual({ maple: 30 * 20 * 25, walnut: 10 * 20 * 25 })
   })
   it('returns [] when the referenced board is missing', () => {
     expect(panelPieces(panel({ boardId: 'gone' }), [board()])).toEqual([])
-  })
-  it('marks pieces from an end-grain board with construction "end"', () => {
-    const pieces = panelPieces(panel(), [board({ construction: 'end' })])
-    expect(pieces[0]?.construction).toBe('end')
   })
 })
 
 describe('placedFootprint', () => {
   it('swaps width/height for 90/270', () => {
     const [p] = panelPieces(panel(), [board()])
-    expect(placedFootprint(p!, cell({ rotate: 0 }))).toEqual({ widthMm: 25, heightMm: 40 })
-    expect(placedFootprint(p!, cell({ rotate: 90 }))).toEqual({ widthMm: 40, heightMm: 25 })
+    expect(placedFootprint(p!, cell({ rotate: 0 }))).toEqual({ widthMm: 40, heightMm: 20 })
+    expect(placedFootprint(p!, cell({ rotate: 90 }))).toEqual({ widthMm: 20, heightMm: 40 })
   })
 })
 
 describe('assembledSize', () => {
-  it('stacks a 2x1 grid: length = sum heights, width = max row width', () => {
-    expect(assembledSize(composite(), [board()])).toEqual({ lengthMm: 80, widthMm: 25, thicknessMm: 20 })
+  it('stacks a 2x1 grid of W×T wafers: length = sum heights, width = max row width, thickness = slice', () => {
+    expect(assembledSize(composite(), [board()])).toEqual({ lengthMm: 40, widthMm: 40, thicknessMm: 25 })
   })
 })
 

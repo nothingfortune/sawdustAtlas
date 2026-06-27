@@ -33,25 +33,19 @@ export const BOARD_PATTERNS = [
     const alternate = slices(context, index => index % 2 === 1)
     return result(context, flatStrips(context), { rowFlips: alternate, rowRotations: alternate })
   }),
-  define('brick', 'Running bond', 'Single-panel brick-bond approximation with every other slice offset half a cell.', context => {
-    const strips = flatStrips(context)
-    const cell = cellWidth(strips)
-    return result(context, strips, { rowOffsets: slices(context, index => index % 2 === 1 ? cell / 2 : 0) })
-  }),
-  define('third-bond', 'Third bond', 'Three-step running bond offset.', context => {
-    const strips = flatStrips(context)
-    const cell = cellWidth(strips)
-    return result(context, strips, { rowOffsets: slices(context, index => index % 3 * (cell / 3)) })
-  }),
+  // Running-bond offsets are stored as a fraction of one cell (resolved to mm against
+  // the live strip widths at render), so a bond keeps tracking after strips are edited.
+  define('brick', 'Running bond', 'Single-panel brick-bond approximation with every other slice offset half a cell.', context =>
+    result(context, flatStrips(context), { rowOffsets: slices(context, index => index % 2 === 1 ? 0.5 : 0) })),
+  define('third-bond', 'Third bond', 'Three-step running bond offset.', context =>
+    result(context, flatStrips(context), { rowOffsets: slices(context, index => (index % 3) / 3) })),
   define('chevron', 'Chevron', 'Alternating angled strip faces, gauged to the stock so wafers stay full.', context => result(context, chevronStrips(context))),
   define('zigzag', 'Zig-zag', 'Chevron blank with alternating slice direction.', context => result(context, chevronStrips(context), {
     rowRotations: slices(context, index => index % 2 === 1),
   })),
   define('stepped-wave', 'Stepped wave', 'Repeating rise-and-fall offset across slices.', context => {
-    const strips = flatStrips(context)
-    const cell = cellWidth(strips)
     const fractions = [0, 0.25, 0.5, 0.75, 0.5, 0.25]
-    return result(context, strips, { rowOffsets: slices(context, index => fractions[index % fractions.length]! * cell) })
+    return result(context, flatStrips(context), { rowOffsets: slices(context, index => fractions[index % fractions.length]!) })
   }),
 ] as const satisfies readonly BoardPatternDefinition[]
 
@@ -156,12 +150,6 @@ function chevronMagnitude(strips: readonly BoardStrip[], thickness: number): num
   return Math.min(45, Math.atan(minWidth / (3 * thickness)) * 180 / Math.PI)
 }
 
-// The running-bond cell the offsets are measured against — the average strip width,
-// so a bond tracks the real strips instead of a fixed preset constant.
-function cellWidth(strips: readonly BoardStrip[]): number {
-  if (strips.length === 0) return PRESET_STRIP_WIDTH
-  return strips.reduce((total, strip) => total + nonNegative(strip.width), 0) / strips.length
-}
 
 function slices<T>(context: PatternContext, value: (index: number) => T): T[] {
   return Array.from({ length: context.sliceCount }, (_, index) => value(index))

@@ -12,7 +12,7 @@ export const defaultSpecies = [
 ] satisfies [WoodSpecies, ...WoodSpecies[]]
 
 export const starterData: AtlasData = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
   composites: [],

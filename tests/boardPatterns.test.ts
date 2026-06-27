@@ -56,7 +56,8 @@ describe('board pattern registry', () => {
     const result = applyBoardPattern('third-bond', project, woods, 6, () => `strip-${++id}`)
     expect(result.strips).toHaveLength(8)
     expect(result.strips.map(strip => strip.speciesId).slice(0, 4)).toEqual(['walnut', 'maple', 'walnut', 'maple'])
-    expect(result.endGrain.rowOffsets?.slice(0, 4)).toEqual([0, 40 / 3, 80 / 3, 0])
+    // Offsets are now stored as cell fractions (resolved to mm at render): third-bond steps 0, 1/3, 2/3.
+    expect(result.endGrain.rowOffsets?.slice(0, 4)).toEqual([0, 1 / 3, 2 / 3, 0])
   })
 
   it('resets stale transforms before applying a new recipe', () => {
@@ -142,10 +143,12 @@ describe('end-grain pattern geometry (P1/P3/P4)', () => {
     expect(result.strips[1]!.trailingAngle).toBeLessThan(0)
   })
 
-  it('running-bond offset derives from the actual strip width, not a constant (P3)', () => {
-    const strips = Array.from({ length: 6 }, (_, i) => strip(String(i), 'walnut', 24))
-    const result = applyBoardPattern('brick', { ...project, strips }, woods, 4, () => 'id')
-    expect(result.endGrain.rowOffsets?.[1]).toBeCloseTo(12, 6) // half of 24, not half of the 40mm preset
+  it('running-bond offset is a width-independent cell fraction that tracks at render (P3)', () => {
+    const brick = (width: number) => applyBoardPattern('brick', { ...project, strips: Array.from({ length: 6 }, (_, i) => strip(String(i), 'walnut', width)) }, woods, 4, () => 'id')
+    // Stored as half a cell regardless of strip width; the mm shift is derived from the
+    // current width at render (resolveOffsetMm), so editing widths re-tracks the bond.
+    expect(brick(24).endGrain.rowOffsets?.[1]).toBeCloseTo(0.5, 9)
+    expect(brick(60).endGrain.rowOffsets?.[1]).toBeCloseTo(0.5, 9)
   })
 
   it('applies a recipe to an empty board by generating a starter layout (fallback)', () => {

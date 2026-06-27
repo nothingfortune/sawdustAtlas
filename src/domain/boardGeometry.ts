@@ -1,4 +1,4 @@
-import type { BoardProject, WoodSpecies } from '../types'
+import type { BoardProject, BoardStrip, WoodSpecies } from '../types'
 import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
 export { CUBIC_MM_PER_BOARD_FOOT } from './units'
@@ -61,6 +61,21 @@ interface StripVolume {
   stock: number
   ripWaste: number
   crosscutWaste: number
+}
+
+// Mean strip width — the running-bond "cell" that per-slice offsets are a fraction of.
+export function averageStripWidth(strips: readonly BoardStrip[]): number {
+  if (strips.length === 0) return 0
+  return strips.reduce((total, strip) => total + nonNegative(strip.width), 0) / strips.length
+}
+
+// Resolve a stored running-bond offset (a fraction of one cell) to a millimeter shift
+// wrapped into [0, height). This is where the offset tracks the current geometry: the
+// same stored fraction yields a different mm shift as the strips (cell width) change.
+export function resolveOffsetMm(offsetFraction: number, cellWidthMm: number, panelHeightMm: number): number {
+  if (!(panelHeightMm > 0)) return 0
+  const mm = offsetFraction * cellWidthMm
+  return ((mm % panelHeightMm) + panelHeightMm) % panelHeightMm
 }
 
 export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {

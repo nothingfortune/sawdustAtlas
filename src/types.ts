@@ -99,7 +99,7 @@ export interface EndGrainSettings {
   trimAllowance: number
   rowFlips: boolean[]
   rowRotations: boolean[]
-  /** Per-slice vertical offset in mm for running-bond/brick patterns; wraps within the slice. */
+  /** Per-slice running-bond offset as a fraction of one cell (the average strip width); resolved to mm against the live strips and wrapped within the slice at render. */
   rowOffsets?: number[]
   /** Physical slice identity order after crosscutting; used so identical wafers can still be reordered visibly. */
   rowOrder?: number[]

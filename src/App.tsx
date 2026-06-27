@@ -219,7 +219,7 @@ export default function App() {
         {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
         {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
         {view === 'boards' && boardsMode === 'gallery' && (
-          <BoardGallery boards={data.boards} composites={data.composites} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+          <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
         )}
         {view === 'boards' && boardsMode === 'board' && (
           <BoardDesigner
@@ -248,7 +248,7 @@ export default function App() {
                 onBack={() => setBoardsMode('gallery')}
               />
             )
-            : <BoardGallery boards={data.boards} composites={data.composites} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+            : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
         })()}
         {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}

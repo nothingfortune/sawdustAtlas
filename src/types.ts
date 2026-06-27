@@ -1,4 +1,4 @@
-export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances' | 'composites'
+export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances'
 
 export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
 export type FeedDirection = 0 | 90 | 180 | 270
@@ -56,33 +56,20 @@ export interface BoardStrip {
   trailingAngle: number
 }
 
-export interface CrosscutSpec {
-  stripWidthMm: number
+export interface CompositeCut {
+  axis: 'x' | 'y'        // X = crosscut (end-grain wafers); Y = rip (long-grain strips)
+  stripWidthMm: number   // slice thickness
   kerfMm: number
   count: number
 }
 
-export interface RipPanel {
+export interface CompositePanel {
   id: string
-  name: string
-  kind: 'rip'
-  construction: 'edge' | 'end'
-  thicknessMm: number
-  strips: BoardStrip[]
-  crosscut: CrosscutSpec
+  boardId: string        // source board sliced into wafers
+  cut: CompositeCut
 }
 
-export interface DerivedPanel {
-  id: string
-  name: string
-  kind: 'derived'
-  construction: 'edge' | 'end'
-  sourceBoardId: string
-  crosscut: CrosscutSpec
-}
-
-export type SourcePanel = RipPanel | DerivedPanel
-
+// A wafer placed in a row.
 export interface AssemblyCell {
   panelId: string
   pieceIndex: number
@@ -90,13 +77,17 @@ export interface AssemblyCell {
   flip: boolean
 }
 
+export interface CompositeRow {
+  id: string
+  wafers: AssemblyCell[]
+}
+
 export interface CompositeBoard {
   id: string
   name: string
-  panels: SourcePanel[]
-  rows: number
-  cols: number
-  cells: (AssemblyCell | null)[]
+  construction: 'edge' | 'end'   // one construction per composite — never mixed
+  panels: CompositePanel[]
+  rows: CompositeRow[]           // ordered top→bottom
   updatedAt: string
 }
 

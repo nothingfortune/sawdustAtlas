@@ -1,82 +1,74 @@
-import type { AssemblyCell, CompositeBoard } from '../types'
-import { boardDependsOn, type BoardRegistry } from './compositeBoard'
+import type { AssemblyCell, CompositeBoard, CompositeRow } from '../types'
+import { createId } from '../id'
 
-export type Cell = AssemblyCell | null
-
-export function emptyCells(rows: number, cols: number): Cell[] {
-  return Array.from({ length: Math.max(0, rows) * Math.max(0, cols) }, () => null)
-}
-
-export function placeCell(cells: Cell[], index: number, cell: AssemblyCell): Cell[] {
-  const next = cells.slice()
-  if (index >= 0 && index < next.length) next[index] = cell
-  return next
-}
-
-export function clearCell(cells: Cell[], index: number): Cell[] {
-  const next = cells.slice()
-  if (index >= 0 && index < next.length) next[index] = null
-  return next
-}
-
-export function resizeGrid(cells: Cell[], oldCols: number, newRows: number, newCols: number): Cell[] {
-  const next = emptyCells(newRows, newCols)
-  for (let i = 0; i < cells.length; i += 1) {
-    const piece = cells[i]
-    if (!piece) continue
-    const r = Math.floor(i / oldCols)
-    const c = i % oldCols
-    if (r < newRows && c < newCols) next[r * newCols + c] = piece
-  }
-  return next
-}
-
+// ---- Per-wafer transforms (about the wafer center) ----
+const ROT: Array<0 | 90 | 180 | 270> = [0, 90, 180, 270]
 const TRANSFORM_CYCLE: Array<{ rotate: 0 | 90 | 180 | 270; flip: boolean }> = [
   { rotate: 0, flip: false }, { rotate: 90, flip: false }, { rotate: 180, flip: false }, { rotate: 270, flip: false },
   { rotate: 0, flip: true }, { rotate: 90, flip: true }, { rotate: 180, flip: true }, { rotate: 270, flip: true },
 ]
-
 export function cycleTransform(cell: AssemblyCell): AssemblyCell {
   const i = TRANSFORM_CYCLE.findIndex(s => s.rotate === cell.rotate && s.flip === cell.flip)
   const next = TRANSFORM_CYCLE[(i + 1) % TRANSFORM_CYCLE.length] ?? TRANSFORM_CYCLE[0]!
   return { ...cell, rotate: next.rotate, flip: next.flip }
 }
+export function rotateRight(cell: AssemblyCell): AssemblyCell { return { ...cell, rotate: ROT[(ROT.indexOf(cell.rotate) + 1) % 4] ?? 0 } }
+export function rotateLeft(cell: AssemblyCell): AssemblyCell { return { ...cell, rotate: ROT[(ROT.indexOf(cell.rotate) + 3) % 4] ?? 0 } }
+export function flipX(cell: AssemblyCell): AssemblyCell { return { ...cell, flip: !cell.flip } }
+export function flipY(cell: AssemblyCell): AssemblyCell { return { ...cell, flip: !cell.flip, rotate: ROT[(ROT.indexOf(cell.rotate) + 2) % 4] ?? 0 } }
 
-export interface CellRect {
-  index: number
-  left: number
-  top: number
-  right: number
-  bottom: number
+export function pieceKey(panelId: string, pieceIndex: number): string { return `${panelId}:${pieceIndex}` }
+
+// ---- Row + wafer operations (immutable; return a new board) ----
+export function emptyRow(): CompositeRow { return { id: createId(), wafers: [] } }
+
+export function addRow(board: CompositeBoard, where: 'above' | 'below', refRowId?: string): CompositeBoard {
+  const row = emptyRow()
+  const idx = refRowId ? board.rows.findIndex(r => r.id === refRowId) : -1
+  if (idx < 0) return { ...board, rows: where === 'above' ? [row, ...board.rows] : [...board.rows, row] }
+  const at = where === 'above' ? idx : idx + 1
+  const rows = board.rows.slice()
+  rows.splice(at, 0, row)
+  return { ...board, rows }
 }
 
-export function cellFromPointer(rects: readonly CellRect[], clientX: number, clientY: number): number {
-  for (const r of rects) {
-    if (clientX >= r.left && clientX < r.right && clientY >= r.top && clientY < r.bottom) return r.index
+export function removeRow(board: CompositeBoard, rowId: string): CompositeBoard {
+  return { ...board, rows: board.rows.filter(r => r.id !== rowId) }
+}
+
+export function moveRow(board: CompositeBoard, rowId: string, toIndex: number): CompositeBoard {
+  const from = board.rows.findIndex(r => r.id === rowId)
+  if (from < 0 || toIndex < 0 || toIndex >= board.rows.length || from === toIndex) return board
+  const rows = board.rows.slice()
+  const [r] = rows.splice(from, 1)
+  if (r) rows.splice(toIndex, 0, r)
+  return { ...board, rows }
+}
+
+export function addWaferToRow(board: CompositeBoard, rowId: string, wafer: AssemblyCell): CompositeBoard {
+  return { ...board, rows: board.rows.map(r => r.id === rowId ? { ...r, wafers: [...r.wafers, wafer] } : r) }
+}
+
+export function removeWafer(board: CompositeBoard, rowId: string, index: number): CompositeBoard {
+  return { ...board, rows: board.rows.map(r => r.id === rowId ? { ...r, wafers: r.wafers.filter((_, i) => i !== index) } : r) }
+}
+
+export function transformWafer(board: CompositeBoard, rowId: string, index: number, fn: (cell: AssemblyCell) => AssemblyCell): CompositeBoard {
+  return { ...board, rows: board.rows.map(r => r.id === rowId ? { ...r, wafers: r.wafers.map((w, i) => i === index ? fn(w) : w) } : r) }
+}
+
+export function moveWafer(board: CompositeBoard, fromRow: string, fromIndex: number, toRow: string, toIndex: number): CompositeBoard {
+  const src = board.rows.find(r => r.id === fromRow)
+  const wafer = src?.wafers[fromIndex]
+  if (!wafer) return board
+  const removed = board.rows.map(r => r.id === fromRow ? { ...r, wafers: r.wafers.filter((_, i) => i !== fromIndex) } : r)
+  return {
+    ...board,
+    rows: removed.map(r => {
+      if (r.id !== toRow) return r
+      const wafers = r.wafers.slice()
+      wafers.splice(Math.max(0, Math.min(toIndex, wafers.length)), 0, wafer)
+      return { ...r, wafers }
+    }),
   }
-  return -1
-}
-
-export function moveCell(cells: Cell[], from: number, to: number): Cell[] {
-  if (from === to || from < 0 || to < 0 || from >= cells.length || to >= cells.length) return cells
-  const next = cells.slice()
-  const moved = next[from] ?? null
-  next[from] = next[to] ?? null
-  next[to] = moved
-  return next
-}
-
-export function buildRegistry(boards: readonly CompositeBoard[]): BoardRegistry {
-  return new Map(boards.map(b => [b.id, b]))
-}
-
-export function selectableSourceBoardIds(boards: readonly CompositeBoard[], currentId: string): string[] {
-  const registry = buildRegistry(boards)
-  return boards
-    .filter(b => b.id !== currentId && !boardDependsOn(b, currentId, registry))
-    .map(b => b.id)
-}
-
-export function pieceKey(panelId: string, pieceIndex: number): string {
-  return `${panelId}:${pieceIndex}`
 }

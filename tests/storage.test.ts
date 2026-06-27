@@ -131,26 +131,70 @@ describe('workspace storage migration', () => {
     expect(normalizeData(legacy).composites).toEqual([])
   })
 
-  it('round-trips a composite board with rip and derived panels', () => {
+  it('migrates a Phase-1 inline-strip composite panel into a board + reference', () => {
     const data = normalizeData({
       shops: [], boards: [],
       composites: [{
-        id: 'B', name: 'Final', rows: 1, cols: 2, updatedAt: '2026-06-25T00:00:00.000Z',
-        panels: [
-          { id: 'A', name: 'Base', kind: 'rip', construction: 'edge', thicknessMm: 20,
-            strips: [{ id: 's1', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
-            crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } },
-          { id: 'dp', name: 'Recut', kind: 'derived', construction: 'end', sourceBoardId: 'A',
-            crosscut: { stripWidthMm: 20, kerfMm: 3, count: 3 } },
-        ],
-        cells: [{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null],
+        id: 'c', name: 'Old', rows: 1, cols: 1, updatedAt: '2026-06-25T00:00:00.000Z',
+        panels: [{ id: 'p', name: 'Base', kind: 'rip', construction: 'edge', thicknessMm: 20,
+          strips: [{ id: 's', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
+          crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+        cells: [{ panelId: 'p', pieceIndex: 0, rotate: 0, flip: false }],
       }],
     } as unknown as Partial<AtlasData>)
-    const board = normalizeData({ composites: data.composites } as Partial<AtlasData>).composites[0]
-    expect(board?.panels).toHaveLength(2)
-    expect(board?.panels[0]?.kind).toBe('rip')
-    expect(board?.panels[1]).toMatchObject({ kind: 'derived', sourceBoardId: 'A' })
-    expect(board?.cells).toEqual([{ panelId: 'A', pieceIndex: 0, rotate: 90, flip: true }, null])
+    const comp = data.composites[0]!
+    expect(comp.construction).toBe('edge')
+    expect(comp.panels).toHaveLength(1)
+    const ref = comp.panels[0]!
+    expect(ref).toMatchObject({ id: 'p', cut: { axis: 'x', stripWidthMm: 25, count: 4 } })
+    const migratedBoard = data.boards.find(b => b.id === ref.boardId)
+    expect(migratedBoard?.construction).toBe('edge')
+    expect(migratedBoard?.strips[0]).toMatchObject({ speciesId: 'walnut', width: 38 })
+    expect(migratedBoard?.thickness).toBe(20)
+  })
+
+  it('migrates a legacy grid into rows, grouping non-null cells per grid row', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{
+        id: 'c', name: 'Grid', rows: 2, cols: 2, updatedAt: '',
+        panels: [{ id: 'p', boardId: 'b', crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+        cells: [
+          { panelId: 'p', pieceIndex: 0, rotate: 0, flip: false }, null,
+          { panelId: 'p', pieceIndex: 1, rotate: 90, flip: false }, { panelId: 'p', pieceIndex: 2, rotate: 0, flip: true },
+        ],
+      }],
+    } as unknown as Partial<AtlasData>)
+    const comp = data.composites[0]!
+    expect(comp.rows).toHaveLength(2)
+    expect(comp.rows[0]!.wafers.map(w => w.pieceIndex)).toEqual([0])
+    expect(comp.rows[1]!.wafers.map(w => w.pieceIndex)).toEqual([1, 2])
+  })
+
+  it('drops legacy derived panels and the wafers that referenced them', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{ id: 'c', name: 'D', rows: 1, cols: 1, updatedAt: '',
+        panels: [{ id: 'd', name: 'Recut', kind: 'derived', construction: 'end', sourceBoardId: 'x', crosscut: { stripWidthMm: 20, kerfMm: 3, count: 2 } }],
+        cells: [{ panelId: 'd', pieceIndex: 0, rotate: 0, flip: false }] }],
+    } as unknown as Partial<AtlasData>)
+    expect(data.composites[0]!.panels).toEqual([])
+    expect(data.composites[0]!.rows).toEqual([{ id: expect.any(String), wafers: [] }])
+  })
+
+  it('preserves a new-shape composite round-trip', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{
+        id: 'c', name: 'New', construction: 'end', updatedAt: '',
+        panels: [{ id: 'p', boardId: 'b', cut: { axis: 'y', stripWidthMm: 30, kerfMm: 3, count: 3 } }],
+        rows: [{ id: 'r1', wafers: [{ panelId: 'p', pieceIndex: 0, rotate: 270, flip: true }] }],
+      }],
+    } as unknown as Partial<AtlasData>)
+    const comp = data.composites[0]!
+    expect(comp.construction).toBe('end')
+    expect(comp.panels[0]!.cut).toEqual({ axis: 'y', stripWidthMm: 30, kerfMm: 3, count: 3 })
+    expect(comp.rows[0]!.wafers[0]).toEqual({ panelId: 'p', pieceIndex: 0, rotate: 270, flip: true })
   })
 })
 

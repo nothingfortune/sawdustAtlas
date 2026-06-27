@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, parseLengthInput } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, parseLengthInput, snapLengthMm } from '../src/domain/lengthUnits'
+
+describe('snapLengthMm', () => {
+  const IN = 25.4
+  it('leaves metric values untouched', () => {
+    expect(snapLengthMm(123.4, 'metric')).toBe(123.4)
+  })
+  it('snaps imperial to the nearest half inch', () => {
+    expect(snapLengthMm(1.1 * IN, 'imperial')).toBeCloseTo(1.0 * IN, 5)
+    expect(snapLengthMm(1.3 * IN, 'imperial')).toBeCloseTo(1.5 * IN, 5)
+    expect(snapLengthMm(1.8 * IN, 'imperial')).toBeCloseTo(2.0 * IN, 5)
+  })
+})
 
 describe('lengthUnits', () => {
   it('formats metric lengths with trimmed decimals', () => {

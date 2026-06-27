@@ -1,4 +1,4 @@
-import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, SourcePanel, WoodSpecies } from './types'
+import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositeCut, CompositePanel, CompositeRow, EndGrainSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { normalizeShopItem } from './domain/shopObjects'
@@ -31,28 +31,35 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
+  // Migrating Phase-1 composites can spawn new boards (their inline strips become
+  // real boards); collect them in a sink and append to the boards list.
+  const migratedBoards: BoardProject[] = []
+  const normalizedBoards = boards.map((board): BoardProject => ({
+    id: stringValue(board['id'], createId()),
+    name: stringValue(board['name'], 'Imported cutting board'),
+    length: finiteNumber(board['length'], 450),
+    thickness: finiteNumber(board['thickness'], 38),
+    updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
+    construction: board['construction'] === 'end' ? 'end' : 'edge',
+    allowances,
+    strips: records(board['strips']).map(strip => ({
+      id: stringValue(strip['id'], createId()),
+      speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
+      width: finiteNumber(strip['width'], 38),
+      trailingAngle: signedFinite(strip['trailingAngle'], 0),
+    })),
+    endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
+  }))
+  // Composites reference boards (to infer construction) and can spawn migrated
+  // boards, so normalize them after the boards list exists.
+  const composites = records(data.composites).map(c => normalizeComposite(c, migratedBoards, allowances, normalizedBoards))
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
-    composites: records(data.composites).map(normalizeComposite),
+    composites,
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
-    boards: boards.map((board): BoardProject => ({
-      id: stringValue(board['id'], createId()),
-      name: stringValue(board['name'], 'Imported cutting board'),
-      length: finiteNumber(board['length'], 450),
-      thickness: finiteNumber(board['thickness'], 38),
-      updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
-      construction: board['construction'] === 'end' ? 'end' : 'edge',
-      allowances,
-      strips: records(board['strips']).map(strip => ({
-        id: stringValue(strip['id'], createId()),
-        speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
-        width: finiteNumber(strip['width'], 38),
-        trailingAngle: signedFinite(strip['trailingAngle'], 0),
-      })),
-      endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
-    })),
+    boards: [...normalizedBoards, ...migratedBoards],
   }
 }
 
@@ -80,49 +87,106 @@ function normalizeBlockedZone(zone: ShopBlockedZone): ShopBlockedZone {
   }
 }
 
-function normalizeComposite(raw: Record<string, unknown>): CompositeBoard {
-  const rows = Math.max(1, Math.floor(finiteNumber(raw['rows'], 1)))
-  const cols = Math.max(1, Math.floor(finiteNumber(raw['cols'], 1)))
-  // Map the raw array directly (not via `records`, which drops null entries and
-  // would collapse a sparse grid) so empty cells keep their position.
-  const rawCells = Array.isArray(raw['cells']) ? raw['cells'] : []
+function normalizeComposite(raw: Record<string, unknown>, boardSink: BoardProject[], allowances: BuildAllowances, normalizedBoards: readonly BoardProject[]): CompositeBoard {
+  const droppedPanelIds = new Set<string>()
+  const panels: CompositePanel[] = []
+  // A composite is one construction throughout; infer it from the first panel's
+  // referenced (or spawned) board when the composite itself doesn't record it.
+  let inferredConstruction: 'edge' | 'end' | undefined
+  for (const rawPanel of records(raw['panels'])) {
+    const id = stringValue(rawPanel['id'], createId())
+    // Accept both the new `cut` and the legacy `crosscut` (always axis 'x').
+    const cut = normalizeCut(rawPanel['cut'] ?? rawPanel['crosscut'])
+    // New shape (or legacy inline-strip migrated earlier): a direct board reference.
+    if (typeof rawPanel['boardId'] === 'string') {
+      panels.push({ id, boardId: rawPanel['boardId'], cut })
+      if (inferredConstruction === undefined) {
+        inferredConstruction = normalizedBoards.find(b => b.id === rawPanel['boardId'])?.construction
+      }
+      continue
+    }
+    // Legacy 'rip' (inline strips) → create a board and reference it.
+    if (rawPanel['kind'] === 'rip') {
+      const boardId = createId()
+      const thickness = finiteNumber(rawPanel['thicknessMm'], 38)
+      const construction = rawPanel['construction'] === 'end' ? 'end' : 'edge'
+      boardSink.push({
+        id: boardId,
+        name: stringValue(rawPanel['name'], 'Migrated panel'),
+        length: 300,
+        thickness,
+        construction,
+        endGrain: normalizeEndGrain(undefined, thickness),
+        allowances,
+        strips: records(rawPanel['strips']).map(s => ({
+          id: stringValue(s['id'], createId()),
+          speciesId: stringValue(s['speciesId'], 'walnut'),
+          width: finiteNumber(s['width'], 38),
+          trailingAngle: signedFinite(s['trailingAngle'], 0),
+        })),
+        updatedAt: new Date().toISOString(),
+      })
+      panels.push({ id, boardId, cut })
+      if (inferredConstruction === undefined) inferredConstruction = construction
+      continue
+    }
+    // Legacy 'derived' (recursion) → dropped; any wafers referencing it drop too.
+    droppedPanelIds.add(id)
+  }
+  const construction = raw['construction'] === 'end' || raw['construction'] === 'edge'
+    ? raw['construction']
+    : (inferredConstruction ?? 'edge')
   return {
     id: stringValue(raw['id'], createId()),
     name: stringValue(raw['name'], 'Composite board'),
-    rows,
-    cols,
+    construction,
+    panels,
+    rows: normalizeRows(raw, droppedPanelIds),
     updatedAt: stringValue(raw['updatedAt'], new Date().toISOString()),
-    panels: records(raw['panels']).map(normalizeSourcePanel),
-    cells: Array.from({ length: rows * cols }, (_, i) => normalizeCell(rawCells[i])),
   }
 }
 
-function normalizeSourcePanel(raw: Record<string, unknown>): SourcePanel {
-  const crosscut = (raw['crosscut'] ?? {}) as Record<string, unknown>
-  const base = {
-    id: stringValue(raw['id'], createId()),
-    name: stringValue(raw['name'], 'Panel'),
-    construction: raw['construction'] === 'end' ? 'end' as const : 'edge' as const,
-    crosscut: {
-      stripWidthMm: finiteNumber(crosscut['stripWidthMm'], 25),
-      kerfMm: finiteNumber(crosscut['kerfMm'], 3),
-      count: Math.max(0, Math.floor(finiteNumber(crosscut['count'], 1))),
-    },
-  }
-  if (raw['kind'] === 'derived') {
-    return { ...base, kind: 'derived', sourceBoardId: stringValue(raw['sourceBoardId'], '') }
-  }
+function normalizeCut(raw: unknown): CompositeCut {
+  const c = isRecord(raw) ? raw : {}
   return {
-    ...base,
-    kind: 'rip',
-    thicknessMm: finiteNumber(raw['thicknessMm'], 38),
-    strips: records(raw['strips']).map(strip => ({
-      id: stringValue(strip['id'], createId()),
-      speciesId: stringValue(strip['speciesId'], 'walnut'),
-      width: finiteNumber(strip['width'], 38),
-      trailingAngle: signedFinite(strip['trailingAngle'], 0),
-    })),
+    axis: c['axis'] === 'y' ? 'y' : 'x',
+    stripWidthMm: finiteNumber(c['stripWidthMm'], 25),
+    kerfMm: finiteNumber(c['kerfMm'], 3),
+    count: Math.max(0, Math.floor(finiteNumber(c['count'], 1))),
   }
+}
+
+function normalizeWafers(raw: unknown, droppedPanelIds: Set<string>): AssemblyCell[] {
+  const list = Array.isArray(raw) ? raw : []
+  return list
+    .map(normalizeCell)
+    .filter((w): w is AssemblyCell => w !== null && !droppedPanelIds.has(w.panelId))
+}
+
+function normalizeRows(raw: Record<string, unknown>, droppedPanelIds: Set<string>): CompositeRow[] {
+  const rawRows = raw['rows']
+  // New shape: rows is an array of { id, wafers }.
+  if (Array.isArray(rawRows)) {
+    return rawRows.filter(isRecord).map(r => ({
+      id: stringValue(r['id'], createId()),
+      wafers: normalizeWafers(r['wafers'], droppedPanelIds),
+    }))
+  }
+  // Legacy grid: rows:number, cols:number, cells: row-major sparse array → one
+  // CompositeRow per grid row, dropping nulls and wafers of dropped panels.
+  const rowCount = Math.max(1, Math.floor(finiteNumber(rawRows, 1)))
+  const colCount = Math.max(1, Math.floor(finiteNumber(raw['cols'], 1)))
+  const rawCells = Array.isArray(raw['cells']) ? raw['cells'] : []
+  const rows: CompositeRow[] = []
+  for (let r = 0; r < rowCount; r += 1) {
+    const wafers: AssemblyCell[] = []
+    for (let c = 0; c < colCount; c += 1) {
+      const cell = normalizeCell(rawCells[r * colCount + c])
+      if (cell && !droppedPanelIds.has(cell.panelId)) wafers.push(cell)
+    }
+    rows.push({ id: createId(), wafers })
+  }
+  return rows
 }
 
 function normalizeCell(raw: unknown): AssemblyCell | null {

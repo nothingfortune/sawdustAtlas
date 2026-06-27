@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput } from '../domain/lengthUnits'
+import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput, snapLengthMm } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 
 interface LengthInputProps {
@@ -47,7 +47,7 @@ export function LengthInput({ value, min = 0, max, step = 1, ariaLabel, title, c
       setDraft(formatLengthValue(value, lengthUnit))
       return
     }
-    const next = clamp(parsed, min, max)
+    const next = clamp(snapLengthMm(parsed, lengthUnit), min, max)
     onChange(next)
     setDraft(formatLengthValue(next, lengthUnit))
   }

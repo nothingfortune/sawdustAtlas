@@ -1,147 +1,79 @@
 import { describe, expect, it } from 'vitest'
-import { assembledSize, boardDependsOn, boardVolumeBySpecies, compositeCutPlan, materialBySpecies, panelPieces, placedFootprint } from '../src/domain/compositeBoard'
+import { panelPieces, placedFootprint, croppedLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
-import type { AssemblyCell, CompositeBoard, DerivedPanel, RipPanel } from '../src/types'
+import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
-const derivedPanel = (sourceBoardId: string, over: Partial<DerivedPanel> = {}): DerivedPanel => ({
-  id: 'd', name: 'Derived', kind: 'derived', construction: 'end', sourceBoardId,
-  crosscut: { stripWidthMm: 20, kerfMm: 3, count: 3 }, ...over,
+const board = (over: Partial<BoardProject> = {}): BoardProject => ({
+  id: 'b1', name: 'Board', length: 300, thickness: 20, construction: 'edge',
+  endGrain: { sourceLength: 900, stockThickness: 20, sliceThickness: 45, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [] },
+  allowances: { jointing: 0, planing: 0, routerTable: 0, ripAllowance: 0, lengthTrim: 0, widthTrim: 0 },
+  strips: [{ id: 's1', speciesId: 'maple', width: 30, trailingAngle: 0 }, { id: 's2', speciesId: 'walnut', width: 10, trailingAngle: 0 }],
+  updatedAt: '2026-06-27T00:00:00.000Z', ...over,
+})
+const panelX = (over: Partial<CompositePanel> = {}): CompositePanel => ({ id: 'A', boardId: 'b1', cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 4 }, ...over })
+const w = (pieceIndex: number, over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex, rotate: 0, flip: false, ...over })
+const composite = (over: Partial<CompositeBoard> = {}): CompositeBoard => ({
+  id: 'c1', name: 'Composite', construction: 'edge', panels: [panelX()],
+  rows: [{ id: 'r1', wafers: [w(0), w(1), w(2)] }, { id: 'r2', wafers: [w(0), w(1)] }],
+  updatedAt: '2026-06-27T00:00:00.000Z', ...over,
 })
 
-const ripPanel = (over: Partial<RipPanel> = {}): RipPanel => ({
-  id: 'A',
-  name: 'Panel A',
-  kind: 'rip',
-  construction: 'edge',
-  thicknessMm: 20,
-  strips: [
-    { id: 's1', speciesId: 'maple', width: 30, trailingAngle: 0 },
-    { id: 's2', speciesId: 'walnut', width: 10, trailingAngle: 0 },
-  ],
-  crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 },
-  ...over,
-})
-
-describe('panelPieces (rip panel)', () => {
-  it('yields one piece per crosscut with the strip-stack cross-section', () => {
-    const pieces = panelPieces(ripPanel(), new Map())
-    expect(pieces).toHaveLength(4)
-    expect(pieces[0]).toMatchObject({ panelId: 'A', index: 0, widthMm: 25, heightMm: 40, thicknessMm: 20 })
+describe('panelPieces — slice along an axis', () => {
+  it('X (crosscut) → end-grain wafer face = boardWidth × thickness, ordered strips', () => {
+    const p = panelPieces(panelX(), [board()])
+    expect(p).toHaveLength(4)
+    expect(p[0]).toMatchObject({ widthMm: 40, heightMm: 20, thicknessMm: 25, grain: 'end' })
+    expect(p[0]?.strips).toEqual([{ speciesId: 'maple', widthMm: 30 }, { speciesId: 'walnut', widthMm: 10 }])
+    expect(p[0]?.bySpecies).toEqual({ maple: 30 * 20 * 25, walnut: 10 * 20 * 25 })
   })
-
-  it('splits each piece volume by species (strip width × crosscut width × thickness)', () => {
-    const [piece] = panelPieces(ripPanel(), new Map())
-    expect(piece?.bySpecies).toEqual({ maple: 30 * 25 * 20, walnut: 10 * 25 * 20 })
+  it('Y (rip) → long-grain strip face = boardLength × slice, dominant species', () => {
+    const p = panelPieces(panelX({ cut: { axis: 'y', stripWidthMm: 25, kerfMm: 3, count: 3 } }), [board()])
+    expect(p[0]).toMatchObject({ widthMm: 300, heightMm: 25, thicknessMm: 20, grain: 'long' })
+    expect(p[0]?.bySpecies).toEqual({ maple: 300 * 25 * 20 })
   })
-})
-
-const cell = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
-
-const boardWith = (over: Partial<CompositeBoard> = {}): CompositeBoard => ({
-  id: 'board1', name: 'Board 1', panels: [ripPanel()], rows: 2, cols: 1,
-  cells: [cell({ pieceIndex: 0 }), cell({ pieceIndex: 1 })], updatedAt: '2026-06-25T00:00:00.000Z', ...over,
+  it('returns [] for a missing board', () => { expect(panelPieces(panelX({ boardId: 'gone' }), [board()])).toEqual([]) })
 })
 
 describe('placedFootprint', () => {
-  it('swaps width/height when rotated 90 or 270', () => {
-    const [piece] = panelPieces(ripPanel(), new Map())
-    expect(placedFootprint(piece!, cell({ rotate: 0 }))).toEqual({ widthMm: 25, heightMm: 40 })
-    expect(placedFootprint(piece!, cell({ rotate: 90 }))).toEqual({ widthMm: 40, heightMm: 25 })
+  it('swaps for 90/270', () => {
+    const [p] = panelPieces(panelX(), [board()])
+    expect(placedFootprint(p!, w(0))).toEqual({ widthMm: 40, heightMm: 20 })
+    expect(placedFootprint(p!, w(0, { rotate: 90 }))).toEqual({ widthMm: 20, heightMm: 40 })
   })
 })
 
-describe('assembledSize', () => {
-  it('stacks two pieces in a 2x1 grid: length = sum of heights, width = max row width', () => {
-    const size = assembledSize(boardWith(), new Map())
-    expect(size).toEqual({ lengthMm: 80, widthMm: 25, thicknessMm: 20 })
-  })
-
-  it('ignores empty (null) cells', () => {
-    const size = assembledSize(boardWith({ cells: [cell({ pieceIndex: 0 }), null] }), new Map())
-    expect(size).toEqual({ lengthMm: 40, widthMm: 25, thicknessMm: 20 })
+describe('croppedLayout + assembledSize — 4-sided crop', () => {
+  it('crops X to the narrowest row (centered) and stacks rows', () => {
+    const layout = croppedLayout(composite(), [board()])
+    // row1 width 120, row2 width 80 → target 80; row1 wafers kept 20/40/20
+    expect(layout.widthMm).toBe(80)
+    expect(layout.rows[0]?.placed.map(p => p.keptWidthMm)).toEqual([20, 40, 20])
+    expect(layout.rows[1]?.placed.map(p => p.keptWidthMm)).toEqual([40, 40])
+    expect(assembledSize(composite(), [board()])).toEqual({ lengthMm: 40, widthMm: 80, thicknessMm: 25 })
   })
 })
 
-describe('material accounting', () => {
-  it('sums placed-piece volume by species (mm^3)', () => {
-    // 2x1 grid places pieces 0 and 1 of the rip panel; each piece is maple 15000 + walnut 5000
-    expect(boardVolumeBySpecies(boardWith(), new Map())).toEqual({ maple: 30000, walnut: 10000 })
+describe('material — placed wafers only', () => {
+  it('finished = cropped (kept) volume by species', () => {
+    // kept fractions: row1 .5/1/.5, row2 1/1 → 4× each wafer's bySpecies
+    expect(materialBySpecies(composite(), [board()])).toEqual([
+      { speciesId: 'maple', boardFeet: (15000 * 4) / CUBIC_MM_PER_BOARD_FOOT },
+      { speciesId: 'walnut', boardFeet: (5000 * 4) / CUBIC_MM_PER_BOARD_FOOT },
+    ])
   })
-
-  it('conserves: placing all crosscut pieces equals the whole panel material', () => {
-    const board = boardWith({ rows: 4, cols: 1, cells: [0, 1, 2, 3].map(i => cell({ pieceIndex: i })) })
-    const vol = boardVolumeBySpecies(board, new Map())
-    expect(vol).toEqual({ maple: 4 * 30 * 25 * 20, walnut: 4 * 10 * 25 * 20 })
-  })
-
-  it('reports board-feet per species, sorted', () => {
-    expect(materialBySpecies(boardWith(), new Map())).toEqual([
-      { speciesId: 'maple', boardFeet: 30000 / CUBIC_MM_PER_BOARD_FOOT },
-      { speciesId: 'walnut', boardFeet: 10000 / CUBIC_MM_PER_BOARD_FOOT },
+  it('stock = full placed wafers + kerf (1 + kerf/slice)', () => {
+    const r = 1 + 3 / 25
+    expect(stockBySpecies(composite(), [board()])).toEqual([
+      { speciesId: 'maple', boardFeet: (15000 * 5 * r) / CUBIC_MM_PER_BOARD_FOOT },
+      { speciesId: 'walnut', boardFeet: (5000 * 5 * r) / CUBIC_MM_PER_BOARD_FOOT },
     ])
   })
 })
 
-describe('boardDependsOn (cycle guard)', () => {
-  it('is true for itself', () => {
-    const b = boardWith({ id: 'X' })
-    expect(boardDependsOn(b, 'X', new Map())).toBe(true)
-  })
-
-  it('detects a transitive dependency through derived panels', () => {
-    const a = boardWith({ id: 'A', panels: [ripPanel()] })
-    const b = boardWith({ id: 'B', panels: [derivedPanel('A')] })
-    const c = boardWith({ id: 'C', panels: [derivedPanel('B')] })
-    const reg = new Map([['A', a], ['B', b], ['C', c]])
-    expect(boardDependsOn(c, 'A', reg)).toBe(true)
-    expect(boardDependsOn(c, 'Z', reg)).toBe(false)
-  })
-})
-
-describe('panelPieces (derived panel)', () => {
-  it('renders the source board then crosscuts it into N pieces, splitting material evenly', () => {
-    const source = boardWith({ id: 'A', panels: [ripPanel()] }) // maple 30000 + walnut 10000 over 2 placed pieces
-    const reg = new Map([['A', source]])
-    const panel = derivedPanel('A', { crosscut: { stripWidthMm: 20, kerfMm: 3, count: 4 } })
-    const pieces = panelPieces(panel, reg)
-    expect(pieces).toHaveLength(4)
-    expect(pieces[0]).toMatchObject({ widthMm: 20, heightMm: 25 }) // source width = 25
-    expect(pieces[0]?.bySpecies).toEqual({ maple: 30000 / 4, walnut: 10000 / 4 })
-  })
-
-  it('yields no pieces when the source board is missing from the registry', () => {
-    expect(panelPieces(derivedPanel('missing'), new Map())).toEqual([])
-  })
-
-  it('conserves material up a derived chain: re-cutting a board keeps total volume', () => {
-    const source = boardWith({ id: 'A', panels: [ripPanel()] })
-    const reg = new Map([['A', source]])
-    const child = boardWith({
-      id: 'B', panels: [derivedPanel('A', { id: 'dp', crosscut: { stripWidthMm: 20, kerfMm: 3, count: 4 } })],
-      rows: 4, cols: 1,
-      cells: [0, 1, 2, 3].map(i => cell({ panelId: 'dp', pieceIndex: i })),
-    })
-    reg.set('B', child)
-    // placing all 4 derived pieces reconstitutes the source board's material
-    expect(boardVolumeBySpecies(child, reg)).toEqual({ maple: 30000, walnut: 10000 })
-  })
-})
-
-describe('compositeCutPlan', () => {
-  it('orders source boards before boards that derive from them', () => {
-    const source = boardWith({ id: 'A', name: 'Base', panels: [ripPanel()] })
-    const child = boardWith({ id: 'B', name: 'Final', panels: [derivedPanel('A', { id: 'dp' })], cells: [cell({ panelId: 'dp', pieceIndex: 0 }), cell({ panelId: 'dp', pieceIndex: 1 })] })
-    const reg = new Map([['A', source], ['B', child]])
-    const plan = compositeCutPlan(child, reg)
-    expect(plan.stages.map(s => s.boardId)).toEqual(['A', 'B'])
-    expect(plan.stages[1]?.steps.some(s => s.includes('Final'))).toBe(false)
-    expect(plan.stages[1]?.steps.some(s => /crosscut finished board "Base"/i.test(s))).toBe(true)
-  })
-
-  it('a rip-only board is a single stage with a crosscut step and an assembly step', () => {
-    const plan = compositeCutPlan(boardWith(), new Map())
-    expect(plan.stages).toHaveLength(1)
-    expect(plan.stages[0]?.steps.some(s => /crosscut into 4 pieces/i.test(s))).toBe(true)
-    expect(plan.stages[0]?.steps.some(s => /Assemble 2×1 grid/i.test(s))).toBe(true)
+describe('cut plan', () => {
+  it('names slice axis + kerf-inclusive source length', () => {
+    expect(panelSourceLengthMm(panelX())).toBe(4 * (25 + 3))
+    const plan = compositeCutPlan(composite(), [board()])
+    expect(plan.stages[0]?.steps.some(s => /crosscut into 4 wafers/.test(s) && /112mm/.test(s))).toBe(true)
   })
 })

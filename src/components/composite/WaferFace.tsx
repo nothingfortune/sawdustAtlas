@@ -2,6 +2,15 @@ import type { AssemblyCell } from '../../types'
 import type { DeskWafer, Piece } from '../../domain/compositeBoard'
 import { placedFootprint } from '../../domain/compositeBoard'
 
+// Running left edge of each item given its width. Module-level (not a render
+// body), so the prefix-sum accumulator isn't an in-component reassignment.
+function leftEdges(widths: number[]): number[] {
+  const lefts: number[] = []
+  let sum = 0
+  for (const w of widths) { lefts.push(sum); sum += w }
+  return lefts
+}
+
 // Paint-server defs shared across every wafer SVG on the screen. SVG `url(#id)`
 // references resolve document-wide, so render this once at the screen root and
 // each wafer's fill resolves against it. Adds a faint hatch for trim markings.
@@ -32,12 +41,9 @@ export function WaferFace({ piece, cell }: { piece: Piece; cell: AssemblyCell })
   const fillKind = piece.grain === 'end' ? 'end' : 'long'
 
   // Running left edges of each strip column across the natural width.
-  let x = 0
-  const columns = piece.strips.map((strip, i) => {
-    const col = { key: i, x, w: Math.max(0, strip.widthMm), id: strip.speciesId }
-    x += col.w
-    return col
-  })
+  const widths = piece.strips.map(s => Math.max(0, s.widthMm))
+  const lefts = leftEdges(widths)
+  const columns = piece.strips.map((strip, i) => ({ key: i, x: lefts[i] ?? 0, w: widths[i] ?? 0, id: strip.speciesId }))
 
   return (
     <g transform={transform}>

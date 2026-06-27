@@ -168,8 +168,9 @@ export default function App() {
   const makeComposite = (board: BoardProject) => {
     const composite: CompositeBoard = {
       id: createId(), name: `${board.name} composite`,
-      panels: [{ id: createId(), boardId: board.id, crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 } }],
-      rows: 1, cols: 1, cells: [null], updatedAt: new Date().toISOString(),
+      construction: board.construction,
+      panels: [{ id: createId(), boardId: board.id, cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+      rows: [{ id: createId(), wafers: [] }], updatedAt: new Date().toISOString(),
     }
     commitData(current => ({ ...current, composites: [...current.composites, composite] }))
     setActiveComposite(composite.id); setBoardsMode('composite')

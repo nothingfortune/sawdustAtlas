@@ -56,18 +56,20 @@ export interface BoardStrip {
   trailingAngle: number
 }
 
-export interface CrosscutSpec {
-  stripWidthMm: number
+export interface CompositeCut {
+  axis: 'x' | 'y'        // X = crosscut (end-grain wafers); Y = rip (long-grain strips)
+  stripWidthMm: number   // slice thickness
   kerfMm: number
   count: number
 }
 
 export interface CompositePanel {
   id: string
-  boardId: string
-  crosscut: CrosscutSpec
+  boardId: string        // source board sliced into wafers
+  cut: CompositeCut
 }
 
+// A wafer placed in a row.
 export interface AssemblyCell {
   panelId: string
   pieceIndex: number
@@ -75,13 +77,17 @@ export interface AssemblyCell {
   flip: boolean
 }
 
+export interface CompositeRow {
+  id: string
+  wafers: AssemblyCell[]
+}
+
 export interface CompositeBoard {
   id: string
   name: string
+  construction: 'edge' | 'end'   // one construction per composite — never mixed
   panels: CompositePanel[]
-  rows: number
-  cols: number
-  cells: (AssemblyCell | null)[]
+  rows: CompositeRow[]           // ordered top→bottom
   updatedAt: string
 }
 

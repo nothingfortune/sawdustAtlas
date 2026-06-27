@@ -11,14 +11,14 @@ export interface PanelRailProps {
   boards: BoardProject[]
   woods: WoodSpecies[]
   selectedPieceKey: string | null
-  onSelectPiece: (key: string | null) => void
+  onStartCarry: (key: string, clientX: number, clientY: number) => void
   onChange: (composite: CompositeBoard) => void
   onAddInline: () => void
   onPickBoard: (boardId: string) => void
   onEditPanel: (boardId: string) => void
 }
 
-export function PanelRail({ composite, boards, woods, selectedPieceKey, onSelectPiece, onChange, onAddInline, onPickBoard, onEditPanel }: PanelRailProps) {
+export function PanelRail({ composite, boards, woods, selectedPieceKey, onStartCarry, onChange, onAddInline, onPickBoard, onEditPanel }: PanelRailProps) {
   const [adding, setAdding] = useState(false)
 
   const setCrosscut = (panelId: string, patch: Partial<CompositePanel['crosscut']>) =>
@@ -54,8 +54,8 @@ export function PanelRail({ composite, boards, woods, selectedPieceKey, onSelect
                 const key = pieceKey(panel.id, piece.index)
                 return (
                   <button key={key} className={`piece-chip${selectedPieceKey === key ? ' is-selected' : ''}`} aria-pressed={selectedPieceKey === key}
-                    onClick={() => onSelectPiece(selectedPieceKey === key ? null : key)}>
-                    <svg viewBox={`0 0 ${piece.widthMm} ${piece.heightMm}`} width={40} height={40} preserveAspectRatio="xMidYMid meet">
+                    style={{ touchAction: 'none' }} onPointerDown={e => onStartCarry(key, e.clientX, e.clientY)}>
+                    <svg viewBox={`0 0 ${piece.widthMm} ${piece.heightMm}`} width={44} height={28} preserveAspectRatio="xMidYMid meet">
                       <defs><WoodPatterns woods={woods} /></defs>
                       <CompositePieceFace piece={piece} cell={{ panelId: panel.id, pieceIndex: piece.index, rotate: 0, flip: false }} />
                     </svg>

@@ -147,6 +147,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .add-panel { background:#f3f1ea; display:flex; flex-direction:column; gap:8px; margin-top:auto; border-bottom:0; }
 .add-panel select { width:100%; border:1px solid var(--line); background:white; padding:9px 8px; font:inherit; font-size:11px; border-radius:2px; }
 .assembly-canvas { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; background:#dddcd5; }
+.canvas-hint { margin:0; padding:7px 12px; font:10px 'DM Mono'; color:#6d786f; background:#fff; border-bottom:1px solid var(--line); text-align:center; }
 .assembly-canvas .pinch-viewport { flex:1; min-height:0; }
 .assembly-canvas .canvas-controls { position:static; transform:none; background:#fff; border-top:1px solid var(--line); padding:8px 12px; display:flex; gap:8px; box-shadow:none; }
 .cell-clear-row { display:flex; flex-wrap:wrap; gap:4px; padding:6px 12px; background:#f8f6f0; border-top:1px solid var(--line); }

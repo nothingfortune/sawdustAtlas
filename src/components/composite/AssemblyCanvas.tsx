@@ -14,11 +14,12 @@ export interface AssemblyCanvasProps {
   boards: BoardProject[]
   woods: WoodSpecies[]
   selectedPieceKey: string | null
+  dropActive?: boolean
   onChange: (composite: CompositeBoard) => void
   onConsumeSelection: () => void
 }
 
-export function AssemblyCanvas({ composite, boards, woods, selectedPieceKey, onChange, onConsumeSelection }: AssemblyCanvasProps) {
+export function AssemblyCanvas({ composite, boards, woods, selectedPieceKey, dropActive = false, onChange, onConsumeSelection }: AssemblyCanvasProps) {
   const [boxRef, box] = useElementSize()
   const pinch = usePinchPan()
   const gridRef = useRef<SVGSVGElement | null>(null)
@@ -124,6 +125,7 @@ export function AssemblyCanvas({ composite, boards, woods, selectedPieceKey, onC
         <button className="button" disabled={!hasSelected} onClick={() => applyToSelected(flipX)} aria-label="Flip horizontal">⇋</button>
         <button className="button" disabled={!hasSelected} onClick={() => applyToSelected(flipY)} aria-label="Flip vertical">⥯</button>
       </div>
+      {composite.cells.every(c => !c) && <p className="canvas-hint">Drag a wafer from the tray onto a cell — or tap a wafer then tap a cell.</p>}
       <div className="pinch-viewport" ref={boxRef} {...pinch.handlers} style={{ touchAction: 'none' }}>
         <div className="pinch-content" style={{ transform: `translate(${pinch.x}px, ${pinch.y}px) scale(${pinch.scale})`, transformOrigin: '0 0' }}>
           <svg ref={gridRef} viewBox={`0 0 ${contentW} ${contentH}`} width={contentW * pxPerMm} height={contentH * pxPerMm}
@@ -136,9 +138,12 @@ export function AssemblyCanvas({ composite, boards, woods, selectedPieceKey, onC
               const cellValue = composite.cells[index] ?? null
               const piece = pieceFor(cellValue)
               const isSel = selectedCell === index
+              const dropHint = !cellValue && dropActive
               return (
                 <g key={index} transform={`translate(${col * slot} ${row * slot})`}>
-                  <rect x={0} y={0} width={slot} height={slot} fill="#fff" stroke={isSel ? '#c47a3d' : '#0002'} strokeWidth={isSel ? 1.2 : 0.5} />
+                  <rect data-cell-index={index} x={0} y={0} width={slot} height={slot} fill="#fff"
+                    stroke={isSel ? '#c47a3d' : dropHint ? '#c47a3d' : '#0002'} strokeWidth={isSel || dropHint ? 1.2 : 0.5}
+                    strokeDasharray={dropHint ? '6 4' : undefined} />
                   {piece && cellValue && (() => {
                     const fpp = placedFootprint(piece, cellValue)
                     return (

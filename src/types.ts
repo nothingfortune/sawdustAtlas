@@ -128,6 +128,22 @@ export interface PricingSettings {
   floor: { edge: number; end: number }
 }
 
+export type ComplexityTier = 'simple' | 'standard' | 'complex'
+
+export interface PriceBreakdown {
+  tier: ComplexityTier
+  laborHours: number
+  materialCost: number
+  materialMarkup: number
+  labor: number
+  consumables: number
+  subtotal: number
+  floor: number
+  /** max(0, floor − subtotal); > 0 only when the minimum is binding. */
+  floorAdjustment: number
+  total: number
+}
+
 export interface BoardProject {
   id: string
   name: string

@@ -21,17 +21,19 @@ import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
 import { AssembledBoard, SliceFace } from './board/AssembledBoard'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
-import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
+import type { BoardProject, BoardStrip, EndGrainSettings, PriceBreakdown, PricingSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
 import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 import { convertMetricText, formatDimensions, formatLength, formatNumber } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
+import { calculatePrice, classifyBoard } from '../domain/pricing'
+import { PriceBreakdownCard } from './board/PriceBreakdownCard'
 
-interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onMakeComposite: (board: BoardProject) => void; onBack: () => void }
+interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; pricing: PricingSettings; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onMakeComposite: (board: BoardProject) => void; onBack: () => void }
 
-export function BoardDesigner({ projects, project, woods, onSelect, onCreate, onChange, onDelete, onMakeComposite, onBack }: Props) {
+export function BoardDesigner({ projects, project, woods, pricing, onSelect, onCreate, onChange, onDelete, onMakeComposite, onBack }: Props) {
   const { lengthUnit } = useUnitSystem()
   const [canvasRef, canvasWidth] = useContainerWidth(820)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -62,8 +64,10 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     const estimatedCost = project.construction === 'end'
       ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
       : edgeEstimatedCost
-    return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost }
-  }, [lengthUnit, project, woods])
+    const tier = classifyBoard(project, end.sliceCount)
+    const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: build.roughBoardFeet, construction: project.construction, tier, pricing })
+    return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost, price }
+  }, [lengthUnit, project, woods, pricing])
   // The pattern-preview project (with stable preview-* ids) only needs recomputing
   // when the pending pattern or inputs change — not on every render while the
   // dialog is open. Null unless a preview is pending.
@@ -78,7 +82,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
   const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost } = derived!
+  const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -130,7 +134,7 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
     </div>
     <div className="board-main">
       <div className="board-canvas-area" ref={canvasRef}>
-        <BuildSheetHeader project={project} build={build} boardFeet={boardFeet} estimatedCost={estimatedCost}/>
+        <BuildSheetHeader project={project} build={build} boardFeet={boardFeet} estimatedCost={estimatedCost} price={price}/>
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final surfacing' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
 
@@ -138,10 +142,11 @@ export function BoardDesigner({ projects, project, woods, onSelect, onCreate, on
 
         <div className="board-stats">
           <Stat label="Finished size" value={formatDimensions([build.length.finished, build.width.finished, build.thickness.finished], lengthUnit)}/>
-          <Stat label="Rough stock" value={`${formatNumber(boardFeet)} bf`}/>
-          <Stat label="Material estimate" value={`$${estimatedCost.toFixed(2)}`}/>
+          <Stat label="Material" value={`$${estimatedCost.toFixed(2)}`}/>
+          <Stat label="Price" value={`$${price.total.toFixed(2)}`}/>
           <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${formatNumber(end.totalWasteBoardFeet)} bf · ${formatNumber(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
+        <PriceBreakdownCard price={price} roughBoardFeet={boardFeet} construction={project.construction}/>
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
         <BuildAssumptions project={project}/>
@@ -522,7 +527,7 @@ function BuildSummary({ build }: { build: BuildDimensions }) {
 
 // Print-only banner leading the build sheet: name, construction, date, and the
 // headline numbers. Hidden on screen (the live .board-intro covers that there).
-function BuildSheetHeader({ project, build, boardFeet, estimatedCost }: { project: BoardProject; build: BuildDimensions; boardFeet: number; estimatedCost: number }) {
+function BuildSheetHeader({ project, build, boardFeet, estimatedCost, price }: { project: BoardProject; build: BuildDimensions; boardFeet: number; estimatedCost: number; price: PriceBreakdown }) {
   const { lengthUnit } = useUnitSystem()
   return <header className="print-only print-sheet-header">
     <div>
@@ -534,6 +539,7 @@ function BuildSheetHeader({ project, build, boardFeet, estimatedCost }: { projec
       <div><dt>Finished size</dt><dd>{formatDimensions([build.length.finished, build.width.finished, build.thickness.finished], lengthUnit)}</dd></div>
       <div><dt>Rough stock</dt><dd>{formatNumber(boardFeet)} bf</dd></div>
       <div><dt>Material estimate</dt><dd>${estimatedCost.toFixed(2)}</dd></div>
+      <div><dt>Price</dt><dd>${price.total.toFixed(2)}</dd></div>
     </dl>
   </header>
 }
@@ -556,7 +562,7 @@ function BuildAssumptions({ project }: { project: BoardProject }) {
       ['Crosscut', `${formatLength(e.sliceThickness, lengthUnit)} slices · ${formatLength(e.kerf, lengthUnit)} blade kerf · ${formatLength(e.trimAllowance, lengthUnit)} total end trim.`],
     )
   }
-  rows.push(['Cost basis', 'Estimated from rough purchased board-feet × price per board foot. Excludes glue, finish, and consumables.'])
+  rows.push(['Pricing', 'Price = material (rough board-feet × price per board foot, including milling waste) + markup + labor by complexity tier + consumables, raised to the configured per-construction minimum. Estimates exclude defects, wood movement, and final surfacing.'])
   return <section className="print-only build-assumptions">
     <h4>Assumptions</h4>
     <dl>{rows.map(([term, detail]) => <div key={term}><dt>{term}</dt><dd>{detail}</dd></div>)}</dl>

@@ -259,6 +259,7 @@ export default function App() {
             projects={data.boards}
             project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]}
             woods={data.woods}
+            pricing={data.pricing}
             onSelect={setActiveBoard}
             onCreate={createBoard}
             onChange={updateBoard}

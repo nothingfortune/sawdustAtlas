@@ -78,6 +78,28 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history, activeShop, activeBoard])
 
+  // Mirror in-app navigation into browser history so the Back button moves between
+  // screens (composite → gallery → home) instead of leaving the app.
+  const navRef = useRef({ skip: false, first: true })
+  useEffect(() => {
+    const state = { view, boardsMode, activeBoard, activeComposite }
+    if (navRef.current.skip) { navRef.current.skip = false; return }
+    if (navRef.current.first) { navRef.current.first = false; window.history.replaceState(state, ''); return }
+    window.history.pushState(state, '')
+  }, [view, boardsMode, activeBoard, activeComposite])
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => {
+      const state = event.state as { view?: View; boardsMode?: 'gallery' | 'board' | 'composite'; activeBoard?: string; activeComposite?: string } | null
+      navRef.current.skip = true
+      setView(state?.view ?? 'home')
+      setBoardsMode(state?.boardsMode ?? 'gallery')
+      if (typeof state?.activeBoard === 'string') setActiveBoard(state.activeBoard)
+      if (typeof state?.activeComposite === 'string') setActiveComposite(state.activeComposite)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
   const updateShop = (project: ShopProject) => commitData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
   const updateBoard = (project: BoardProject) => commitData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
   const addWood = () => {

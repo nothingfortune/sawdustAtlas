@@ -219,7 +219,6 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     width: project.width * SCALE,
     height: project.depth * SCALE,
     transform: `scale(${zoom})`,
-    ['--grid-step' as string]: `${project.gridSize * SCALE}px`,
   } as CSSProperties
 
   return <div className="designer-layout">
@@ -272,7 +271,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
           </div>
           {drawMode && <div className="draw-zone-banner">Drag on the floor to mark unusable area. Rectangles smaller than {formatLength(120, lengthUnit)} are ignored.</div>}
           <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
-            <div ref={canvasRef} className={`room-canvas ${drawMode ? 'drawing' : ''} ${showGrid ? '' : 'no-grid'}`} onPointerDown={event => drawMode ? beginZoneDraw(event) : setSelected('')} style={canvasStyle}>
+            <div ref={canvasRef} className={`room-canvas ${drawMode ? 'drawing' : ''}`} onPointerDown={event => drawMode ? beginZoneDraw(event) : setSelected('')} style={canvasStyle}>
               {showGrid && <FloorGridLayer project={project}/>}
               <BlockedZoneLayer project={project} draftZone={draftZone} selectedZoneId={zone?.id ?? ''} onPointerDown={beginZoneDrag} onKeyDown={onZoneKeyDown}/>
               <FeedClearanceLayer project={project}/>

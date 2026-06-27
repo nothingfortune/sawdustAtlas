@@ -67,7 +67,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | ⚪ | SHOP-006 | Snap, guides, and precise placement | Planned | Next | Configurable grid snap, edge/center guides, coordinate entry, nudge controls, and alignment tools. |
 | ⚪ | SHOP-007 | Collision and clearance warnings | Planned | Next | Distinguish physical overlap from working-zone conflicts; warnings identify involved objects. |
 | ⚪ | SHOP-008 | Irregular rooms and wall segments | Planned | Later | Polygonal rooms, alcoves, columns, and interior walls preserve exact dimensions. |
-| ⚪ | SHOP-009 | Doors, windows, and openings | Planned | Later | Wall-hosted openings include width, swing, sill height, and obstruction rules. |
+| ⚪ | SHOP-009 | Doors, windows, and openings | Cancelled | Later | Wall-hosted openings include width, swing, sill height, and obstruction rules. |
 | ⚪ | SHOP-010 | Utilities layer | Planned | Later | Electrical circuits, outlets, lighting, compressed air, and dust collection can be mapped independently. |
 | ⚪ | SHOP-011 | Workflow zones | Planned | Later | Mark lumber intake, milling, assembly, finishing, storage, and walking paths. |
 | ⚪ | SHOP-012 | Measurements and annotations | Planned | Next | Add dimension lines, notes, labels, and printable legends. |
@@ -87,7 +87,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | 🟢 | BOARD-005 | Angled strip geometry | Complete | Now | Trailing angles affect cross-sections, stock requirements, final squaring, and visible patterns. |
 | 🟢 | BOARD-006 | Material and waste conservation | Complete | Now | Rip wedges, end trim, kerf, offcut, and side squaring reconcile to source volume. |
 | 🟢 | BOARD-007 | Invalid-geometry reporting | Complete | Now | Self-crossing strips and invalid dimensions produce visible errors rather than trusted output. |
-| ⚪ | BOARD-008 | Composable board assemblies | Planned | Next | Create multiple source panel recipes, generate reusable wafers/separators from each, and combine them into a final board assembly. This unlocks true brick-and-mortar, basket weave, borders, and user-built wafer workflows. See `BRICK_PATTERN_CORRECTION.md`. |
+| ⚪ | BOARD-008 | Composable board assemblies | In Progress | Next | Create multiple source panel recipes, generate reusable wafers/separators from each, and combine them into a final board assembly. This unlocks true brick-and-mortar, basket weave, borders, and user-built wafer workflows. See `BRICK_PATTERN_CORRECTION.md`. |
 | 🟢 | BOARD-009 | Drag-to-reorder slices | Complete | Now | Final slices reorder via pointer drag, arrow keys, and tap-to-cycle, each carrying its rotate/flip/offset (its identity in the single-panel model). Pure `boardSlices` domain layer with boundary tests. Full value lands with composable board assemblies in `BOARD-008`. |
 | 🟡 | BOARD-010 | Custom wood library | Partial | Next | Shared wood-library module (own sidebar section) supports add/edit species, base color, grain accent, and price per board foot; texture, density, notes, and inventory references remain. |
 | 🟡 | BOARD-011 | Improved wood appearance | Partial | Later | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
@@ -138,20 +138,20 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | 🟡 | DATA-004 | Installable PWA shell | Partial | Next | Manifest, icon, and cache worker exist; verify installation and offline behavior under trusted HTTPS. |
 | ⚪ | DATA-005 | Shared LAN persistence | Planned | Next | Computer and tablet read/write one versioned project store with backups and atomic writes. |
 | ⚪ | DATA-006 | Conflict handling | Planned | Next | Detect concurrent edits; never silently overwrite another device's newer project revision. |
-| ⚪ | DATA-007 | Private HTTPS | Planned | Next | Support a trusted local certificate or Tailscale Serve without public internet exposure. |
+| ⚪ | DATA-007 | Private HTTPS | Parking Lot | Next | Support a trusted local certificate or Tailscale Serve without public internet exposure. |
 | ⚪ | DATA-008 | Automated backups | Planned | Next | Configurable scheduled snapshots with retention and tested restore. |
 | 🔵 | DATA-009 | Optional authentication | Research | Research | Decide whether trusted-LAN access is sufficient before adding account complexity. |
 
-### Notion Integration
+### Notion Integration - Cancelled
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| ⚪ | NOTION-001 | Integration mapping design | Planned | Later | Define which databases represent projects, stock, tools, photos, and build logs. |
-| ⚪ | NOTION-002 | OAuth/server credential flow | Planned | Later | Tokens never ship in the browser bundle or exported project files. |
-| ⚪ | NOTION-003 | Link project metadata | Planned | Later | Sync name, status, tags, notes, dates, costs, and canonical SawdustAtlas project ID. |
-| ⚪ | NOTION-004 | Reference Notion photos | Planned | Later | Browse or attach selected images while handling expiring Notion asset URLs correctly. |
-| 🔵 | NOTION-005 | Stock and tool sync | Research | Research | Validate whether Notion or SawdustAtlas should own each inventory field before implementing bidirectional sync. |
-| ⚪ | NOTION-006 | Geometry ownership boundary | Planned | Later | Design geometry remains in SawdustAtlas; Notion receives summaries and links, not editable geometry blobs. |
+| ⚪ | NOTION-001 | Integration mapping design | Cancelled | Later | Define which databases represent projects, stock, tools, photos, and build logs. |
+| ⚪ | NOTION-002 | OAuth/server credential flow | Cancelled | Later | Tokens never ship in the browser bundle or exported project files. |
+| ⚪ | NOTION-003 | Link project metadata | Cancelled | Later | Sync name, status, tags, notes, dates, costs, and canonical SawdustAtlas project ID. |
+| ⚪ | NOTION-004 | Reference Notion photos | Cancelled | Later | Browse or attach selected images while handling expiring Notion asset URLs correctly. |
+| 🔵 | NOTION-005 | Stock and tool sync | Cancelled | Research | Validate whether Notion or SawdustAtlas should own each inventory field before implementing bidirectional sync. |
+| ⚪ | NOTION-006 | Geometry ownership boundary | Cancelled | Later | Design geometry remains in SawdustAtlas; Notion receives summaries and links, not editable geometry blobs. |
 
 ### Tablet, UX, and Accessibility
 
@@ -242,7 +242,7 @@ Exit criteria: a printed plan can be measured against the physical shop and expo
 
 Exit criteria: computer and tablet safely edit the same projects, survive restarts, and can restore from backup without manual JSON shuttling.
 
-### M6: Notion Bridge - Later
+### M6: Notion Bridge - Cancelled
 
 - Secure OAuth integration.
 - Project metadata, notes, selected photos, and build-log links.

@@ -3,6 +3,7 @@ import { calculateBuildDimensions, resolveAllowances, roughStripStockWidth } fro
 import type { BuildDimensions } from './boardAllowances'
 import { clampAngle, toBoardFeet } from './units'
 import { calculateEndGrainMetrics } from './boardGeometry'
+import type { EndGrainMetrics } from './boardGeometry'
 
 export type CutStage = 'rip' | 'crosscut' | 'trim'
 
@@ -55,29 +56,31 @@ export interface CuttingBoardPlan {
   warnings: string[]
 }
 
-export function generateCuttingBoardPlan(project: BoardProject, woods: readonly WoodSpecies[]): CuttingBoardPlan {
-  const build = calculateBuildDimensions(project)
-  const metrics = calculateEndGrainMetrics(project)
+// `build` / `metrics` may be supplied by a caller that already computed them (the
+// designer pipeline) to avoid recomputing the whole geometry/allowance chain here.
+export function generateCuttingBoardPlan(project: BoardProject, woods: readonly WoodSpecies[], build?: BuildDimensions, metrics?: EndGrainMetrics): CuttingBoardPlan {
+  const endMetrics = metrics ?? calculateEndGrainMetrics(project)
+  const dimensions = build ?? calculateBuildDimensions(project, endMetrics)
   const allowance = resolveAllowances(project)
-  const stock = aggregateStock(project, woods, build)
-  const cuts = project.construction === 'end' ? endGrainCuts(project, build.stripRoughWidths, metrics.crosscutCount, metrics.sliceCount) : edgeGrainCuts(project, build)
-  const warnings = project.construction === 'end' ? [...metrics.errors] : []
+  const stock = aggregateStock(project, woods, dimensions)
+  const cuts = project.construction === 'end' ? endGrainCuts(project, dimensions.stripRoughWidths, endMetrics.crosscutCount, endMetrics.sliceCount) : edgeGrainCuts(project, dimensions)
+  const warnings = project.construction === 'end' ? [...endMetrics.errors, ...endMetrics.warnings] : []
 
-  if (project.construction === 'end' && Math.abs(metrics.faceShift) > 1e-9) {
-    warnings.push(`The first glue-up faces differ by ${format(Math.abs(metrics.faceShift))} mm; the final board requires side squaring.`)
+  if (project.construction === 'end' && Math.abs(endMetrics.faceShift) > 1e-9) {
+    warnings.push(`The first glue-up faces differ by ${format(Math.abs(endMetrics.faceShift))} mm; the final board requires side squaring.`)
   }
   if (!project.strips.length) warnings.push('Add at least one strip before generating a build plan.')
 
   return {
     stock,
     cuts,
-    steps: project.construction === 'end' ? endGrainSteps(project, metrics.sliceCount, metrics.crosscutCount) : edgeGrainSteps(project),
+    steps: project.construction === 'end' ? endGrainSteps(project, endMetrics.sliceCount, endMetrics.crosscutCount) : edgeGrainSteps(project),
     summary: {
-      roughBoardFeet: build.roughBoardFeet,
-      finishedBoardFeet: build.finishedBoardFeet,
-      plannedWasteBoardFeet: Math.max(0, build.roughBoardFeet - build.finishedBoardFeet),
+      roughBoardFeet: dimensions.roughBoardFeet,
+      finishedBoardFeet: dimensions.finishedBoardFeet,
+      plannedWasteBoardFeet: Math.max(0, dimensions.roughBoardFeet - dimensions.finishedBoardFeet),
       ripPasses: project.strips.length,
-      crosscutPasses: project.construction === 'end' ? metrics.crosscutCount : allowance.lengthTrim > 0 ? 2 : 0,
+      crosscutPasses: project.construction === 'end' ? endMetrics.crosscutCount : allowance.lengthTrim > 0 ? 2 : 0,
     },
     warnings,
   }

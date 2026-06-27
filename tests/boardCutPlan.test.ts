@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { calculateBuildDimensions } from '../src/domain/boardAllowances'
+import { calculateEndGrainMetrics } from '../src/domain/boardGeometry'
 import { generateCuttingBoardPlan } from '../src/domain/boardCutPlan'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
+
+describe('precomputed inputs reuse (P6)', () => {
+  it('honors provided build + metrics instead of recomputing', () => {
+    const project = makeProject('end', [{ id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 0 }])
+    const metrics = calculateEndGrainMetrics(project)
+    const build = calculateBuildDimensions(project, metrics)
+    const fakeMetrics = { ...metrics, sliceCount: metrics.sliceCount + 5 }
+    const plan = generateCuttingBoardPlan(project, woods, build, fakeMetrics)
+    expect(plan.cuts.find(cut => cut.id === 'crosscut-slices')?.quantity).toBe(fakeMetrics.sliceCount)
+  })
+})
 
 const woods: WoodSpecies[] = [
   { id: 'walnut', name: 'Walnut', color: '#543', accent: '#765', pricePerBoardFoot: 12 },

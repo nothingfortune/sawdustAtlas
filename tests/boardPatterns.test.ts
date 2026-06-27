@@ -101,3 +101,56 @@ describe('strip arrangement reorderings', () => {
     expect(strips.map(s => s.id)).toEqual(['1', '2'])
   })
 })
+
+describe('end-grain pattern geometry (P1/P3/P4)', () => {
+  const thick = 40
+
+  it('chevron picks an angle that keeps wafers from tapering to a point (P1)', () => {
+    const p = { ...project, endGrain: { ...project.endGrain, stockThickness: thick }, strips: [] }
+    const result = applyBoardPattern('chevron', p, woods, 6, () => 'id')
+    for (const s of result.strips) {
+      const trailing = s.width + thick * Math.tan(s.trailingAngle * Math.PI / 180)
+      expect(trailing).toBeGreaterThanOrEqual(0.5 * s.width) // never a sliver
+    }
+    expect(result.strips.some(s => s.trailingAngle > 0)).toBe(true)
+    expect(result.strips.some(s => s.trailingAngle < 0)).toBe(true)
+    expect(Math.abs(result.strips[0]!.trailingAngle)).toBeLessThan(45) // not the old hard 45°
+  })
+
+  it('chevron angle adapts to stock thickness so thick stock stays safe (P1)', () => {
+    const thin = { ...project, endGrain: { ...project.endGrain, stockThickness: 20 }, strips: [] }
+    const thickP = { ...project, endGrain: { ...project.endGrain, stockThickness: 80 }, strips: [] }
+    const a = Math.abs(applyBoardPattern('chevron', thin, woods, 6, () => 'id').strips[0]!.trailingAngle)
+    const b = Math.abs(applyBoardPattern('chevron', thickP, woods, 6, () => 'id').strips[0]!.trailingAngle)
+    expect(a).toBeGreaterThan(b) // thicker stock => gentler angle
+  })
+
+  it('re-skins existing strips, preserving id/width/species (P4)', () => {
+    const strips = [strip('a', 'walnut', 25), strip('b', 'maple', 60), strip('c', 'walnut', 13)]
+    const result = applyBoardPattern('checker', { ...project, strips }, woods, 4, () => 'NEW')
+    expect(result.strips.map(s => s.id)).toEqual(['a', 'b', 'c'])
+    expect(result.strips.map(s => s.width)).toEqual([25, 60, 13])
+    expect(result.strips.map(s => s.speciesId)).toEqual(['walnut', 'maple', 'walnut'])
+    expect(result.endGrain.rowRotations.slice(0, 2)).toEqual([false, true]) // transforms still applied
+  })
+
+  it('chevron re-skins widths but overwrites the trailing angle, alternating sign (P1/P4)', () => {
+    const strips = [strip('a', 'walnut', 40), strip('b', 'maple', 40)]
+    const result = applyBoardPattern('chevron', { ...project, endGrain: { ...project.endGrain, stockThickness: thick }, strips }, woods, 4, () => 'id')
+    expect(result.strips.map(s => s.id)).toEqual(['a', 'b'])
+    expect(result.strips[0]!.trailingAngle).toBeGreaterThan(0)
+    expect(result.strips[1]!.trailingAngle).toBeLessThan(0)
+  })
+
+  it('running-bond offset derives from the actual strip width, not a constant (P3)', () => {
+    const strips = Array.from({ length: 6 }, (_, i) => strip(String(i), 'walnut', 24))
+    const result = applyBoardPattern('brick', { ...project, strips }, woods, 4, () => 'id')
+    expect(result.endGrain.rowOffsets?.[1]).toBeCloseTo(12, 6) // half of 24, not half of the 40mm preset
+  })
+
+  it('applies a recipe to an empty board by generating a starter layout (fallback)', () => {
+    const result = applyBoardPattern('stripe', { ...project, strips: [] }, woods, 4, () => 'g')
+    expect(result.strips.length).toBeGreaterThanOrEqual(8)
+    expect(result.strips.every(s => s.width === 40)).toBe(true)
+  })
+})

@@ -174,3 +174,28 @@ describe('material accounting', () => {
     expect(metrics.errors.some(error => /conservation/.test(error))).toBe(false)
   })
 })
+
+describe('thin / pointed face warnings (P2)', () => {
+  it('warns when an angled strip tapers to a thin sliver without closing', () => {
+    const project = makeProject({}, [{ id: 'a', speciesId: 'walnut', width: 40, trailingAngle: -40 }])
+    project.endGrain.stockThickness = 40 // trailing face = 40 - 40*tan40 ≈ 6.4mm: thin but > 0
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.errors.some(error => /closes or crosses/.test(error))).toBe(false)
+    expect((metrics.warnings ?? []).some(warning => /thin|sliver|point|taper/i.test(warning))).toBe(true)
+  })
+
+  it('does not warn for a healthy rectangular board', () => {
+    const metrics = calculateEndGrainMetrics(makeProject())
+    expect(metrics.warnings ?? []).toEqual([])
+  })
+
+  it('does not warn for a gently angled board', () => {
+    const project = makeProject({}, [
+      { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 15 },
+      { id: 'b', speciesId: 'maple', width: 40, trailingAngle: -15 },
+    ])
+    project.endGrain.stockThickness = 20 // faces ≈ 40 ± 5.4 → ratio ~0.87, fine
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.warnings ?? []).toEqual([])
+  })
+})

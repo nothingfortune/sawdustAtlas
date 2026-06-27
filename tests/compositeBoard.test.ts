@@ -144,3 +144,75 @@ describe('material — defensive branches', () => {
     expect(materialBySpecies(c, [zeroBoard]).every(u => u.boardFeet === 0)).toBe(true)
   })
 })
+
+// Every expected value here is derived by hand from the donor geometry, as an
+// independent check on the crop/material math (not a snapshot of the code).
+// board(): edge face 300×40, strips maple30 + walnut10, thickness 20.
+// panelX slice 25 → each wafer footprint 25×40, bySpecies { maple: 15000, walnut: 5000 }.
+describe('math verification (hand-computed)', () => {
+  describe('croppedLayout — mixed heights + rotation (Y crop and X crop together)', () => {
+    // row1: w0 (0°, 25×40) + w1 (90°, 40×25) → rowWidth 65, rowHeight min(40,25)=25
+    // row2: w0 (0°, 25×40)                    → rowWidth 25, rowHeight 40
+    // narrowest row = 25, so every row crops to width 25.
+    const mixed = composite({ rows: [
+      { id: 'r1', wafers: [w(0), w(1, { rotate: 90 })] },
+      { id: 'r2', wafers: [w(0)] },
+    ] })
+    const layout = croppedLayout(mixed, [board()])
+    it('crops to the narrowest row (25) and each row to its shortest wafer', () => {
+      expect(layout.widthMm).toBe(25)
+      expect(layout.rows.map(r => r.heightMm)).toEqual([25, 40])
+    })
+    it('row1: w0 loses 20 off its left, w1 loses 20 off its right; both Y-cropped to 25', () => {
+      expect(layout.rows[0]?.placed[0]).toMatchObject({ footWidthMm: 25, footHeightMm: 40, keptWidthMm: 5, keptHeightMm: 25, trimLeftMm: 20, trimRightMm: 0, trimTopMm: 7.5, trimBottomMm: 7.5 })
+      expect(layout.rows[0]?.placed[1]).toMatchObject({ footWidthMm: 40, footHeightMm: 25, keptWidthMm: 20, keptHeightMm: 25, trimLeftMm: 0, trimRightMm: 20, trimTopMm: 0, trimBottomMm: 0 })
+    })
+    it('row2 is already narrowest → kept whole', () => {
+      expect(layout.rows[1]?.placed[0]).toMatchObject({ keptWidthMm: 25, keptHeightMm: 40, trimLeftMm: 0, trimRightMm: 0 })
+    })
+    it('assembledSize stacks cropped row heights (25+40) at the common width (25)', () => {
+      expect(assembledSize(mixed, [board()])).toEqual({ lengthMm: 65, widthMm: 25, thicknessMm: 20 })
+    })
+    it('finished material = Σ (kept-fraction × wafer volume) by species', () => {
+      // kept fractions: w0r1 = 5·25/(25·40) = .125 ; w1r1 = 20·25/(40·25) = .5 ; w0r2 = 1
+      // maple 15000·(.125+.5+1)=24375 ; walnut 5000·1.625=8125
+      expect(materialBySpecies(mixed, [board()])).toEqual([
+        { speciesId: 'maple', boardFeet: 24375 / CUBIC_MM_PER_BOARD_FOOT },
+        { speciesId: 'walnut', boardFeet: 8125 / CUBIC_MM_PER_BOARD_FOOT },
+      ])
+    })
+    it('stock = full volume of all 3 placed wafers × (1 + kerf/slice)', () => {
+      const r = 1 + 3 / 25
+      const s = stockBySpecies(mixed, [board()])
+      expect(s.map(x => x.speciesId)).toEqual(['maple', 'walnut'])
+      // toBeCloseTo: the code sums vol·r per wafer, the expected does vol·3·r — equal
+      // to ~1 ULP, so compare with tolerance rather than exact float equality.
+      expect(s[0]!.boardFeet).toBeCloseTo((15000 * 3 * r) / CUBIC_MM_PER_BOARD_FOOT, 9)
+      expect(s[1]!.boardFeet).toBeCloseTo((5000 * 3 * r) / CUBIC_MM_PER_BOARD_FOOT, 9)
+    })
+  })
+
+  describe('maxWafers — kerf and exact-fit', () => {
+    const sq = board({ length: 100, strips: [{ id: 's', speciesId: 'maple', width: 100, trailingAngle: 0 }] }) // face 100×100
+    it('no kerf → floor(avail / slice)', () => { expect(maxWafers(sq, { axis: 'x', stripWidthMm: 20, kerfMm: 0, count: 99 })).toBe(5) })
+    it('with kerf the last slice needs no trailing kerf', () => { expect(maxWafers(sq, { axis: 'x', stripWidthMm: 20, kerfMm: 5, count: 99 })).toBe(4) }) // 4·20+3·5=95 ≤ 100
+    it('zero slice yields nothing', () => { expect(maxWafers(sq, { axis: 'x', stripWidthMm: 0, kerfMm: 0, count: 99 })).toBe(0) })
+    it('panelPieces never exceeds the cap', () => {
+      expect(panelPieces({ id: 'A', boardId: sq.id, cut: { axis: 'x', stripWidthMm: 20, kerfMm: 0, count: 99 } }, [sq])).toHaveLength(5)
+    })
+  })
+
+  describe('degenerate composites', () => {
+    it('no panels / no rows → zero size and empty material', () => {
+      const empty = composite({ panels: [], rows: [] })
+      expect(assembledSize(empty, [board()])).toEqual({ lengthMm: 0, widthMm: 0, thicknessMm: 0 })
+      expect(materialBySpecies(empty, [board()])).toEqual([])
+      expect(stockBySpecies(empty, [board()])).toEqual([])
+      expect(croppedLayout(empty, [board()]).rows).toEqual([])
+    })
+    it('rows whose wafers reference a missing panel collapse to zero', () => {
+      const ghost = composite({ panels: [], rows: [{ id: 'r1', wafers: [w(0)] }] })
+      expect(assembledSize(ghost, [board()])).toEqual({ lengthMm: 0, widthMm: 0, thicknessMm: 0 })
+    })
+  })
+})

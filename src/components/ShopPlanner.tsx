@@ -29,7 +29,8 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const { lengthUnit } = useUnitSystem()
   const [selected, setSelected] = useState<string>('')
-  const [zoom, setZoom] = useState(.74)
+  const [zoom, setZoom] = useState(1)
+  const [showGrid, setShowGrid] = useState(true)
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
   const [drawMode, setDrawMode] = useState(false)
   const [customObject, setCustomObject] = useState<ShopObjectDefinition>(DEFAULT_CUSTOM_OBJECT)
@@ -262,11 +263,17 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       {blockedConflicts.length > 0 && <div className="planner-alert"><AlertTriangle/><span>{blockedConflicts.length} object{blockedConflicts.length === 1 ? '' : 's'} overlap out-of-bounds floor zones.</span></div>}
       {viewMode === 'top'
         ? <>
-          <div className="canvas-controls"><button onClick={() => setZoom(z => Math.max(.35, z - .1))}>−</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(z => Math.min(1.25, z + .1))}>+</button></div>
+          <div className="canvas-controls">
+            <button onClick={() => setZoom(z => Math.max(.35, z - .1))} aria-label="Zoom out">−</button>
+            <span>{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(z => Math.min(1.25, z + .1))} aria-label="Zoom in">+</button>
+            <button className="canvas-controls-text" onClick={() => setZoom(1)} aria-label="Reset zoom to 100%">100%</button>
+            <button className={`canvas-controls-text ${showGrid ? 'active' : ''}`} onClick={() => setShowGrid(value => !value)} aria-pressed={showGrid}>Grid</button>
+          </div>
           {drawMode && <div className="draw-zone-banner">Drag on the floor to mark unusable area. Rectangles smaller than {formatLength(120, lengthUnit)} are ignored.</div>}
           <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
             <div ref={canvasRef} className={`room-canvas ${drawMode ? 'drawing' : ''}`} onPointerDown={event => drawMode ? beginZoneDraw(event) : setSelected('')} style={canvasStyle}>
-              <FloorGridLayer project={project}/>
+              {showGrid && <FloorGridLayer project={project}/>}
               <BlockedZoneLayer project={project} draftZone={draftZone} selectedZoneId={zone?.id ?? ''} onPointerDown={beginZoneDrag} onKeyDown={onZoneKeyDown}/>
               <FeedClearanceLayer project={project}/>
               {project.items.map(candidate => {

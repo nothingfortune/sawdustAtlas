@@ -331,6 +331,27 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .build-sequence p { font-size:10px; }
 .wood-editor-row > input { font-size:11px; }
 
+/* Shop Planner readability: lift the whole planner type scale to one coherent
+   baseline (primary text 13px, secondary mono labels 11-12px) so the canvas
+   overlays and inspector read consistently — not just the smallest labels. */
+.canvas-controls span { font-size:12px; }
+.canvas-controls button.canvas-controls-text { font-size:12px; font-family:'DM Mono'; padding:7px 11px; border-left:1px solid var(--line); color:#5d6b60; }
+.canvas-controls button.canvas-controls-text.active { background:var(--green); color:white; }
+.view-mode-toggle button { font-size:12px; }
+.selection-chip { font-size:12px; }
+.planner-alert { font-size:13px; }
+.draw-zone-banner { font-size:12px; }
+.dimension { font-size:13px; }
+.object-name { font-size:13px; }
+.object-name small { font-size:11px; }
+.blocked-zone-card b { font-size:13px; }
+.blocked-zone-card small { font-size:11px; }
+.zone-help { font-size:13px; line-height:1.5; }
+.empty-inspector h3 { font-size:15px; }
+.empty-inspector p { font-size:13px; }
+.feed-settings > p { font-size:12px; }
+.rotation-buttons button { font-size:12px; }
+
 /* Narrow screens: drop the 760px body floor that forced horizontal scrolling
    on phones, and give the canvas tighter gutters. The drawer/single-column
    layout is handled by the (max-width:820px) clause on the rules above. */

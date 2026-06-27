@@ -75,6 +75,12 @@ interface CompositeBoard {
 ### Entry & navigation
 - **Cutting boards** project selector lists boards + composites (composites badged). The top-level **Composite boards** nav item and the `'composites'` view are removed.
 - In the board designer, near the build summary: **"Make composite board"** → creates a `CompositeBoard` with the current board as panel #1, switches the selector to it, opens the composite screen.
+- **Gallery landing:** the top level of the Cutting Boards module shows a **gallery** of existing cutting boards (composites badged) plus a **create-new** action — instead of dropping straight into the designer with a dropdown. Selecting a card opens that board (designer) or composite (composite screen).
+
+### App-wide housekeeping (this branch)
+- **Brand → Home:** the **top-left "SawdustAtlas" brand/breadcrumb is a Home link**, always available from anywhere.
+- **Move Preston's Button:** relocate the imperial/metric toggle out of the left sidebar into the **top bar, next to the "Saved in this browser" indicator**.
+- **Purge Notion:** remove the sidebar "Notion sync / Planned integration" element and any Notion-related code — the integration is cancelled.
 
 ### Composite screen (under Cutting boards)
 - **Left rail — panels:** one card per panel: a true-to-scale **board thumbnail**, name, **crosscut stepper** (count, with width/kerf), and a **tray of piece chips**. **"+ Add panel"** → *Design new* (opens the board designer for a fresh board, then returns) | *Pick existing board* (lists `data.boards`). **Edit** a panel → opens the board designer for its board (edits are live; a board used in two composites updates both). **Remove** a panel (✕) drops it and nulls referencing cells.
@@ -93,7 +99,7 @@ interface CompositeBoard {
 
 ## Scope (YAGNI)
 
-- **In:** the flow and model above; both panel sources; free 8-orientation per piece via explicit controls; kerf in source length + cut plan + material/waste; unified selector; canvas fit-to-container; migration of Phase-1 composites.
+- **In:** the flow and model above; both panel sources; free 8-orientation per piece via explicit controls; kerf in source length + cut plan + material/waste; unified selector + **gallery landing**; canvas fit-to-container; migration of Phase-1 composites; **app-wide housekeeping** (brand→Home, Preston's Button to the top bar, purge Notion).
 - **Deferred:** picking an existing *composite* as a panel (recursion — engine still supports it, not surfaced now); pattern templates (brick/herringbone auto-fill); printable build-sheet polish; a real-device touch-hardening pass for pinch/drag.
 
 ## Testing strategy
@@ -111,3 +117,5 @@ interface CompositeBoard {
 - The canvas fills its container with large, touchable cells; rows/cols are count steppers.
 - Finished size and cross-panel material totals are computed and conserved (finished + kerf waste = stock).
 - Phase-1 composite data migrates without breaking existing boards/shops; full suite, lint, and build stay green.
+- The Cutting Boards module opens to a **gallery** of boards/composites with a create-new action.
+- App housekeeping: the top-left **SawdustAtlas brand is a Home link** from anywhere; **Preston's Button lives in the top bar** next to "Saved in this browser"; the **Notion sync** element and code are **removed**.

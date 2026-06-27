@@ -33,6 +33,12 @@ describe('row operations', () => {
   })
   it('removeRow drops by id', () => { expect(removeRow(board(), 'r1').rows.map(r => r.id)).toEqual(['r2']) })
   it('moveRow reorders', () => { expect(moveRow(board(), 'r2', 0).rows.map(r => r.id)).toEqual(['r2', 'r1']) })
+  it('moveRow is a no-op for unknown id / same index / out-of-range', () => {
+    const b = board()
+    expect(moveRow(b, 'nope', 0)).toBe(b)
+    expect(moveRow(b, 'r1', 0)).toBe(b)
+    expect(moveRow(b, 'r1', 9)).toBe(b)
+  })
 })
 
 describe('wafer operations', () => {
@@ -50,6 +56,11 @@ describe('wafer operations', () => {
     const m = moveWafer(board(), 'r1', 0, 'r2', 0)
     expect(m.rows[0]?.wafers).toHaveLength(0)
     expect(m.rows[1]?.wafers.map(x => x.pieceIndex)).toEqual([0, 1])
+  })
+  it('moveWafer is a no-op when the source wafer is missing', () => {
+    const b = board()
+    expect(moveWafer(b, 'r1', 9, 'r2', 0)).toBe(b)
+    expect(moveWafer(b, 'nope', 0, 'r2', 0)).toBe(b)
   })
   it('is immutable', () => {
     const b = board()

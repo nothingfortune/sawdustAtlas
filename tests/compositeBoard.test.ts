@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { panelPieces, placedFootprint, croppedLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan } from '../src/domain/compositeBoard'
+import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
@@ -75,5 +75,41 @@ describe('cut plan', () => {
     expect(panelSourceLengthMm(panelX())).toBe(4 * (25 + 3))
     const plan = compositeCutPlan(composite(), [board()])
     expect(plan.stages[0]?.steps.some(s => /crosscut into 4 wafers/.test(s) && /112mm/.test(s))).toBe(true)
+  })
+})
+
+describe('deskLayout — full footprints incl. empty rows', () => {
+  it('keeps every row at its full (uncropped) footprint and carries trim', () => {
+    const layout = deskLayout(composite(), [board()])
+    expect(layout.rows.map(r => r.wafers.length)).toEqual([3, 2])
+    expect(layout.rows[0]?.wafers.map(w => w.footWidthMm)).toEqual([40, 40, 40])
+    expect(layout.rows[0]?.wafers[0]).toMatchObject({ footWidthMm: 40, footHeightMm: 20 })
+    // row1 (width 120) is wider than the narrowest row (80), so its outer wafers
+    // carry X trim; the desk reports the full footprint plus that trim.
+    expect(layout.rows[0]?.wafers[0]?.trimLeftMm).toBe(20)
+    expect(layout.maxRowWidthMm).toBe(120)
+    expect(layout.totalHeightMm).toBe(40)
+  })
+  it('reports an empty row as zero-height with no wafers', () => {
+    const c = composite({ rows: [{ id: 'r1', wafers: [w(0)] }, { id: 'empty', wafers: [] }] })
+    const layout = deskLayout(c, [board()])
+    expect(layout.rows[1]).toMatchObject({ rowId: 'empty', wafers: [], rowWidthMm: 0, bandHeightMm: 0 })
+  })
+  it('drops a wafer whose piece is missing (out-of-range index)', () => {
+    const c = composite({ rows: [{ id: 'r1', wafers: [w(0), w(99)] }] })
+    expect(deskLayout(c, [board()]).rows[0]?.wafers).toHaveLength(1)
+  })
+})
+
+describe('material — defensive branches', () => {
+  it('stock skips wafers whose panel/piece is missing', () => {
+    const c = composite({ rows: [{ id: 'r1', wafers: [w(0), { panelId: 'ghost', pieceIndex: 0, rotate: 0, flip: false }] }] })
+    // The ghost wafer contributes nothing; only the real maple/walnut wafer counts.
+    expect(stockBySpecies(c, [board()]).map(s => s.speciesId)).toEqual(['maple', 'walnut'])
+  })
+  it('finished material is zero when a wafer has no footprint area', () => {
+    const zeroBoard = board({ strips: [{ id: 's1', speciesId: 'maple', width: 0, trailingAngle: 0 }] })
+    const c = composite({ rows: [{ id: 'r1', wafers: [w(0)] }] })
+    expect(materialBySpecies(c, [zeroBoard]).every(u => u.boardFeet === 0)).toBe(true)
   })
 })

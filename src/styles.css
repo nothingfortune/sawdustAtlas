@@ -444,11 +444,17 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .popout-body .pinch-content { width:100%; height:100%; }
 .preview-popout .studio-note { padding:10px 2px 0; }
 
+/* Build provenance badge: a small monochrome chip pinned to the bottom-right
+   corner so previews and test builds are identifiable at a glance. pointer-events
+   are off so it never intercepts clicks on the app beneath it. Hidden when
+   printing (see @media print). */
+.build-badge { position:fixed; right:10px; bottom:9px; z-index:20; pointer-events:none; font:9px 'DM Mono'; letter-spacing:.04em; color:#5d6b60; background:#f7f5efe6; border:1px solid var(--line); border-radius:3px; padding:4px 8px; opacity:.7; backdrop-filter:blur(4px); user-select:none; }
+
 @media print {
   @page { margin:14mm; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body { min-width:0;background:#fff; }
-  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio { display:none !important; }
+  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio, .build-badge { display:none !important; }
   main { margin:0 !important;width:100% !important; }
   .workspace { min-height:0; }
   .board-layout { height:auto;display:block;overflow:visible; }

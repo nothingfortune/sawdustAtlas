@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { panelPieces, placedFootprint, assembledSize, boardVolumeBySpecies, materialBySpecies } from '../src/domain/compositeBoard'
+import { panelPieces, placedFootprint, assembledSize, boardVolumeBySpecies, materialBySpecies, panelSourceLengthMm, stockBySpecies, compositeCutPlan } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
@@ -59,5 +59,25 @@ describe('material accounting', () => {
       { speciesId: 'maple', boardFeet: (2 * 30 * 25 * 20) / CUBIC_MM_PER_BOARD_FOOT },
       { speciesId: 'walnut', boardFeet: (2 * 10 * 25 * 20) / CUBIC_MM_PER_BOARD_FOOT },
     ])
+  })
+})
+
+describe('kerf accounting', () => {
+  it('source length per panel = count*(width+kerf)', () => {
+    expect(panelSourceLengthMm(panel())).toBe(4 * (25 + 3)) // 112
+  })
+  it('stock includes all cut pieces plus kerf waste, by species', () => {
+    // strips maple30+walnut10 (height 40), thickness 20, crosscut 25mm x4, kerf 3
+    // finished per species: maple 30*25*20=15000, walnut 10*25*20=5000 ; x4 cut pieces
+    // kerf waste total = 4*3*40*20 = 9600, split maple:walnut 30:10 => maple 7200, walnut 2400
+    const cf = CUBIC_MM_PER_BOARD_FOOT
+    expect(stockBySpecies(composite(), [board()])).toEqual([
+      { speciesId: 'maple', boardFeet: (4 * 15000 + 7200) / cf },
+      { speciesId: 'walnut', boardFeet: (4 * 5000 + 2400) / cf },
+    ])
+  })
+  it('cut plan names the kerf-inclusive source length', () => {
+    const plan = compositeCutPlan(composite(), [board()])
+    expect(plan.stages[0]?.steps.some(s => /112\s*mm/.test(s))).toBe(true)
   })
 })

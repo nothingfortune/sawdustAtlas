@@ -112,6 +112,38 @@ export function materialBySpecies(board: CompositeBoard, boards: readonly BoardP
     .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
 }
 
+// Source-panel length needed to cut all pieces, including a parting kerf per piece.
+export function panelSourceLengthMm(panel: CompositePanel): number {
+  const count = Math.max(0, Math.floor(panel.crosscut.count))
+  return count * (nonNegative(panel.crosscut.stripWidthMm) + nonNegative(panel.crosscut.kerfMm))
+}
+
+// Stock to cut, by species: every cut piece's volume PLUS kerf waste (kerf is not
+// free), split across species in proportion to each board's strip volume.
+export function stockBySpecies(board: CompositeBoard, boards: readonly BoardProject[]): SpeciesUsage[] {
+  const totals: Record<string, number> = {}
+  for (const panel of board.panels) {
+    const src = boards.find(b => b.id === panel.boardId)
+    if (!src) continue
+    const count = Math.max(0, Math.floor(panel.crosscut.count))
+    const width = nonNegative(panel.crosscut.stripWidthMm)
+    const kerf = nonNegative(panel.crosscut.kerfMm)
+    const thickness = nonNegative(src.thickness)
+    const stackHeight = src.strips.reduce((a, s) => a + nonNegative(s.width), 0)
+    const kerfWaste = count * kerf * stackHeight * thickness
+    const stripTotal = stackHeight || 1
+    for (const strip of src.strips) {
+      const sw = nonNegative(strip.width)
+      const finished = count * sw * width * thickness
+      const waste = kerfWaste * (sw / stripTotal)
+      totals[strip.speciesId] = (totals[strip.speciesId] ?? 0) + finished + waste
+    }
+  }
+  return Object.entries(totals)
+    .map(([speciesId, volume]) => ({ speciesId, boardFeet: volume / CUBIC_MM_PER_BOARD_FOOT }))
+    .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
+}
+
 export interface CutPlanStage {
   boardId: string
   boardName: string
@@ -126,7 +158,7 @@ export function compositeCutPlan(board: CompositeBoard, boards: readonly BoardPr
   const steps: string[] = []
   for (const panel of board.panels) {
     const src = boards.find(b => b.id === panel.boardId)
-    steps.push(`Panel "${src?.name ?? panel.boardId}": crosscut into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide, ${panel.crosscut.kerfMm}mm kerf).`)
+    steps.push(`Panel "${src?.name ?? panel.boardId}": rip glue-up, then crosscut into ${panel.crosscut.count} pieces (${panel.crosscut.stripWidthMm}mm wide, ${panel.crosscut.kerfMm}mm kerf) — needs ${panelSourceLengthMm(panel)}mm of source length.`)
   }
   const placed = board.cells.filter((c): c is AssemblyCell => c !== null).length
   steps.push(`Assemble ${board.rows}×${board.cols} grid: place ${placed} pieces, then glue up.`)

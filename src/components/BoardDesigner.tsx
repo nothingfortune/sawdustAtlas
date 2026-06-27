@@ -19,7 +19,7 @@ import { useModalDialog } from './useModalDialog'
 import { dropTargetFromX, orderWithKeyAt } from './sliceDrag'
 import { ScaledBoardFrame } from './board/ScaledBoardFrame'
 import { LongGrainFace } from './board/LongGrainFace'
-import { EndGrainFace } from './board/EndGrainFace'
+import { AssembledBoard, SliceFace } from './board/AssembledBoard'
 import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
@@ -385,38 +385,6 @@ function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: 
   </section>
 }
 
-// The assembled end-grain board: one column per slice, each showing the strip
-// cross-section, with the per-slice rotate/flip transform. Interactive when
-// onToggleRow is supplied (the finished hero); static otherwise (process step).
-function AssembledBoard({ project, template, sliceCount, pxPerMm, onToggleRow, clipIdPrefix = 'assembled-slice' }: { project: BoardProject; template: EndGrainTemplate; sliceCount: number; pxPerMm: number; onToggleRow?: (index: number) => void; clipIdPrefix?: string }) {
-  const thickness = Math.max(project.endGrain.stockThickness, 0.001)
-  const k = 1 / pxPerMm
-  return <g>{Array.from({ length: sliceCount }, (_, index) => {
-    const state = {
-      rotated: project.endGrain.rowRotations[index] ?? false,
-      flipped: project.endGrain.rowFlips[index] ?? false,
-      offset: project.endGrain.rowOffsets?.[index] ?? 0,
-      sourceIndex: project.endGrain.rowOrder?.[index] ?? index,
-    }
-    const stateTag = `${state.rotated ? 'R' : ''}${state.flipped ? 'F' : ''}` || 'N'
-    const interactive = !!onToggleRow
-    return <g
-      key={index}
-      transform={`translate(${index * thickness} 0)`}
-      className="slice"
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Slice ${index + 1}: ${stateTag}` : undefined}
-      onClick={interactive ? () => onToggleRow(index) : undefined}
-      onKeyDown={interactive ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggleRow(index) } } : undefined}
-    >
-      <SliceFace project={project} template={template} state={state} clipId={`${clipIdPrefix}-${index}`}/>
-      <rect className="slice-hit" width={thickness} height={template.height} fill="transparent"/>
-      <g transform={`translate(${thickness / 2} ${template.height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{stateTag}</text></g>
-    </g>
-  })}</g>
-}
-
 // Drag-to-reorder assembled board for the pop-out. One pointer per column: a
 // press without movement cycles rotate/flip (as AssembledBoard does); a press
 // that moves past a small threshold lifts the column, opens a dashed gap at the
@@ -493,26 +461,6 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
   }
 
   return <g ref={groupRef} className={`assembled-editable${drag && drag.moved ? ' is-dragging' : ''}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}>{body}</g>
-}
-
-function SliceFace({ project, template, state, clipId }: { project: BoardProject; template: EndGrainTemplate; state: SliceState; clipId: string }) {
-  const thickness = Math.max(project.endGrain.stockThickness, 0.001)
-  const height = Math.max(template.height, 0.001)
-  const transform = state.rotated && state.flipped
-    ? `translate(0 ${template.height}) scale(1 -1)`
-    : state.rotated
-      ? `translate(${thickness} ${template.height}) rotate(180)`
-      : state.flipped
-        ? `translate(${thickness} 0) scale(-1 1)`
-        : undefined
-  const offset = (((state.offset % height) + height) % height)
-  const face = <g transform={transform}><EndGrainFace polygons={template.polygons}/></g>
-  if (offset <= 0.01) return face
-  return <g clipPath={`url(#${clipId})`}>
-    <clipPath id={clipId}><rect width={thickness} height={height}/></clipPath>
-    <g transform={`translate(0 ${-offset})`}>{face}</g>
-    <g transform={`translate(0 ${height - offset})`}>{face}</g>
-  </g>
 }
 
 // Crosscut markers drawn in mm over the glue-up: trim, slice cut lines, kerf

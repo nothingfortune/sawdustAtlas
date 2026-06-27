@@ -120,6 +120,51 @@ export function croppedLayout(board: CompositeBoard, boards: readonly BoardProje
   return { rows, lengthMm, widthMm: targetWidth, thicknessMm }
 }
 
+// ---- Desk layout (editing view) ---------------------------------------------
+// Full (uncropped) footprints for every row — including empty ones, which the
+// crop omits — each wafer carrying the trim it WOULD lose so the desk can draw
+// faint trim markings on both axes while you edit.
+
+export interface DeskWafer {
+  wafer: AssemblyCell
+  piece: Piece
+  footWidthMm: number
+  footHeightMm: number
+  trimLeftMm: number
+  trimRightMm: number
+  trimTopMm: number
+  trimBottomMm: number
+}
+export interface DeskRow { rowId: string; wafers: DeskWafer[]; rowWidthMm: number; bandHeightMm: number }
+export interface DeskLayout { rows: DeskRow[]; maxRowWidthMm: number; totalHeightMm: number }
+
+export function deskLayout(board: CompositeBoard, boards: readonly BoardProject[]): DeskLayout {
+  const pmap = piecesByPanel(board, boards)
+  const cropByRow = new Map(croppedLayout(board, boards).rows.map(r => [r.rowId, r]))
+  const rows: DeskRow[] = board.rows.map(row => {
+    const cr = cropByRow.get(row.id)
+    // Filter to present pieces in the SAME order the crop used, so placed[j] aligns.
+    const present = row.wafers
+      .map(w => ({ w, piece: pmap.get(w.panelId)?.[w.pieceIndex] }))
+      .filter((x): x is { w: AssemblyCell; piece: Piece } => x.piece !== undefined)
+    const wafers: DeskWafer[] = present.map((x, j) => {
+      const fp = placedFootprint(x.piece, x.w)
+      const pr = cr?.placed[j]
+      return {
+        wafer: x.w, piece: x.piece, footWidthMm: fp.widthMm, footHeightMm: fp.heightMm,
+        trimLeftMm: pr?.trimLeftMm ?? 0, trimRightMm: pr?.trimRightMm ?? 0,
+        trimTopMm: pr?.trimTopMm ?? 0, trimBottomMm: pr?.trimBottomMm ?? 0,
+      }
+    })
+    const rowWidthMm = wafers.reduce((a, w) => a + w.footWidthMm, 0)
+    const bandHeightMm = wafers.length ? Math.max(...wafers.map(w => w.footHeightMm)) : 0
+    return { rowId: row.id, wafers, rowWidthMm, bandHeightMm }
+  })
+  const maxRowWidthMm = Math.max(1, ...rows.map(r => r.rowWidthMm))
+  const totalHeightMm = rows.reduce((a, r) => a + r.bandHeightMm, 0)
+  return { rows, maxRowWidthMm, totalHeightMm }
+}
+
 export interface AssembledSize { lengthMm: number; widthMm: number; thicknessMm: number }
 
 export function assembledSize(board: CompositeBoard, boards: readonly BoardProject[]): AssembledSize {

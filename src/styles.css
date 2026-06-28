@@ -104,6 +104,15 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .button.secondary.danger:hover { background:#f6e9e4;border-color:#a7523c; }
 .modal-scrim { position:fixed;inset:0;z-index:60;background:#14191499;display:grid;place-items:center;padding:24px; }
 .pattern-dialog { width:min(940px,96vw);max-height:92vh;overflow:auto;background:#f8f6f0;border:1px solid #d2cec2;box-shadow:0 24px 70px #00000061;padding:20px; }
+.import-dialog { width:min(560px,96vw);max-height:88vh;overflow:auto;background:#f8f6f0;border:1px solid #d2cec2;box-shadow:0 24px 70px #00000061;padding:22px; }
+.import-dialog header strong { font-size:17px; }
+.import-counts { margin:12px 0 0;font-size:13px;line-height:1.5;color:#3b463d; }
+.import-warnings { margin-top:14px;border:1px solid #d3ad8d;background:#f4e9da;padding:11px 13px; }
+.import-warnings .eyebrow { color:#8a5a2c; }
+.import-warnings ul, .import-errors { margin:6px 0 0;padding-left:18px; }
+.import-warnings li, .import-errors li { font-size:11px;line-height:1.5;color:#5d5138; }
+.import-errors { margin-top:12px;color:#7a302b; }
+.import-dialog footer { display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:16px;margin-top:18px; }
 .pattern-dialog header { display:flex;justify-content:space-between;gap:18px;align-items:start;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px; }
 .pattern-dialog h2 { margin:4px 0 5px;font-size:24px; }
 .pattern-dialog p { margin:0;color:#747970;font-size:12px;line-height:1.45; }

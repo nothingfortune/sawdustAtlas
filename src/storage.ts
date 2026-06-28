@@ -86,7 +86,7 @@ const NO_COUNTS: ImportCounts = { shops: 0, boards: 0, composites: 0, woods: 0 }
 const TOP_LEVEL_KEYS = new Set(['schemaVersion', 'shops', 'boards', 'woods', 'allowances', 'pricing', 'composites'])
 const BOARD_KEYS = new Set(['id', 'name', 'length', 'thickness', 'construction', 'endGrain', 'allowances', 'strips', 'updatedAt'])
 const SHOP_KEYS = new Set(['id', 'name', 'width', 'depth', 'gridSize', 'blockedZones', 'items', 'updatedAt'])
-const WOOD_KEYS = new Set(['id', 'name', 'color', 'accent', 'pricePerBoardFoot'])
+const WOOD_KEYS = new Set(['id', 'name', 'color', 'accent', 'pricePerBoardFoot', 'availableAt'])
 
 // Single entry point for importing a backup: validate, migrate, normalize, and
 // report. Surfaces project counts and anything it could not carry over (unrecognized
@@ -341,13 +341,15 @@ export function normalizePricing(saved: unknown): PricingSettings {
 }
 
 function normalizeWood(wood: Partial<WoodSpecies>): WoodSpecies {
-  return {
+  const base: WoodSpecies = {
     id: stringValue(wood.id, createId()),
     name: stringValue(wood.name, stringValue(wood.id, 'Custom wood')),
     color: validColor(wood.color, '#8c6a48'),
     accent: validColor(wood.accent, '#b18a5e'),
     pricePerBoardFoot: finiteNumber(wood.pricePerBoardFoot, 0),
   }
+  const availableAt = typeof wood.availableAt === 'string' ? wood.availableAt.trim() : ''
+  return availableAt ? { ...base, availableAt } : base
 }
 
 function records(value: unknown): Record<string, unknown>[] {

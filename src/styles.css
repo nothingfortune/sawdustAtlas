@@ -156,10 +156,13 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .pattern-dialog footer { display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px;margin-top:16px; }
 
 .wood-editor-list { display:flex;flex-direction:column;gap:6px;margin-top:10px; }
-.wood-editor-row { display:grid;grid-template-columns:31px minmax(75px,1fr) 25px 25px 48px 25px 25px;align-items:center;gap:4px;background:white;border:1px solid #dedbd2;padding:5px; }
-.wood-editor-row > input { min-width:0;border:0;background:transparent;font-size:10px; }
-.wood-editor-row > label input { width:23px;height:27px;border:0;padding:0;background:transparent; }
-.wood-editor-row > span { font-size:8px;color:#888; }
+.wood-editor-row { display:flex;flex-direction:column;gap:4px;background:white;border:1px solid #dedbd2;padding:5px; }
+.wood-editor-main { display:grid;grid-template-columns:31px minmax(75px,1fr) 25px 25px 48px 25px 25px;align-items:center;gap:4px; }
+.wood-editor-main > input { min-width:0;border:0;background:transparent;font-size:10px; }
+.wood-editor-main > label input { width:23px;height:27px;border:0;padding:0;background:transparent; }
+.wood-editor-main > span { font-size:8px;color:#888; }
+.wood-vendor { width:100%;border:0;border-top:1px solid #efece4;background:transparent;font-size:10px;padding:4px 2px 0;color:#5d6b60; }
+.wood-vendor::placeholder { color:#b0b3aa; }
 .wood-use,.wood-delete { border:0;background:transparent;padding:3px; }
 .wood-use { position:relative;width:29px;height:29px; }
 .wood-use i { display:block;position:absolute;inset:0; }
@@ -292,8 +295,9 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
   .slice-chip .grip-handle { min-width:36px; }
   .slice-chip-body { min-height:46px; padding:8px 12px; }
   .slice-chip-body small { font-size:8px; }
-  .wood-editor-row { grid-template-columns:31px minmax(70px,1fr) 28px 28px 52px 34px 34px; gap:6px; padding:7px 6px; }
-  .wood-editor-row > input { font-size:13px; }
+  .wood-editor-row { padding:7px 6px; }
+  .wood-editor-main { grid-template-columns:31px minmax(70px,1fr) 28px 28px 52px 34px 34px; gap:6px; }
+  .wood-editor-main > input, .wood-vendor { font-size:13px; }
   .wood-use, .wood-delete { min-width:34px; min-height:40px; }
   .wood-use svg, .wood-delete svg { width:16px; }
   .drawer-close { padding:10px; }
@@ -371,7 +375,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .plan-table .plan-table-head { font-size:8px; }
 .build-sequence b { font-size:11px; }
 .build-sequence p { font-size:10px; }
-.wood-editor-row > input { font-size:11px; }
+.wood-editor-main > input, .wood-vendor { font-size:11px; }
 
 /* Shop Planner readability: lift the whole planner type scale to one coherent
    baseline (primary text 13px, secondary mono labels 11-12px) so the canvas

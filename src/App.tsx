@@ -269,7 +269,7 @@ export default function App() {
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
             : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
           <button className="backup-button" onClick={toggleLengthUnit} title="Toggle imperial / metric units">
-            <Ruler size={15} />{lengthUnit === 'imperial' ? "Preston's Button: on" : "Preston's Button"}
+            <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to Sanity' : 'Preston - Click here'}
           </button>
           <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
           <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
@@ -358,7 +358,7 @@ function WelcomeDialog({ onExportBackup, onClose }: { onExportBackup: () => void
       <ul className="welcome-points">
         <li><b>Your data lives in this browser, on this device.</b> There's no cloud or account — clearing the browser or switching devices won't carry it over on its own.</li>
         <li><b>Back up with Export.</b> Export a JSON backup regularly; Import restores it or moves your work to another browser or device.</li>
-        <li><b>Millimeters by default.</b> Toggle imperial anytime with <em>Preston's Button</em> in the top bar.</li>
+        <li><b>Millimeters by default.</b> Toggle imperial anytime with the <em>Preston</em> button in the top bar.</li>
         <li><b>Kerf &amp; milling allowances drive the math.</b> Set them to your saw and setup so cut lists, stock, and waste come out right.</li>
       </ul>
       <footer>

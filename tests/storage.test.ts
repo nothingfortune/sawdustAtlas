@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearPreImportSnapshot, importData, loadData, loadPreImportSnapshot, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
+import { clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
 describe('importData (PLAT-004)', () => {
@@ -302,6 +302,17 @@ describe('saveData / loadData persistence', () => {
     })
     expect(() => saveData(data)).not.toThrow()
     expect(saveData(data)).toBe(false)
+  })
+})
+
+describe('onboarding flag (UX-004)', () => {
+  beforeEach(() => { vi.stubGlobal('localStorage', new MemoryStorage()) })
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  it('is false on first run and true after marking onboarded', () => {
+    expect(hasOnboarded()).toBe(false)
+    markOnboarded()
+    expect(hasOnboarded()).toBe(true)
   })
 })
 

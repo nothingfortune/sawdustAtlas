@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
-import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
+import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded } from './storage'
 import type { ImportResult } from './storage'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
@@ -39,6 +39,8 @@ export default function App() {
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  // First-run welcome (UX-004): shown until dismissed; reopenable from Home.
+  const [showWelcome, setShowWelcome] = useState(() => !hasOnboarded())
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
@@ -224,6 +226,7 @@ export default function App() {
   }
 
   const toggleLengthUnit = () => setLengthUnit(current => current === 'metric' ? 'imperial' : 'metric')
+  const dismissWelcome = () => { markOnboarded(); setShowWelcome(false) }
 
   // App-wide warning center (UX-006): aggregate geometry, placeholder-wood, shop
   // clearance, and storage issues across the whole workspace, each linked to its fix.
@@ -273,7 +276,7 @@ export default function App() {
         </div>
       </header>
       <section className="workspace">
-        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} />}
+        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
         {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
         {view === 'boards' && boardsMode === 'gallery' && (
           <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
@@ -316,6 +319,7 @@ export default function App() {
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
     {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+    {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
     <BuildBadge />
     </div>
   </UnitSystemProvider>
@@ -336,6 +340,27 @@ function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: Impo
       <footer>
         {ok && <button className="button" onClick={onExportBackup}><Upload size={15} />Export a backup now</button>}
         <button className="button secondary" onClick={onClose}>{ok ? 'Done' : 'Close'}</button>
+      </footer>
+    </div>
+  </div>
+}
+
+// First-run welcome (UX-004): the friend-beta essentials in one screen — data is
+// browser-local, how backups work, units, and that kerf/allowances drive accuracy.
+// Shown once (gated by the onboarding flag); reopenable from Home.
+function WelcomeDialog({ onExportBackup, onClose }: { onExportBackup: () => void, onClose: () => void }) {
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div className="welcome-dialog" role="dialog" aria-modal="true" aria-label="Welcome to SawdustAtlas">
+      <header><span className="eyebrow">WELCOME</span><strong>A few things to know</strong></header>
+      <ul className="welcome-points">
+        <li><b>Your data lives in this browser, on this device.</b> There's no cloud or account — clearing the browser or switching devices won't carry it over on its own.</li>
+        <li><b>Back up with Export.</b> Export a JSON backup regularly; Import restores it or moves your work to another browser or device.</li>
+        <li><b>Millimeters by default.</b> Toggle imperial anytime with <em>Preston's Button</em> in the top bar.</li>
+        <li><b>Kerf &amp; milling allowances drive the math.</b> Set them to your saw and setup so cut lists, stock, and waste come out right.</li>
+      </ul>
+      <footer>
+        <button className="button" onClick={() => { onExportBackup(); onClose() }}><Upload size={15} />Export a backup now</button>
+        <button className="button secondary" onClick={onClose}>Got it</button>
       </footer>
     </div>
   </div>

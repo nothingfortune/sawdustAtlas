@@ -9,14 +9,15 @@ interface Props {
   onOpenBoard: (id: string) => void
   onCreateShop: () => void
   onCreateBoard: () => void
+  onShowGuide: () => void
 }
 
-export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreateBoard }: Props) {
+export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreateBoard, onShowGuide }: Props) {
   const { lengthUnit } = useUnitSystem()
   const starterShop = data.shops[0]
   const starterBoard = data.boards[0]
   return <div className="page dashboard-page">
-    <div className="hero-copy"><span className="eyebrow">YOUR DIGITAL WORKSHOP</span><h1>Plan the space.<br/><em>Build the thing.</em></h1><p>A practical home for the projects your shop deserves. Start with the room, then work all the way down to the grain.</p></div>
+    <div className="hero-copy"><span className="eyebrow">YOUR DIGITAL WORKSHOP</span><h1>Plan the space.<br/><em>Build the thing.</em></h1><p>A practical home for the projects your shop deserves. Start with the room, then work all the way down to the grain. <button type="button" className="guide-link" onClick={onShowGuide}>How SawdustAtlas works</button></p></div>
     <div className="action-grid">
       <button className="action-card shop-action" onClick={onCreateShop}><span className="action-icon"><Grid2X2/></span><div><small>NEW PLAN</small><h2>Lay out a workshop</h2><p>Map machines, benches, storage, and the room needed to work safely.</p></div><ArrowRight/></button>
       <button className="action-card board-action" onClick={onCreateBoard}><span className="action-icon"><Boxes/></span><div><small>NEW DESIGN</small><h2>Design a cutting board</h2><p>Explore wood species, strip widths, dimensions, and material estimates.</p></div><ArrowRight/></button>

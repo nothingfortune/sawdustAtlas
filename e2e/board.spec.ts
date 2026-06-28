@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test'
 // rendering. Starts from a clean localStorage so the seed board is deterministic.
 test.describe('cutting board designer', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.clear())
+    await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
     await page.goto('/')
     await page.getByRole('button', { name: 'Cutting boards' }).click()
     // 'Cutting boards' opens the gallery; open the seed board, then switch to

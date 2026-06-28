@@ -133,17 +133,6 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | ⚪ | DATA-008 | Automated backups | Planned | Next | Configurable scheduled snapshots with retention and tested restore. |
 | 🔵 | DATA-009 | Optional authentication | Research | Research | Decide whether trusted-LAN access is sufficient before adding account complexity. |
 
-### Notion Integration - Cancelled
-
-|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
-| --- | --- | --- | --- | --- | --- |
-| ⚪ | NOTION-001 | Integration mapping design | Cancelled | Later | Define which databases represent projects, stock, tools, photos, and build logs. |
-| ⚪ | NOTION-002 | OAuth/server credential flow | Cancelled | Later | Tokens never ship in the browser bundle or exported project files. |
-| ⚪ | NOTION-003 | Link project metadata | Cancelled | Later | Sync name, status, tags, notes, dates, costs, and canonical SawdustAtlas project ID. |
-| ⚪ | NOTION-004 | Reference Notion photos | Cancelled | Later | Browse or attach selected images while handling expiring Notion asset URLs correctly. |
-| 🔵 | NOTION-005 | Stock and tool sync | Cancelled | Research | Validate whether Notion or SawdustAtlas should own each inventory field before implementing bidirectional sync. |
-| ⚪ | NOTION-006 | Geometry ownership boundary | Cancelled | Later | Design geometry remains in SawdustAtlas; Notion receives summaries and links, not editable geometry blobs. |
-
 ### Tablet, UX, and Accessibility
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
@@ -233,14 +222,6 @@ Exit criteria: a printed plan can be measured against the physical shop and expo
 
 Exit criteria: computer and tablet safely edit the same projects, survive restarts, and can restore from backup without manual JSON shuttling.
 
-### M6: Notion Bridge - Cancelled
-
-- Secure OAuth integration.
-- Project metadata, notes, selected photos, and build-log links.
-- Inventory ownership decision before any bidirectional stock sync.
-
-Exit criteria: Notion improves discovery and documentation without becoming required to open, edit, or recover a design.
-
 ### M7: Additional Woodworking Designers - Later
 
 - General project parts and assemblies.
@@ -284,17 +265,17 @@ These recommendations came from the 2026-06-24 end-of-develop review pass. They 
 
 ## User-Reported Issues and Requests
 
-These came from direct user feedback on 2026-06-25. They are logged here for triage only. No fix or scope commitment is implied by this section.
+These came from direct user feedback on 2026-06-25. All were addressed on 2026-06-28 (see Resolution).
 
-| Type | Area | Report | Likely plan home / note |
+| Type | Area | Report | Resolution |
 | --- | --- | --- | --- |
-| Bug | Navigation / app shell | If the left nav is collapsed, the ruler in the icon jumps upward. | UI polish; likely app-shell/nav alignment issue. |
-| UX issue | Workshop layout | Room size control was found, but too late: when `New` is selected, workshop dimensions should be the first thing shown instead of living at the bottom of a long scroll. | `SHOP-001`, `UX-004`, `UX-006`; primarily a control-ordering and discoverability problem for first-time layout setup. |
-| Feature | Material/library metadata | Add an `available at` field for stores/vendors. | Likely `BOARD-010` and later `CUT-008`; could hold preferred store, SKU, aisle, or supplier note. |
-| Feature | Cutting board preview controls | In the expanded preview under the 90-degree turn, allow slice rotation there too, not only on the finished board. | `BOARD-003`, `BOARD-004`; interaction expansion in the staged workflow. |
-| Bug | End-grain randomize | In the end-grain cutting board flow, `Randomize` can produce results that feel excessively chaotic. | Likely `BOARD-002` / arrangement logic; needs a reproducible definition of acceptable randomization. |
-| UX confusion | Cutting board arrangement tools | User does not understand what `Gradient` is trying to do. | Naming, affordance, preview, or docs problem; likely `UX-004` plus board-arrangement UX cleanup. |
-| Bug | Navigation / app shell | The top-left icon should always take the user home. | App-shell navigation behavior; should be verified against current route behavior and expectations. |
+| Bug | Navigation / app shell | If the left nav is collapsed, the ruler in the icon jumps upward. | Fixed (#40): on collapse the lone brand mark inherited the label's flex rule, top-aligning the glyph; scoped that rule to `.brand-mark + div`. |
+| UX issue | Workshop layout | Room size control was found, but too late: when `New` is selected, workshop dimensions should be the first thing shown instead of living at the bottom of a long scroll. | Fixed (#41): Room size moved to the top of the workshop's left rail. |
+| Feature | Material/library metadata | Add an `available at` field for stores/vendors. | Fixed (#42): optional free-text `availableAt` (store / vendor / SKU) per wood, persisted + import-validated. |
+| Feature | Cutting board preview controls | In the expanded preview under the 90-degree turn, allow slice rotation there too, not only on the finished board. | Fixed (#43): the 90° turn pop-out is now interactive — tap to rotate/flip, drag to reorder. |
+| Bug | End-grain randomize | In the end-grain cutting board flow, `Randomize` can produce results that feel excessively chaotic. | Fixed (#41): `shuffleStripsAvoidingAdjacent` never seats two of the same species side by side. |
+| UX confusion | Cutting board arrangement tools | User does not understand what `Gradient` is trying to do. | Fixed (#41): renamed "By width" with a sort-ascending icon + tooltip; all arrangement buttons gained tooltips. |
+| Bug | Navigation / app shell | The top-left icon should always take the user home. | Fixed (#41): the sidebar brand is now a button that returns home. |
 
 ## Near-Term Ordered Backlog
 

@@ -28,6 +28,8 @@ import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips, shu
 import type { BoardPatternId } from '../domain/boardPatterns'
 import { calculateStockRequirements } from '../domain/boardStock'
 import type { StockRequirements } from '../domain/boardStock'
+import { calculateAngleSetup } from '../domain/boardAngle'
+import type { AngleSetup } from '../domain/boardAngle'
 import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 import { calculatePrice, classifyBoard } from '../domain/pricing'
@@ -57,6 +59,17 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const cutPlan = generateCuttingBoardPlan(project, woods, build, end)
     const woodUsage = calculateWoodUsage(project, woods, end)
     const stock = calculateStockRequirements(project, woods, build, end)
+    const angleRows = project.construction === 'end'
+      ? [...new Map(project.strips
+          .filter(strip => Math.abs(strip.trailingAngle) > 0.001)
+          .map(strip => [Math.round(strip.trailingAngle * 100) / 100, strip] as const)).entries()]
+          .map(([angle, strip]) => ({
+            angle,
+            count: project.strips.filter(other => Math.round(other.trailingAngle * 100) / 100 === angle).length,
+            setup: calculateAngleSetup({ trailingAngleDeg: strip.trailingAngle, stockThicknessMm: project.endGrain.stockThickness, stripLengthMm: project.endGrain.sourceLength }),
+          }))
+          .sort((a, b) => a.angle - b.angle)
+      : []
     const woodById = new Map(woods.map(wood => [wood.id, wood]))
     const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
     const boardFeet = build.roughBoardFeet
@@ -71,7 +84,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
       : edgeEstimatedCost
     const tier = classifyBoard(project, end.sliceCount)
     const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: build.roughBoardFeet, construction: project.construction, tier, pricing })
-    return { end, sliceStates, build, template, cutPlan, woodUsage, stock, width, boardFeet, finishedSize, estimatedCost, price }
+    return { end, sliceStates, build, template, cutPlan, woodUsage, stock, angleRows, width, boardFeet, finishedSize, estimatedCost, price }
   }, [lengthUnit, project, woods, pricing])
   // The pattern-preview project (with stable preview-* ids) only needs recomputing
   // when the pending pattern or inputs change — not on every render while the
@@ -94,7 +107,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     update({ endGrain: { ...nextSettings, ...clampTransforms(nextSettings, count) } })
   }
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const { end, sliceStates, build, template, cutPlan, woodUsage, stock, width, boardFeet, finishedSize, estimatedCost, price } = derived!
+  const { end, sliceStates, build, template, cutPlan, woodUsage, stock, angleRows, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -161,6 +174,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
         <StockRequirementsCard stock={stock}/>
+        {angleRows.length > 0 && <AngleSetupCard rows={angleRows} thicknessMm={project.endGrain.stockThickness} lengthMm={project.endGrain.sourceLength}/>}
         <BuildAssumptions project={project}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
@@ -624,6 +638,25 @@ function StockRequirementsCard({ stock }: { stock: StockRequirements }) {
       </div>
     </div>
     <p className="stock-assumptions">Assumes rip allowance {formatLength(a.ripAllowanceMm, lengthUnit)} · width trim {formatLength(a.widthTrimMm, lengthUnit)} · length trim {formatLength(a.lengthTrimMm, lengthUnit)} · surfacing {formatLength(a.surfacingMm, lengthUnit)}{a.construction === 'end' ? ` · kerf ${formatLength(a.kerfMm, lengthUnit)} · slice ${formatLength(a.sliceThicknessMm ?? 0, lengthUnit)}` : ''}.</p>
+  </section>
+}
+
+// BOARD-024: the shop-setup numbers a trailing angle implies — what to set the saw to,
+// the extra rip width, the face offset, and the wedge of waste — one row per distinct angle.
+function AngleSetupCard({ rows, thicknessMm, lengthMm }: { rows: { angle: number, count: number, setup: AngleSetup }[], thicknessMm: number, lengthMm: number }) {
+  const { lengthUnit } = useUnitSystem()
+  return <section className="stock-card angle-card">
+    <h3>Angle &amp; setup</h3>
+    <div className="angle-rows">
+      <div className="angle-head"><span>Saw angle</span><span>+ Width</span><span>Offset</span><span>Wedge waste</span></div>
+      {rows.map(row => <div key={row.angle} className="angle-row">
+        <b>{formatNumber(row.setup.sawAngleDeg)}°</b>
+        <span>{formatLength(row.setup.effectiveWidthGainMm, lengthUnit)}</span>
+        <span>{formatLength(Math.abs(row.setup.angleOffsetMm), lengthUnit)}</span>
+        <span>{formatNumber(row.setup.wedgeBoardFeet)} bf <small>×{row.count}</small></span>
+      </div>)}
+    </div>
+    <p className="stock-assumptions">Across {formatLength(thicknessMm, lengthUnit)} stock over {formatLength(lengthMm, lengthUnit)} length. Offset = thickness × tan(angle); wedge is the triangular trim per strip.</p>
   </section>
 }
 

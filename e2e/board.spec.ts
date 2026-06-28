@@ -94,4 +94,29 @@ test.describe('cutting board designer', () => {
     await close.click()
     await expect(page.locator('.preview-popout')).toHaveCount(0)
   })
+
+  test('no angle & setup card when no strip is angled', async ({ page }) => {
+    await expect(page.locator('.angle-card')).toHaveCount(0)
+  })
+})
+
+test.describe('angle & setup card', () => {
+  test('shows saw setup numbers for an angled end-grain board', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('sawdust-atlas:onboarded', '1')
+      window.localStorage.setItem('sawdust-atlas:v1', JSON.stringify({
+        schemaVersion: 2, shops: [],
+        boards: [{ id: 'a', name: 'Chevron', construction: 'end', thickness: 38,
+          strips: [{ id: '1', speciesId: 'walnut', width: 40, trailingAngle: 30 }, { id: '2', speciesId: 'maple', width: 40, trailingAngle: -30 }],
+          endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] } }],
+      }))
+    })
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Cutting boards' }).click()
+    await page.getByRole('button', { name: /Chevron/ }).click()
+    const card = page.locator('.angle-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText('Angle & setup')
+    await expect(card).toContainText('30°')
+  })
 })

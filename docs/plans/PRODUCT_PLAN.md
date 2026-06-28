@@ -50,19 +50,25 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 
 ## Feature Inventory
 
+> Completed features (🟢) live in **[COMPLETED.md](COMPLETED.md)**. This inventory lists
+> only what is partial 🟡, planned ⚪, under research 🔵, or cancelled, so it stays focused
+> on remaining work.
+
 ### Platform Foundation
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟢 | PLAT-001 | Strict TypeScript policy | Complete | Now | All TypeScript projects inherit `tsconfig.base.json`; build passes with unchecked-index and exact-optional checks. |
-| 🟢 | PLAT-002 | Local autosave | Complete | Now | Changes persist across reloads in the same browser. |
-| 🟢 | PLAT-003 | JSON backup and restore | Complete | Now | Full project data exports and imports; legacy board records are normalized. |
 | 🟡 | PLAT-004 | Schema versioning and migrations | Partial | Now | Exported data includes `schemaVersion`; add named migration steps for future schema changes and never silently discard fields. |
 | ⚪ | PLAT-005 | Undo and redo | Planned | Next | Geometry and editor actions can be undone/redone across both designers; autosave stores the resulting state. |
 | ⚪ | PLAT-006 | Project duplicate, rename, archive, delete | Planned | Next | Destructive actions require confirmation; archived projects remain recoverable. |
 | ⚪ | PLAT-007 | Search, tags, and recent projects | Planned | Later | Projects can be filtered by name, type, wood species, and tags. |
 | 🟡 | PLAT-008 | Accessible keyboard operation | Partial | Now | Navigation is labeled; all canvas operations need keyboard equivalents and visible focus states. |
- | General and directional infeed/outfeed/side zones are visible and rotate with equipment; add distinct operator zones and collision warnings. |
+
+### Shop Layout Planner
+
+|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
+| --- | --- | --- | --- | --- | --- |
+| 🟡 | SHOP-004 | Working-clearance zones | Partial | Next | General and directional infeed/outfeed/side zones are visible and rotate with equipment; add distinct operator zones and collision warnings. |
 | 🟡 | SHOP-005 | Custom object library | Partial | Next | Catalog and arbitrary placed objects support category, dimensions, color, and clearance; add reusable user presets, notes, photos, and directional clearance profiles. |
 | ⚪ | SHOP-006 | Snap, guides, and precise placement | Planned | Next | Configurable grid snap, edge/center guides, coordinate entry, nudge controls, and alignment tools. |
 | ⚪ | SHOP-007 | Collision and clearance warnings | Planned | Next | Distinguish physical overlap from working-zone conflicts; warnings identify involved objects. |
@@ -74,26 +80,14 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | ⚪ | SHOP-013 | Print and image/PDF export | Planned | Next | Produce a dimensioned floor plan with selectable layers and a scale statement. |
 | ⚪ | SHOP-014 | Multiple layout variants | Planned | Later | Compare alternatives without duplicating all room metadata and assets. |
 | 🔵 | SHOP-015 | 3D visualization | Research | Research | Consider only after 2D geometry, heights, and collision semantics are trustworthy. |
-| 🟢 | SHOP-016 | Angled shop view | Complete | Now | Project exact millimeter footprints, rotations, object heights, and directional feed zones into a selectable isometric review view. |
 
 ### Cutting Board Designer
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟢 | BOARD-001 | Edge-grain strip designer | Complete | Now | Species and strip widths produce a live, dimensioned preview and material estimate. |
-| 🟢 | BOARD-002 | Pattern helpers | Complete | Now | Mirror, repeat, and reverse operate on strip sequences. |
-| 🟢 | BOARD-003 | End-grain staged workflow | Complete | Now | Show first glue-up, kerf-aware crosscut plan, and board after the 90-degree turn. |
-| 🟢 | BOARD-004 | Per-slice rotate and flip | Complete | Now | Normal, rotate, flip, and combined transformations remain distinct and persist. |
-| 🟢 | BOARD-005 | Angled strip geometry | Complete | Now | Trailing angles affect cross-sections, stock requirements, final squaring, and visible patterns. |
-| 🟢 | BOARD-006 | Material and waste conservation | Complete | Now | Rip wedges, end trim, kerf, offcut, and side squaring reconcile to source volume. |
-| 🟢 | BOARD-007 | Invalid-geometry reporting | Complete | Now | Self-crossing strips and invalid dimensions produce visible errors rather than trusted output. |
 | ⚪ | BOARD-008 | Composable board assemblies | In Progress | Next | Create multiple source panel recipes, generate reusable wafers/separators from each, and combine them into a final board assembly. This unlocks true brick-and-mortar, basket weave, borders, and user-built wafer workflows. See `BRICK_PATTERN_CORRECTION.md`. |
-| 🟢 | BOARD-009 | Drag-to-reorder slices | Complete | Now | Final slices reorder via pointer drag, arrow keys, and tap-to-cycle, each carrying its rotate/flip/offset (its identity in the single-panel model). Pure `boardSlices` domain layer with boundary tests. Full value lands with composable board assemblies in `BOARD-008`. |
 | 🟡 | BOARD-010 | Custom wood library | Partial | Next | Shared wood-library module (own sidebar section) supports add/edit species, base color, grain accent, and price per board foot; texture, density, notes, and inventory references remain. |
 | 🟡 | BOARD-011 | Improved wood appearance | Partial | Later | Current procedural textures distinguish species; add user photos, face/end-grain texture pairs, scale, and orientation. |
-| 🟢 | BOARD-012 | Build allowances | Complete | Now | Separate rough and finished dimensions for jointing, planing, router-table surfacing, and final trimming; rough-stock board feet and cost reflect purchased stock. Allowances are now a shop-wide module (machine setup) shared by every board. |
-| 🟢 | BOARD-013 | Cut list and bill of materials | Complete | Now | Generate rough stock, rip widths, crosscut and saw-pass counts, sequence, warnings, and per-species totals from one typed domain plan. |
-| 🟢 | BOARD-014 | Printable build sheet | Complete | Now | Browser print path renders previews, finished/rough dimensions, numbered build steps, cut list, BOM, warnings, and an assumptions block; app chrome is stripped via `@media print`. |
 | 🟡 | BOARD-015 | Pattern presets | Partial | Next | Stripe, checkerboard, running-bond approximation, chevron, third-bond, zig-zag, and stepped-wave exist (seven presets). True brick-and-mortar requires BOARD-008 because it combines brick-course wafers with separate mortar strips. Add seeded-mosaic next; presets remain editable and dimensionally validated. Basket weave and 3D blocks require BOARD-008/composite blanks, while herringbone, pinwheel, and spiral require block-level 2D assembly. See `END_GRAIN_PATTERN_RESEARCH.md` and `BRICK_PATTERN_CORRECTION.md`. |
 | ⚪ | BOARD-016 | Board features | Planned | Later | Juice grooves, handles, finger slots, feet, chamfers, edge profiles, and corner radii affect dimensions and steps. |
 | ⚪ | BOARD-017 | Variant comparison | Planned | Later | Compare pattern, cost, waste, and finished-size alternatives side by side. |
@@ -132,9 +126,6 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟢 | DATA-001 | Same-device browser persistence | Complete | Now | Local storage remains the fallback when no server is configured. |
-| 🟢 | DATA-002 | LAN-accessible development server | Complete | Now | `pnpm dev:lan` binds to the private network and documents firewall constraints. |
-| 🟢 | DATA-003 | Docker appliance configuration | Complete | Now | Public Docker Hub image, compose build, health check, restart policy, local and LAN responses, PWA endpoints, updates, and recovery are verified and documented. |
 | 🟡 | DATA-004 | Installable PWA shell | Partial | Next | Manifest, icon, and cache worker exist; verify installation and offline behavior under trusted HTTPS. |
 | ⚪ | DATA-005 | Shared LAN persistence | Planned | Next | Computer and tablet read/write one versioned project store with backups and atomic writes. |
 | ⚪ | DATA-006 | Conflict handling | Planned | Next | Detect concurrent edits; never silently overwrite another device's newer project revision. |

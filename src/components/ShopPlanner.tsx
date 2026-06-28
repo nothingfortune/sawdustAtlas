@@ -8,12 +8,16 @@ import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domai
 import type { ShopObjectDefinition } from '../domain/shopObjects'
 import { getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../domain/shopGeometry'
 import type { Point2D } from '../domain/shopGeometry'
-import { formatDimensions, formatLength, formatLengthValue } from '../domain/lengthUnits'
+import { formatDimensions, formatLength, formatLengthValue, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 
 interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void; onDelete: (id: string) => void }
 
 const SCALE = .094
+// Default room grid spacing (mm). When imperial and still at this default, the grid
+// snaps to 1 ft; a user-chosen spacing opts out (see FloorGridLayer).
+const DEFAULT_GRID_MM = 300
+const FOOT_MM = MM_PER_INCH * 12
 const DRAW_ZONE_LABEL = 'Out-of-bounds zone'
 
 const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
@@ -331,15 +335,20 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
 
 function FloorGridLayer({ project }: { project: ShopProject }) {
   const { lengthUnit } = useUnitSystem()
-  const xs = gridSeries(project.width, project.gridSize)
-  const ys = gridSeries(project.depth, project.gridSize)
-  const labelEvery = project.gridSize >= 500 ? 1 : 2
+  // Preston's button: snap the default grid to 1 ft with foot labels so the floor
+  // reads in round feet. A grid spacing the user set directly is respected as-is.
+  const footGrid = lengthUnit === 'imperial' && project.gridSize === DEFAULT_GRID_MM
+  const grid = footGrid ? FOOT_MM : project.gridSize
+  const xs = gridSeries(project.width, grid)
+  const ys = gridSeries(project.depth, grid)
+  const labelEvery = grid >= 500 ? 1 : 2
+  const gridLabel = (value: number) => footGrid ? `${Math.round(value / FOOT_MM)}'` : formatLengthValue(value, lengthUnit)
 
   return <svg className="floor-grid-layer" viewBox={`0 0 ${project.width} ${project.depth}`} preserveAspectRatio="none" aria-hidden="true">
     {xs.map((x, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={x} y1={0} x2={x} y2={project.depth} key={`x-${x}`}/>)}
     {ys.map((y, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={0} y1={y} x2={project.width} y2={y} key={`y-${y}`}/>)}
-    {xs.filter((_, index) => index % labelEvery === 0 && index > 0).map(x => <text className="grid-label" x={x - 12} y={95} key={`xlabel-${x}`}>{formatLengthValue(x, lengthUnit)}</text>)}
-    {ys.filter((_, index) => index % labelEvery === 0 && index > 0).map(y => <text className="grid-label" x={28} y={y - 18} key={`ylabel-${y}`}>{formatLengthValue(y, lengthUnit)}</text>)}
+    {xs.filter((_, index) => index % labelEvery === 0 && index > 0).map(x => <text className="grid-label" x={x - 12} y={95} key={`xlabel-${x}`}>{gridLabel(x)}</text>)}
+    {ys.filter((_, index) => index % labelEvery === 0 && index > 0).map(y => <text className="grid-label" x={28} y={y - 18} key={`ylabel-${y}`}>{gridLabel(y)}</text>)}
   </svg>
 }
 

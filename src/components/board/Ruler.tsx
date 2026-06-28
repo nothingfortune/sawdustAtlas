@@ -8,7 +8,7 @@ import { useUnitSystem } from '../unitSystem'
 export function Ruler({ dimMm, pxPerMm, orientation }: { dimMm: number; pxPerMm: number; orientation: 'top' | 'left' }) {
   const { lengthUnit } = useUnitSystem()
   if (!(pxPerMm > 0) || !(dimMm > 0)) return null
-  const step = niceTickStep(pxPerMm)
+  const step = niceTickStep(pxPerMm, 64, lengthUnit)
   const ticks = buildTicks(dimMm, step)
   const k = 1 / pxPerMm
   const tick = 5 * k

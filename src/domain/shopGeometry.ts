@@ -1,8 +1,25 @@
-import type { ShopBlockedZone, ShopItem } from '../types'
+import type { ShopBlockedZone, ShopItem, ShopProject } from '../types'
 
 export interface Point2D {
   x: number
   y: number
+}
+
+export interface BlockedZoneConflict {
+  item: ShopItem
+  zones: ShopBlockedZone[]
+}
+
+// Shop items whose footprint overlaps one or more blocked floor zones, with the
+// zones each item hits. Shared by the planner's in-place alerts and the workspace
+// warning center.
+export function getBlockedZoneConflicts(project: ShopProject): BlockedZoneConflict[] {
+  return project.items
+    .map(item => ({
+      item,
+      zones: project.blockedZones.filter(zone => polygonsOverlap(getShopItemFootprint(item), getBlockedZoneFootprint(zone))),
+    }))
+    .filter(conflict => conflict.zones.length > 0)
 }
 
 export interface Point3D extends Point2D {

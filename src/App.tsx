@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
 import type { ImportResult } from './storage'
+import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
+import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
@@ -223,6 +225,16 @@ export default function App() {
 
   const toggleLengthUnit = () => setLengthUnit(current => current === 'metric' ? 'imperial' : 'metric')
 
+  // App-wide warning center (UX-006): aggregate geometry, placeholder-wood, shop
+  // clearance, and storage issues across the whole workspace, each linked to its fix.
+  const warnings = useMemo(() => collectWorkspaceWarnings(data, saveOk), [data, saveOk])
+  const goToWarning = (location?: WarningLocation) => {
+    if (!location) return
+    if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); setView('boards') }
+    else if (location.view === 'shop' && location.targetId) { setActiveShop(location.targetId); setView('shop') }
+    else if (location.view === 'woods') setView('woods')
+  }
+
   return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
     <div className="app-shell">
     <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
@@ -248,6 +260,7 @@ export default function App() {
       <header className="topbar">
         <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
+          <WarningCenter warnings={warnings} onNavigate={goToWarning} />
           {saveOk
             ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
             : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
@@ -325,6 +338,29 @@ function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: Impo
         <button className="button secondary" onClick={onClose}>{ok ? 'Done' : 'Close'}</button>
       </footer>
     </div>
+  </div>
+}
+
+// Topbar warning center (UX-006): a count pill (colored by worst severity) that opens
+// a dropdown of every workspace issue; each row navigates to the input that fixes it.
+// Hidden when there's nothing to flag.
+function WarningCenter({ warnings, onNavigate }: { warnings: WorkspaceWarning[], onNavigate: (location?: WarningLocation) => void }) {
+  const [open, setOpen] = useState(false)
+  if (warnings.length === 0) return null
+  const worst = warnings.some(warning => warning.severity === 'error') ? 'error' : 'warning'
+  return <div className="warning-center">
+    <button className={`warning-pill ${worst}`} onClick={() => setOpen(value => !value)} aria-expanded={open} aria-label={`${warnings.length} workspace issue${warnings.length === 1 ? '' : 's'} to review`}>
+      <TriangleAlert size={15} />{warnings.length}
+    </button>
+    {open && <>
+      <div className="warning-scrim" role="presentation" onClick={() => setOpen(false)} />
+      <div className="warning-menu" role="menu" aria-label="Workspace issues">
+        <div className="warning-menu-head">{warnings.length} issue{warnings.length === 1 ? '' : 's'} to review</div>
+        {warnings.map(warning => <button key={warning.id} role="menuitem" className={`warning-row ${warning.severity}`} disabled={!warning.location} onClick={() => { onNavigate(warning.location); setOpen(false) }}>
+          <TriangleAlert size={13} /><span>{warning.message}</span>
+        </button>)}
+      </div>
+    </>}
   </div>
 }
 

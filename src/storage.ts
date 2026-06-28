@@ -416,6 +416,18 @@ export function clearPreImportSnapshot(): void {
   try { localStorage.removeItem(PRE_IMPORT_KEY) } catch { /* best effort; non-fatal */ }
 }
 
+const ONBOARDED_KEY = 'sawdust-atlas:onboarded'
+
+// Whether the first-run welcome has been dismissed. If storage is unavailable we
+// report true so we never nag on every load when the dismissal can't be persisted.
+export function hasOnboarded(): boolean {
+  try { return localStorage.getItem(ONBOARDED_KEY) === '1' } catch { return true }
+}
+
+export function markOnboarded(): void {
+  try { localStorage.setItem(ONBOARDED_KEY, '1') } catch { /* best effort; non-fatal */ }
+}
+
 export function downloadData(data: AtlasData) {
   const blob = new Blob([JSON.stringify(normalizeData(data), null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)

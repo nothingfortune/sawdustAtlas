@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test'
 // nothing is dropped silently. This is a friend-beta exit flow.
 test.describe('backup import', () => {
   test('shows a summary with counts and never-silent-drop warnings', async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.clear())
+    await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
     await page.goto('/')
     page.on('dialog', dialog => { void dialog.accept() }) // the replace-confirmation
 
@@ -34,7 +34,7 @@ test.describe('backup import', () => {
   })
 
   test('rejects an invalid file with a clear error, not a crash', async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.clear())
+    await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
     await page.goto('/')
     page.on('dialog', dialog => { void dialog.accept() })
 

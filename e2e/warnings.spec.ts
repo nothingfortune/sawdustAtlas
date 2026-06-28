@@ -5,6 +5,7 @@ import { test, expect } from '@playwright/test'
 test.describe('warning center', () => {
   test('surfaces a bad-geometry board and navigates to it', async ({ page }) => {
     await page.addInitScript(() => {
+      window.localStorage.setItem('sawdust-atlas:onboarded', '1')
       // An end-grain board whose strip closes/crosses (width 10, -45°, 20 mm stock).
       window.localStorage.setItem('sawdust-atlas:v1', JSON.stringify({
         schemaVersion: 2, shops: [],

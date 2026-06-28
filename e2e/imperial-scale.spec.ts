@@ -8,6 +8,7 @@ import { test, expect } from '@playwright/test'
 test.describe("Preston's button imperial scaling", () => {
   test('workshop grid labels read in whole feet for a non-default grid spacing', async ({ page }) => {
     await page.addInitScript(() => {
+      window.localStorage.setItem('sawdust-atlas:onboarded', '1')
       window.localStorage.setItem('sawdust-atlas:v1', JSON.stringify({
         schemaVersion: 2,
         shops: [{ id: 'w', name: 'Shop', width: 3600, depth: 3600, gridSize: 600, blockedZones: [], items: [], updatedAt: '' }],

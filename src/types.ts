@@ -1,4 +1,4 @@
-export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances'
+export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances' | 'pricing'
 
 export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
 export type FeedDirection = 0 | 90 | 180 | 270
@@ -21,11 +21,22 @@ export interface ShopItem {
   color: string
 }
 
+export interface ShopBlockedZone {
+  id: string
+  name: string
+  x: number
+  y: number
+  width: number
+  depth: number
+}
+
 export interface ShopProject {
   id: string
   name: string
   width: number
   depth: number
+  gridSize: number
+  blockedZones: ShopBlockedZone[]
   items: ShopItem[]
   updatedAt: string
 }
@@ -36,6 +47,8 @@ export interface WoodSpecies {
   color: string
   accent: string
   pricePerBoardFoot: number
+  /** Where to buy it — free-text store / vendor / SKU note. Absent when not set. */
+  availableAt?: string
 }
 
 export interface BoardStrip {
@@ -43,6 +56,41 @@ export interface BoardStrip {
   speciesId: string
   width: number
   trailingAngle: number
+}
+
+export interface CompositeCut {
+  axis: 'x' | 'y'        // X = crosscut (end-grain wafers); Y = rip (long-grain strips)
+  stripWidthMm: number   // slice thickness
+  kerfMm: number
+  count: number
+}
+
+export interface CompositePanel {
+  id: string
+  boardId: string        // source board sliced into wafers
+  cut: CompositeCut
+}
+
+// A wafer placed in a row.
+export interface AssemblyCell {
+  panelId: string
+  pieceIndex: number
+  rotate: 0 | 90 | 180 | 270
+  flip: boolean
+}
+
+export interface CompositeRow {
+  id: string
+  wafers: AssemblyCell[]
+}
+
+export interface CompositeBoard {
+  id: string
+  name: string
+  construction: 'edge' | 'end'   // one construction per composite — never mixed
+  panels: CompositePanel[]
+  rows: CompositeRow[]           // ordered top→bottom
+  updatedAt: string
 }
 
 export interface EndGrainSettings {
@@ -53,7 +101,7 @@ export interface EndGrainSettings {
   trimAllowance: number
   rowFlips: boolean[]
   rowRotations: boolean[]
-  /** Per-slice vertical offset in mm for running-bond/brick patterns; wraps within the slice. */
+  /** Per-slice running-bond offset as a fraction of one cell (the average strip width); resolved to mm against the live strips and wrapped within the slice at render. */
   rowOffsets?: number[]
   /** Physical slice identity order after crosscutting; used so identical wafers can still be reordered visibly. */
   rowOrder?: number[]
@@ -66,6 +114,37 @@ export interface BuildAllowances {
   ripAllowance: number
   lengthTrim: number
   widthTrim: number
+}
+
+export interface PricingSettings {
+  /** Markup added on top of material cost (which already includes waste). */
+  materialMarkupPercent: number
+  laborRatePerHour: number
+  /** Estimated build hours per complexity tier; × laborRatePerHour = labor cost. */
+  tierHours: { simple: number; standard: number; complex: number }
+  /** Flat consumables fee (glue/finish/abrasives) regardless of size. */
+  consumablesBase: number
+  /** Additional consumables per rough board-foot. */
+  consumablesPerBoardFoot: number
+  /** Minimum sell price per construction, applied to the grand total. */
+  floor: { edge: number; end: number }
+}
+
+export type ComplexityTier = 'simple' | 'standard' | 'complex'
+
+export interface PriceBreakdown {
+  tier: ComplexityTier
+  markupPercent: number
+  laborHours: number
+  materialCost: number
+  materialMarkup: number
+  labor: number
+  consumables: number
+  subtotal: number
+  floor: number
+  /** max(0, floor − subtotal); > 0 only when the minimum is binding. */
+  floorAdjustment: number
+  total: number
 }
 
 export interface BoardProject {
@@ -87,4 +166,7 @@ export interface AtlasData {
   woods: WoodSpecies[]
   /** Shop-wide milling allowances (machine setup) applied to every board. */
   allowances: BuildAllowances
+  /** Shop-wide pricing knobs (markup, labor, consumables, floor). */
+  pricing: PricingSettings
+  composites: CompositeBoard[]
 }

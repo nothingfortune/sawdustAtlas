@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildTicks, fitPxPerMm, niceTickStep, resolveScale, scaleBarValue } from '../src/domain/boardScale'
+import { buildTicks, fitPxPerMm, niceTickStep, resolveScale, scaleBarValue, snapScaleToUnit } from '../src/domain/boardScale'
+import { MM_PER_INCH } from '../src/domain/lengthUnits'
 
 describe('fitPxPerMm', () => {
   it('fills the box on the tighter axis, preserving aspect ratio', () => {
@@ -68,6 +69,30 @@ describe('niceTickStep', () => {
   it('falls back to a sane step for a non-positive scale', () => {
     expect(niceTickStep(0)).toBe(10)
   })
+
+  it('snaps to imperial nice steps (½", 1", 2"...) when unit is imperial', () => {
+    // pxPerMm 8 -> minStepMm = 64/8 = 8 mm; smallest imperial step >= 8 is ½" (12.7).
+    expect(niceTickStep(8, 64, 'imperial')).toBeCloseTo(MM_PER_INCH / 2, 6)
+    // shrinking the scale picks a coarser imperial step.
+    expect(niceTickStep(0.16, 64, 'imperial')).toBeGreaterThan(niceTickStep(2, 64, 'imperial'))
+  })
+})
+
+describe('snapScaleToUnit', () => {
+  it('floors the scale so one base unit spans a whole pixel count', () => {
+    // ½" = 12.7 mm; at 0.7 px/mm that is 8.89 px -> floored to 8 px.
+    expect(snapScaleToUnit(0.7, 12.7)).toBeCloseTo(8 / 12.7, 9)
+  })
+
+  it('never exceeds the input scale, so the preview still fits', () => {
+    expect(snapScaleToUnit(0.7, 12.7)).toBeLessThanOrEqual(0.7)
+  })
+
+  it('leaves the scale unchanged for degenerate inputs or sub-pixel units', () => {
+    expect(snapScaleToUnit(0, 12.7)).toBe(0)
+    expect(snapScaleToUnit(0.7, 0)).toBe(0.7)
+    expect(snapScaleToUnit(0.05, 12.7)).toBe(0.05) // 12.7 * 0.05 = 0.635 px < 1
+  })
 })
 
 describe('buildTicks', () => {
@@ -97,5 +122,52 @@ describe('scaleBarValue', () => {
 
   it('falls back to the smallest nice value when even that overflows', () => {
     expect(scaleBarValue(1000, 120).mm).toBe(1)
+  })
+
+  it('picks the largest imperial nice value within the bar when unit is imperial', () => {
+    // 120 px / 0.7 px/mm = 171 mm cap; largest imperial step <= 171 is 6" (152.4).
+    expect(scaleBarValue(0.7, 120, 'imperial').mm).toBeCloseTo(MM_PER_INCH * 6, 6)
+  })
+})
+
+// Invariants asserted across a RANGE of scales, not a single happy value — the gap
+// that let the grid bug ("tested only the default") through.
+describe('imperial scale invariants (regression)', () => {
+  const half = MM_PER_INCH / 2
+
+  it('every imperial tick step is a whole number of half-inches at any scale', () => {
+    for (let px = 0.1; px <= 6; px = Math.round((px + 0.1) * 100) / 100) {
+      const halves = niceTickStep(px, 64, 'imperial') / half
+      expect(Math.abs(halves - Math.round(halves))).toBeLessThan(1e-6)
+    }
+  })
+
+  it('imperial scale-bar value is a whole number of half-inches at any scale', () => {
+    for (let px = 0.05; px <= 4; px = Math.round((px + 0.05) * 100) / 100) {
+      const halves = scaleBarValue(px, 120, 'imperial').mm / half
+      expect(Math.abs(halves - Math.round(halves))).toBeLessThan(1e-6)
+    }
+  })
+
+  it('snapScaleToUnit aligns the base unit to whole pixels and never enlarges', () => {
+    for (let px = 0.1; px <= 6; px = Math.round((px + 0.1) * 100) / 100) {
+      const snapped = snapScaleToUnit(px, half)
+      expect(snapped).toBeLessThanOrEqual(px + 1e-9)
+      const unitPx = snapped * half
+      const wholePixel = Math.abs(unitPx - Math.round(unitPx)) < 1e-6
+      expect(wholePixel || snapped === px).toBe(true) // unchanged only when sub-pixel
+    }
+  })
+})
+
+describe('resolveScale imperial snapping', () => {
+  it('snaps the resolved scale so the base unit lands on whole pixels', () => {
+    const result = resolveScale(460, 800, { targetPxPerMm: 0.7, snapUnitMm: MM_PER_INCH / 2 })
+    expect(result.pxPerMm).toBeCloseTo(Math.floor((MM_PER_INCH / 2) * 0.7) / (MM_PER_INCH / 2), 9)
+    expect(result.pxPerMm).toBeLessThanOrEqual(0.7)
+  })
+
+  it('is unchanged when no snap unit is given', () => {
+    expect(resolveScale(460, 800, { targetPxPerMm: 0.7 }).pxPerMm).toBe(0.7)
   })
 })

@@ -38,6 +38,23 @@ function makeProject(overrides: Partial<BoardProject> = {}, strips: BoardStrip[]
   }
 }
 
+describe('precomputed metrics reuse (P6)', () => {
+  it('uses provided end-grain metrics instead of recomputing', () => {
+    const project = makeProject({ construction: 'end' })
+    const real = calculateEndGrainMetrics(project)
+    const fake = { ...real, finalLength: real.finalLength + 100, finishedWidth: real.finishedWidth + 50 }
+    const build = calculateBuildDimensions(project, fake)
+    expect(build.length.finished).toBe(fake.finalLength)
+    expect(build.width.finished).toBe(fake.finishedWidth)
+  })
+
+  it('still computes metrics itself when none are provided', () => {
+    const project = makeProject({ construction: 'end' })
+    const real = calculateEndGrainMetrics(project)
+    expect(calculateBuildDimensions(project).length.finished).toBe(real.finalLength)
+  })
+})
+
 describe('edge-grain build allowances', () => {
   it('adds each allowance to the matching finished dimension', () => {
     const build = calculateBuildDimensions(makeProject())

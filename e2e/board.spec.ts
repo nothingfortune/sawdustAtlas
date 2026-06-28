@@ -5,10 +5,13 @@ import { test, expect } from '@playwright/test'
 // rendering. Starts from a clean localStorage so the seed board is deterministic.
 test.describe('cutting board designer', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.clear())
+    await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
     await page.goto('/')
     await page.getByRole('button', { name: 'Cutting boards' }).click()
-    // Seed board is edge-grain; switch to end-grain to get wafers + slice tools.
+    // 'Cutting boards' opens the gallery; open the seed board, then switch to
+    // end-grain for wafers + slice tools. (Beforehand this clicked 'End grain'
+    // straight away and silently rotted when the gallery was introduced.)
+    await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
     await page.getByRole('button', { name: 'End grain', exact: true }).click()
   })
 
@@ -55,6 +58,25 @@ test.describe('cutting board designer', () => {
     await expect(label0).not.toHaveText('N')
     // Its neighbour is untouched — rotation is per wafer, independent of others.
     await expect(label1).toHaveText('N')
+  })
+
+  test('the 90° turn preview rotates wafers too, not only the finished board', async ({ page }) => {
+    await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
+    const popout = page.locator('.preview-popout')
+    await expect(popout).toBeVisible()
+    await popout.getByRole('tab', { name: '90° turn' }).click()
+
+    const slot0 = popout.locator('g[data-slot="0"]')
+    const label0 = slot0.locator('text.slice-label')
+    await expect(label0).toHaveText('N')
+
+    const box = await slot0.boundingBox()
+    if (!box) throw new Error('slice 0 not visible on the 90° turn tab')
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.up()
+
+    await expect(label0).not.toHaveText('N')
   })
 
   test('pop-out close button is reachable above the chrome', async ({ page }) => {

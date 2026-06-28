@@ -1,4 +1,4 @@
-import type { AtlasData, WoodSpecies } from './types'
+import type { AtlasData, PricingSettings, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { createId } from './id'
 
@@ -11,12 +11,27 @@ export const defaultSpecies = [
   { id: 'white-oak', name: 'White oak', color: '#b39161', accent: '#d2b681', pricePerBoardFoot: 10.25 },
 ] satisfies [WoodSpecies, ...WoodSpecies[]]
 
+export const DEFAULT_PRICING: PricingSettings = {
+  materialMarkupPercent: 30,
+  laborRatePerHour: 60,
+  tierHours: { simple: 0.75, standard: 1.5, complex: 3 },
+  consumablesBase: 8,
+  consumablesPerBoardFoot: 3,
+  floor: { edge: 100, end: 200 },
+}
+
 export const starterData: AtlasData = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
+  pricing: { ...DEFAULT_PRICING },
+  composites: [],
   shops: [{
-    id: createId(), name: 'My workshop', width: 7300, depth: 4300, updatedAt: new Date().toISOString(),
+    id: createId(), name: 'My workshop', width: 7300, depth: 4300, gridSize: 300, updatedAt: new Date().toISOString(),
+    blockedZones: [
+      { id: createId(), name: 'Lumber corner return', x: 0, y: 0, width: 850, depth: 1250 },
+      { id: createId(), name: 'Water heater chase', x: 6440, y: 0, width: 860, depth: 760 },
+    ],
     items: [
       { id: createId(), name: 'Table saw', kind: 'machine', x: 2850, y: 2200, width: 1070, depth: 970, height: 890, rotation: 0, clearance: 600, feedDirection: 0, infeedClearance: 2440, outfeedClearance: 2440, sideClearance: 300, color: '#d8863b' },
       { id: createId(), name: 'Workbench', kind: 'bench', x: 700, y: 600, width: 1830, depth: 760, height: 900, rotation: 0, clearance: 450, feedDirection: null, infeedClearance: 0, outfeedClearance: 0, sideClearance: 0, color: '#66826d' },

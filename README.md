@@ -68,9 +68,21 @@ Build SawdustAtlas from this repository — dev server, local container build, a
 Quick start:
 
 ```bash
-pnpm install
+pnpm install   # also wires the repo's git hooks (see below)
 pnpm dev
 ```
+
+### Local preview container & dev hooks
+
+`pnpm container` builds and (re)starts the Docker preview at **http://localhost:8080**,
+stamping the in-app build badge with the current git branch / build number / commit
+(e.g. `develop · build 169 · e31445b · container`).
+
+`pnpm install` runs a `prepare` step that points `core.hooksPath` at the committed
+`.githooks/`, so a fresh clone is set up automatically — no per-machine steps. From then
+on a `git pull`/`git merge` that lands on `develop` rebuilds the preview in the background.
+`.githooks/commit-msg` delegates to your global `~/.githooks/commit-msg` if you have one.
+(After a `gh pr merge`, which advances `develop` without a local merge, run `pnpm container`.)
 
 ## Current features
 

@@ -1,6 +1,8 @@
 // Shared scale + ruler math for the to-scale board previews.
 // Pure functions (no React) so the previews can all draw at one consistent
 // px-per-mm and so rulers/scale-bars are derived, never hand-tuned.
+import { MM_PER_INCH } from './lengthUnits'
+import type { LengthUnit } from './lengthUnits'
 
 export interface ScaleResult {
   /** Resolved pixels per millimetre to draw at. */
@@ -18,6 +20,12 @@ export interface ScaleOptions {
   minPxPerMm?: number
   /** Ceiling scale so tiny boards don't render absurdly large. */
   maxPxPerMm?: number
+  /**
+   * When set (Preston's button / imperial), snap the resolved scale down so this
+   * base unit (e.g. half an inch) lands on a whole pixel count — keeps imperial
+   * ruler ticks crisp. Omit for the untouched true-to-scale fit.
+   */
+  snapUnitMm?: number
 }
 
 const DEFAULT_TARGET = 0.7
@@ -26,6 +34,12 @@ const DEFAULT_MAX = 2
 
 // "Nice" millimetre increments used for ruler ticks and the scale bar.
 const NICE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000] as const
+// Imperial counterpart, in mm: ½", 1", 2", 3", 6", 1', 2', 5', 10', 20'.
+const IMPERIAL_STEPS = [0.5, 1, 2, 3, 6, 12, 24, 60, 120, 240].map(inches => inches * MM_PER_INCH)
+
+function steps(unit: LengthUnit): readonly number[] {
+  return unit === 'imperial' ? IMPERIAL_STEPS : NICE_STEPS
+}
 
 /**
  * Pick one px-per-mm so the governing board length fits the container when it
@@ -41,9 +55,22 @@ export function resolveScale(boardLengthMm: number, containerWidthPx: number, op
     return { pxPerMm: clamp(target, min, max), fitToWidth: false, contentWidthPx: 0 }
   }
   const fitScale = containerWidthPx / boardLengthMm
-  const pxPerMm = clamp(Math.min(target, fitScale), min, max)
+  const fitted = clamp(Math.min(target, fitScale), min, max)
+  const pxPerMm = opts.snapUnitMm ? snapScaleToUnit(fitted, opts.snapUnitMm) : fitted
   const contentWidthPx = boardLengthMm * pxPerMm
   return { pxPerMm, fitToWidth: contentWidthPx > containerWidthPx + 0.5, contentWidthPx }
+}
+
+/**
+ * Snap a scale down so one base unit (e.g. ½") spans a whole pixel count, making
+ * imperial ruler ticks fall on crisp pixel boundaries. Always returns ≤ the input
+ * (so a fitted preview keeps fitting); a no-op when the unit is already sub-pixel.
+ */
+export function snapScaleToUnit(pxPerMm: number, baseUnitMm: number): number {
+  if (!(pxPerMm > 0) || !(baseUnitMm > 0)) return pxPerMm
+  const unitPx = baseUnitMm * pxPerMm
+  if (unitPx < 1) return pxPerMm
+  return Math.floor(unitPx) / baseUnitMm
 }
 
 export interface FitOptions {
@@ -80,10 +107,11 @@ export function fitPxPerMm(contentWidthMm: number, contentHeightMm: number, boxW
 }
 
 /** Smallest nice mm step whose on-screen spacing is at least minLabelSpacingPx. */
-export function niceTickStep(pxPerMm: number, minLabelSpacingPx = 64): number {
-  if (!(pxPerMm > 0)) return 10
+export function niceTickStep(pxPerMm: number, minLabelSpacingPx = 64, unit: LengthUnit = 'metric'): number {
+  const list = steps(unit)
+  if (!(pxPerMm > 0)) return unit === 'imperial' ? (list[0] ?? 10) : 10
   const minStepMm = minLabelSpacingPx / pxPerMm
-  return NICE_STEPS.find(step => step >= minStepMm) ?? NICE_STEPS[NICE_STEPS.length - 1] ?? 1000
+  return list.find(step => step >= minStepMm) ?? list[list.length - 1] ?? 1000
 }
 
 /** Tick positions in mm: every step from 0, plus the exact end length. */
@@ -98,10 +126,11 @@ export function buildTicks(lengthMm: number, step: number): number[] {
 }
 
 /** Largest nice mm value whose drawn length fits within maxBarPx, for the scale bar. */
-export function scaleBarValue(pxPerMm: number, maxBarPx = 120): { mm: number; px: number } {
+export function scaleBarValue(pxPerMm: number, maxBarPx = 120, unit: LengthUnit = 'metric'): { mm: number; px: number } {
   if (!(pxPerMm > 0)) return { mm: 0, px: 0 }
-  const fitting = NICE_STEPS.filter(step => step * pxPerMm <= maxBarPx)
-  const mm = fitting.length ? Math.max(...fitting) : (NICE_STEPS[0] ?? 1)
+  const list = steps(unit)
+  const fitting = list.filter(step => step * pxPerMm <= maxBarPx)
+  const mm = fitting.length ? Math.max(...fitting) : (list[0] ?? 1)
   return { mm, px: mm * pxPerMm }
 }
 

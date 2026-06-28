@@ -37,14 +37,21 @@ Look at the **PORTS** column in the result:
 
 ### Step 2 — Start it again, the right way
 
-Copy and paste these two lines, one after the other:
+Run these two commands **one at a time** — paste the first, press **Enter**, wait for your cursor to return, then do the second.
+
+**1. Remove the broken copy:**
 
 ```text
 docker rm -f sawdust-atlas
+```
+
+**2. Start a fresh one with the `-p 8080:80` opening:**
+
+```text
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 
-The first line removes the broken one. The second starts a fresh one **with** the `-p 8080:80` opening. Now open **http://localhost:8080** again.
+Now open **http://localhost:8080** again.
 
 ### Still not opening?
 
@@ -56,10 +63,17 @@ The first line removes the broken one. The second starts a fresh one **with** th
 
 ## "The name sawdust-atlas is already in use"
 
-An older copy is still there. Remove it, then run the start command again:
+An older copy is still there. Run these two commands **one at a time**:
+
+**1. Remove the old copy:**
 
 ```text
 docker rm -f sawdust-atlas
+```
+
+**2. Start it again:**
+
+```text
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 
@@ -67,11 +81,23 @@ docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0
 
 ## "no matching manifest for ... arm64" (or "amd64") when downloading
 
-This means the copy of SawdustAtlas you tried to download did not have a build for your computer's processor. SawdustAtlas is now published for both **Intel/AMD (amd64)** and **Apple Silicon / ARM (arm64)**, so a fresh download works on any machine. If you saw this error, just download the newest copy again:
+This means the copy of SawdustAtlas you tried to download did not have a build for your computer's processor. SawdustAtlas is now published for both **Intel/AMD (amd64)** and **Apple Silicon / ARM (arm64)**, so a fresh download works on any machine. If you saw this error, download the newest copy again by running these three commands **one at a time**:
+
+**1. Remove the copy that would not run:**
 
 ```text
 docker rm -f sawdust-atlas
+```
+
+**2. Download a fresh copy for your processor:**
+
+```text
 docker pull headlock0253/sawdust-atlas:latest
+```
+
+**3. Start it:**
+
+```text
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 

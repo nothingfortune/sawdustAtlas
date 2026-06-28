@@ -162,6 +162,18 @@ Also fix the current offset math:
 
 ### Proper correction
 
+> **Status (2026-06-25): domain foundation implemented** in `src/domain/brickAssembly.ts`
+> (`generateBrickAssembly`, `summarizeBrickAssembly`, `defaultBrickParameters`,
+> `isLegacyBrickPreset`). It builds the two source panels and the alternating
+> wafer/separator final assembly with a half-course offset derived from the course
+> pitch, conserves material (brick + mortar reconstruct the finished board volume
+> exactly), parameterizes mortar into finished size and material totals, and warns
+> against planing end grain. Covered by `tests/brickAssembly.test.ts` (11 tests).
+> **Remaining (UI phase):** a composite designer, the current-vs-proposed preview,
+> build steps showing both panels, and a cut plan that distinguishes brick-course
+> crosscuts from mortar separator cuts. The role-based course model is used instead
+> of `BoardStrip[]` so brick/mortar are wood roles, not hard-coded species.
+
 Add a composable assembly model:
 
 ```ts
@@ -207,10 +219,12 @@ The existing `BoardProject` can keep its simple single-panel fields for normal e
 
 ## Acceptance criteria
 
-- The app no longer labels a single-panel fixed-offset recipe as a true brick-and-mortar board.
-- A true brick recipe has at least two source panels in the domain model.
-- The final assembly can insert separator strips between brick-course strips.
-- Mortar thickness is parameterized and included in final size, waste, and material estimate.
-- Half-course offset is derived from dimensions, not hard-coded.
-- The printable build sheet includes a no-planer warning for end-grain flattening.
-- Tests cover source-panel generation, final assembly ordering, material conservation, and migration from old `brick` preset data.
+- [x] The app no longer labels a single-panel fixed-offset recipe as a true brick-and-mortar board. *(preset renamed "Running bond"; `isLegacyBrickPreset` flags the old `brick` id; the true model is separate.)*
+- [x] A true brick recipe has at least two source panels in the domain model. *(`generateBrickAssembly` returns a brick-course panel + a mortar blank.)*
+- [x] The final assembly can insert separator strips between brick-course strips.
+- [x] Mortar thickness is parameterized and included in final size, waste, and material estimate. *(`summarizeBrickAssembly`.)*
+- [x] Half-course offset is derived from dimensions, not hard-coded. *(`coursePitch / 2`.)*
+- [~] The printable build sheet includes a no-planer warning for end-grain flattening. *(warning produced by the domain summary; printing it is part of the UI phase.)*
+- [x] Tests cover source-panel generation, final assembly ordering, material conservation, and migration from old `brick` preset data. *(`tests/brickAssembly.test.ts`.)*
+
+Remaining for full completion (UI phase): surface the composite recipe in the designer — preview, build steps showing both panels, and a split cut plan — and the printable build sheet, per **UI requirements** above.

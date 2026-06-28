@@ -2,6 +2,9 @@ import { GripVertical, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { BoardStrip, WoodSpecies } from '../types'
+import { lengthUnitLabel } from '../domain/lengthUnits'
+import { LengthInput } from './fields'
+import { useUnitSystem } from './unitSystem'
 
 interface Props {
   strips: BoardStrip[]
@@ -16,6 +19,7 @@ interface Props {
 // keyboard reorder (arrow keys on the grip). Reordering is previewed live and
 // committed on drop; the canonical order stays in the parent.
 export function StripList({ strips, woods, construction, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
+  const { lengthUnit } = useUnitSystem()
   const listRef = useRef<HTMLDivElement>(null)
   const slotMidsRef = useRef<number[]>([])
   const [order, setOrder] = useState<string[] | null>(null)
@@ -90,8 +94,8 @@ export function StripList({ strips, woods, construction, onReorder, onUpdateStri
         ><GripVertical/></button>
         <span className="swatch" style={{ background: wood?.color ?? '#8c6a48' }}/>
         <select value={strip.speciesId} onChange={event => onUpdateStrip(strip.id, { speciesId: event.target.value })}>{woods.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select>
-        <input aria-label={`Strip ${index + 1} width`} title="Width in mm" type="number" min="1" step="1" value={strip.width} onChange={event => onUpdateStrip(strip.id, { width: Number(event.target.value) })}/>
-        <span>mm</span>
+        <LengthInput ariaLabel={`Strip ${index + 1} width`} title={`Width in ${lengthUnitLabel(lengthUnit)}`} value={strip.width} min={1} onChange={value => onUpdateStrip(strip.id, { width: value })}/>
+        <span>{lengthUnitLabel(lengthUnit)}</span>
         {construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => onUpdateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}
         <button aria-label={`Delete strip ${index + 1}`} onClick={() => onDeleteStrip(strip.id)}><Trash2/></button>
       </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, evenStripCount, gradientStrips, pickSpeciesPair } from '../src/domain/boardPatterns'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, evenStripCount, gradientStrips, pickSpeciesPair, shuffleStripsAvoidingAdjacent } from '../src/domain/boardPatterns'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: WoodSpecies[] = [
@@ -56,7 +56,8 @@ describe('board pattern registry', () => {
     const result = applyBoardPattern('third-bond', project, woods, 6, () => `strip-${++id}`)
     expect(result.strips).toHaveLength(8)
     expect(result.strips.map(strip => strip.speciesId).slice(0, 4)).toEqual(['walnut', 'maple', 'walnut', 'maple'])
-    expect(result.endGrain.rowOffsets?.slice(0, 4)).toEqual([0, 40 / 3, 80 / 3, 0])
+    // Offsets are now stored as cell fractions (resolved to mm at render): third-bond steps 0, 1/3, 2/3.
+    expect(result.endGrain.rowOffsets?.slice(0, 4)).toEqual([0, 1 / 3, 2 / 3, 0])
   })
 
   it('resets stale transforms before applying a new recipe', () => {
@@ -99,5 +100,83 @@ describe('strip arrangement reorderings', () => {
     const strips = [strip('1', 'a', 30), strip('2', 'a', 10)]
     gradientStrips(strips)
     expect(strips.map(s => s.id)).toEqual(['1', '2'])
+  })
+
+  const adjacentDupes = (strips: BoardStrip[]) =>
+    strips.filter((s, i) => i > 0 && s.speciesId === strips[i - 1]!.speciesId).length
+
+  it('randomize never seats two of the same species side by side when separable', () => {
+    const strips = [strip('1', 'a', 10), strip('2', 'a', 20), strip('3', 'b', 30), strip('4', 'b', 40)]
+    const result = shuffleStripsAvoidingAdjacent(strips, () => 0)
+    expect(adjacentDupes(result)).toBe(0)
+    expect(new Set(result)).toEqual(new Set(strips)) // same strip objects, only reordered
+  })
+
+  it('randomize keeps every strip even when a species is too dominant to fully separate', () => {
+    const strips = [strip('1', 'a', 10), strip('2', 'a', 20), strip('3', 'a', 30), strip('4', 'b', 40)]
+    const result = shuffleStripsAvoidingAdjacent(strips, () => 0.5)
+    expect(result).toHaveLength(4)
+    expect(new Set(result.map(s => s.id))).toEqual(new Set(['1', '2', '3', '4']))
+  })
+
+  it('randomize does not mutate its input', () => {
+    const strips = [strip('1', 'a', 30), strip('2', 'b', 10)]
+    shuffleStripsAvoidingAdjacent(strips, () => 0)
+    expect(strips.map(s => s.id)).toEqual(['1', '2'])
+  })
+})
+
+describe('end-grain pattern geometry (P1/P3/P4)', () => {
+  const thick = 40
+
+  it('chevron picks an angle that keeps wafers from tapering to a point (P1)', () => {
+    const p = { ...project, endGrain: { ...project.endGrain, stockThickness: thick }, strips: [] }
+    const result = applyBoardPattern('chevron', p, woods, 6, () => 'id')
+    for (const s of result.strips) {
+      const trailing = s.width + thick * Math.tan(s.trailingAngle * Math.PI / 180)
+      expect(trailing).toBeGreaterThanOrEqual(0.5 * s.width) // never a sliver
+    }
+    expect(result.strips.some(s => s.trailingAngle > 0)).toBe(true)
+    expect(result.strips.some(s => s.trailingAngle < 0)).toBe(true)
+    expect(Math.abs(result.strips[0]!.trailingAngle)).toBeLessThan(45) // not the old hard 45°
+  })
+
+  it('chevron angle adapts to stock thickness so thick stock stays safe (P1)', () => {
+    const thin = { ...project, endGrain: { ...project.endGrain, stockThickness: 20 }, strips: [] }
+    const thickP = { ...project, endGrain: { ...project.endGrain, stockThickness: 80 }, strips: [] }
+    const a = Math.abs(applyBoardPattern('chevron', thin, woods, 6, () => 'id').strips[0]!.trailingAngle)
+    const b = Math.abs(applyBoardPattern('chevron', thickP, woods, 6, () => 'id').strips[0]!.trailingAngle)
+    expect(a).toBeGreaterThan(b) // thicker stock => gentler angle
+  })
+
+  it('re-skins existing strips, preserving id/width/species (P4)', () => {
+    const strips = [strip('a', 'walnut', 25), strip('b', 'maple', 60), strip('c', 'walnut', 13)]
+    const result = applyBoardPattern('checker', { ...project, strips }, woods, 4, () => 'NEW')
+    expect(result.strips.map(s => s.id)).toEqual(['a', 'b', 'c'])
+    expect(result.strips.map(s => s.width)).toEqual([25, 60, 13])
+    expect(result.strips.map(s => s.speciesId)).toEqual(['walnut', 'maple', 'walnut'])
+    expect(result.endGrain.rowRotations.slice(0, 2)).toEqual([false, true]) // transforms still applied
+  })
+
+  it('chevron re-skins widths but overwrites the trailing angle, alternating sign (P1/P4)', () => {
+    const strips = [strip('a', 'walnut', 40), strip('b', 'maple', 40)]
+    const result = applyBoardPattern('chevron', { ...project, endGrain: { ...project.endGrain, stockThickness: thick }, strips }, woods, 4, () => 'id')
+    expect(result.strips.map(s => s.id)).toEqual(['a', 'b'])
+    expect(result.strips[0]!.trailingAngle).toBeGreaterThan(0)
+    expect(result.strips[1]!.trailingAngle).toBeLessThan(0)
+  })
+
+  it('running-bond offset is a width-independent cell fraction that tracks at render (P3)', () => {
+    const brick = (width: number) => applyBoardPattern('brick', { ...project, strips: Array.from({ length: 6 }, (_, i) => strip(String(i), 'walnut', width)) }, woods, 4, () => 'id')
+    // Stored as half a cell regardless of strip width; the mm shift is derived from the
+    // current width at render (resolveOffsetMm), so editing widths re-tracks the bond.
+    expect(brick(24).endGrain.rowOffsets?.[1]).toBeCloseTo(0.5, 9)
+    expect(brick(60).endGrain.rowOffsets?.[1]).toBeCloseTo(0.5, 9)
+  })
+
+  it('applies a recipe to an empty board by generating a starter layout (fallback)', () => {
+    const result = applyBoardPattern('stripe', { ...project, strips: [] }, woods, 4, () => 'g')
+    expect(result.strips.length).toBeGreaterThanOrEqual(8)
+    expect(result.strips.every(s => s.width === 40)).toBe(true)
   })
 })

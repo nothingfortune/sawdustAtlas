@@ -1,0 +1,6 @@
+#!/bin/sh
+# Committed dev hook. Because core.hooksPath points at this repo's .githooks (set by
+# the package.json "prepare" script), a developer's global commit-msg hook would be
+# bypassed for this repo — so delegate to it when present (no-op if there isn't one).
+[ -x "$HOME/.githooks/commit-msg" ] && exec "$HOME/.githooks/commit-msg" "$@"
+exit 0

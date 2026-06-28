@@ -26,6 +26,19 @@ export function readSliceStates(settings: EndGrainSettings, count: number): Slic
   }))
 }
 
+// Trim the parallel transform arrays to the live slice count so positions beyond
+// the current count cannot linger and resurrect if the count later grows again.
+// Never pads — a shorter array is left as-is and readSliceStates defaults the tail.
+export function clampTransforms(settings: EndGrainSettings, count: number): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets' | 'rowOrder'> {
+  const length = Math.max(0, Math.trunc(count))
+  return {
+    rowFlips: settings.rowFlips.slice(0, length),
+    rowRotations: settings.rowRotations.slice(0, length),
+    rowOffsets: (settings.rowOffsets ?? []).slice(0, length),
+    rowOrder: (settings.rowOrder ?? []).slice(0, length),
+  }
+}
+
 // Project slice state back onto the parallel arrays the project stores.
 export function writeSliceStates(states: readonly SliceState[]): Pick<EndGrainSettings, 'rowFlips' | 'rowRotations' | 'rowOffsets' | 'rowOrder'> {
   return {

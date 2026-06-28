@@ -1,10 +1,34 @@
 import { describe, expect, it } from 'vitest'
-import { applySliceOrder, moveSlice, readSliceStates, writeSliceStates } from '../src/domain/boardSlices'
+import { applySliceOrder, clampTransforms, moveSlice, readSliceStates, writeSliceStates } from '../src/domain/boardSlices'
 import type { EndGrainSettings } from '../src/types'
 
 const settings = (patch: Partial<EndGrainSettings> = {}): EndGrainSettings => ({
   sourceLength: 900, stockThickness: 40, sliceThickness: 40, kerf: 3, trimAllowance: 20,
   rowFlips: [], rowRotations: [], rowOffsets: [], ...patch,
+})
+
+describe('clampTransforms (P5)', () => {
+  it('drops stale per-slice entries beyond the live slice count', () => {
+    const clamped = clampTransforms(
+      settings({ rowFlips: [true, false, true, true, false], rowRotations: [true, true, true, true, true], rowOffsets: [1, 2, 3, 4, 5], rowOrder: [0, 1, 2, 3, 4] }),
+      3,
+    )
+    expect(clamped.rowFlips).toEqual([true, false, true])
+    expect(clamped.rowRotations).toEqual([true, true, true])
+    expect(clamped.rowOffsets).toEqual([1, 2, 3])
+    expect(clamped.rowOrder).toEqual([0, 1, 2])
+  })
+
+  it('leaves shorter arrays untouched (no padding) so defaults fill the tail', () => {
+    const clamped = clampTransforms(settings({ rowRotations: [true] }), 5)
+    expect(clamped.rowRotations).toEqual([true])
+    expect(clamped.rowFlips).toEqual([])
+  })
+
+  it('clamps to zero when there are no slices', () => {
+    const clamped = clampTransforms(settings({ rowFlips: [true, true] }), 0)
+    expect(clamped.rowFlips).toEqual([])
+  })
 })
 
 describe('readSliceStates', () => {

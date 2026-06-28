@@ -58,6 +58,37 @@ jobs:
       - name: Build
         run: pnpm build
 
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Activate pnpm
+        run: corepack prepare pnpm@11.5.3 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: pnpm test:e2e
+
   docker-verify:
     name: Docker verify
     runs-on: ubuntu-latest
@@ -70,6 +101,19 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # full history so the build-number commit count is real
+
+      - name: Build provenance
+        id: prov
+        env:
+          REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          {
+            echo "number=$(git rev-list --count HEAD)"
+            echo "sha=$(git rev-parse --short HEAD)"
+            echo "branch=${REF_NAME}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -81,6 +125,11 @@ jobs:
           push: false
           load: true
           tags: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+          build-args: |
+            BUILD_ENV=production
+            BUILD_NUMBER=${{ steps.prov.outputs.number }}
+            BUILD_SHA=${{ steps.prov.outputs.sha }}
+            BUILD_BRANCH=${{ steps.prov.outputs.branch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -129,6 +178,22 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # full history so the build-number commit count is real
+
+      - name: Build provenance
+        id: prov
+        env:
+          REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          {
+            echo "number=$(git rev-list --count HEAD)"
+            echo "sha=$(git rev-parse --short HEAD)"
+            echo "branch=${REF_NAME}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
@@ -164,6 +229,11 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            BUILD_ENV=production
+            BUILD_NUMBER=${{ steps.prov.outputs.number }}
+            BUILD_SHA=${{ steps.prov.outputs.sha }}
+            BUILD_BRANCH=${{ steps.prov.outputs.branch }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

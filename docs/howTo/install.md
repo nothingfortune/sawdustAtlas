@@ -49,6 +49,9 @@ Copy the line below exactly, paste it into the window from Step 2, and press **E
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 
+> [!NOTE]
+> This is **one single command**, even if it wraps onto two or three lines on your screen — select and copy the whole thing. After you paste it, if your cursor does not come back on its own, press **Enter** once.
+
 The first time, Docker downloads SawdustAtlas. This can take a few minutes depending on your internet — that is normal. When it finishes and you get your cursor back, SawdustAtlas is running.
 
 > [!IMPORTANT]
@@ -95,11 +98,23 @@ docker start sawdust-atlas
 
 ## Update to the newest version
 
-When a new version of SawdustAtlas is published, update with these three lines, one after another:
+When a new version is published, run these three commands **one at a time**. Paste one, press **Enter**, wait until your cursor comes back, then do the next. Doing them one at a time makes it obvious if a step needs a moment — do not paste all three at once.
+
+**1. Download the newest version:**
 
 ```text
 docker pull headlock0253/sawdust-atlas:latest
+```
+
+**2. Remove the old copy** (your projects are safe — they live in your browser, not in this package):
+
+```text
 docker rm -f sawdust-atlas
+```
+
+**3. Start the newest version:**
+
+```text
 docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
 ```
 

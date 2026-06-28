@@ -9,6 +9,10 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+.playwright-cli/
 .claude/settings.local.json
 .claude/*
 .agents/
+.superpowers/
+.worktrees/
+claude.md

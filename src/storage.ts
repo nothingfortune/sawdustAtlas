@@ -1,14 +1,14 @@
 import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositeCut, CompositePanel, CompositeRow, EndGrainSettings, PricingSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { DEFAULT_PRICING, defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
-import { averageStripWidth } from './domain/boardGeometry'
+import { LATEST_SCHEMA_VERSION, migrate } from './domain/migrations'
 import { normalizeShopItem } from './domain/shopObjects'
 import { createId } from './id'
 
 const KEY = 'sawdust-atlas:v1'
-// v2: rowOffsets store a fraction of one cell (resolved to mm at render) rather than
-// an absolute mm value, so running bonds keep tracking after strip widths are edited.
-export const CURRENT_SCHEMA_VERSION = 2
+// Schema history and named migration steps live in domain/migrations.ts. v2 stores
+// running-bond offsets as cell fractions (resolved to mm at render).
+export const CURRENT_SCHEMA_VERSION = LATEST_SCHEMA_VERSION
 
 export function loadData(): AtlasData {
   try {
@@ -21,7 +21,9 @@ export function loadData(): AtlasData {
   }
 }
 
-export function normalizeData(data: Partial<AtlasData>): AtlasData {
+export function normalizeData(input: Partial<AtlasData>): AtlasData {
+  // Upgrade the raw shape through the named migration steps first, then coerce.
+  const data = migrate(input as Record<string, unknown>).data as Partial<AtlasData>
   const shops = records(data.shops)
   const boards = records(data.boards)
   const savedWoods = records(data.woods).length > 0 ? records(data.woods) : defaultSpecies
@@ -34,9 +36,6 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
-  // Pre-v2 saves stored running-bond offsets in absolute mm; v2 stores them as a
-  // fraction of one cell (the average strip width) so they track edited widths.
-  const incomingVersion = typeof data.schemaVersion === 'number' ? data.schemaVersion : 1
   // Migrating Phase-1 composites can spawn new boards (their inline strips become
   // real boards); collect them in a sink and append to the boards list.
   const migratedBoards: BoardProject[] = []
@@ -48,11 +47,6 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
       trailingAngle: signedFinite(strip['trailingAngle'], 0),
     }))
     const endGrain = normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38))
-    if (incomingVersion < 2 && endGrain.rowOffsets?.length) {
-      const cell = averageStripWidth(strips)
-      // No strips means no cell to scale against; leave the values as-is.
-      if (cell > 0) endGrain.rowOffsets = endGrain.rowOffsets.map(mm => mm / cell)
-    }
     return {
       id: stringValue(board['id'], createId()),
       name: stringValue(board['name'], 'Imported cutting board'),
@@ -76,6 +70,82 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
     boards: [...normalizedBoards, ...migratedBoards],
+  }
+}
+
+export interface ImportCounts { shops: number; boards: number; composites: number; woods: number }
+export interface ImportResult {
+  ok: boolean
+  data: AtlasData | null
+  counts: ImportCounts
+  warnings: string[]
+  errors: string[]
+}
+
+const NO_COUNTS: ImportCounts = { shops: 0, boards: 0, composites: 0, woods: 0 }
+const TOP_LEVEL_KEYS = new Set(['schemaVersion', 'shops', 'boards', 'woods', 'allowances', 'pricing', 'composites'])
+const BOARD_KEYS = new Set(['id', 'name', 'length', 'thickness', 'construction', 'endGrain', 'allowances', 'strips', 'updatedAt'])
+const SHOP_KEYS = new Set(['id', 'name', 'width', 'depth', 'gridSize', 'blockedZones', 'items', 'updatedAt'])
+const WOOD_KEYS = new Set(['id', 'name', 'color', 'accent', 'pricePerBoardFoot'])
+
+// Single entry point for importing a backup: validate, migrate, normalize, and
+// report. Surfaces project counts and anything it could not carry over (unrecognized
+// fields, unknown wood references, newer-than-app backups) so nothing is dropped
+// silently (PLAT-004). normalizeData stays the load path; importData wraps it for UI.
+export function importData(parsed: unknown): ImportResult {
+  if (!isRecord(parsed)) {
+    return { ok: false, data: null, counts: NO_COUNTS, warnings: [], errors: ['This file is not a SawdustAtlas backup.'] }
+  }
+  const errors: string[] = []
+  if (!Array.isArray(parsed['shops'])) errors.push('Backup is missing its "shops" list.')
+  if (!Array.isArray(parsed['boards'])) errors.push('Backup is missing its "boards" list.')
+  if (errors.length) return { ok: false, data: null, counts: NO_COUNTS, warnings: [], errors }
+
+  const migrated = migrate(parsed)
+  const data = normalizeData(parsed as Partial<AtlasData>)
+  const counts: ImportCounts = { shops: data.shops.length, boards: data.boards.length, composites: data.composites.length, woods: data.woods.length }
+  return { ok: true, data, counts, warnings: collectImportWarnings(parsed, migrated.tooNew, migrated.fromVersion), errors: [] }
+}
+
+function collectImportWarnings(raw: Record<string, unknown>, tooNew: boolean, fromVersion: number): string[] {
+  const warnings: string[] = []
+  if (tooNew) warnings.push(`This backup is from a newer version (schema v${fromVersion}); fields this app doesn't understand were ignored.`)
+
+  const unknownTop = Object.keys(raw).filter(key => !TOP_LEVEL_KEYS.has(key))
+  if (unknownTop.length) warnings.push(`Ignored unrecognized top-level field(s): ${unknownTop.join(', ')}.`)
+
+  const unknownFields = new Set<string>()
+  collectUnknownKeys(raw['boards'], BOARD_KEYS, 'board', unknownFields)
+  collectUnknownKeys(raw['shops'], SHOP_KEYS, 'shop', unknownFields)
+  collectUnknownKeys(raw['woods'], WOOD_KEYS, 'wood', unknownFields)
+  if (unknownFields.size) {
+    const shown = [...unknownFields].slice(0, 8).join(', ')
+    warnings.push(`Ignored ${unknownFields.size} unrecognized field(s): ${shown}${unknownFields.size > 8 ? ', …' : ''}.`)
+  }
+
+  // A strip referencing a wood id absent from the effective library gets a placeholder
+  // species (so colors/prices stay visible); surface it so it can be corrected. Mirror
+  // normalizeData's source: saved woods if present, else the default library.
+  const savedWoodIds = new Set(
+    records(raw['woods']).length > 0
+      ? records(raw['woods']).map(wood => String(wood['id'] ?? ''))
+      : defaultSpecies.map(wood => wood.id),
+  )
+  const missing = new Set(
+    records(raw['boards'])
+      .flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? '')))
+      .filter(id => id && !savedWoodIds.has(id)),
+  )
+  if (missing.size) warnings.push(`${missing.size} strip wood reference(s) were unknown; placeholder species were added: ${[...missing].slice(0, 6).join(', ')}.`)
+
+  return warnings
+}
+
+function collectUnknownKeys(list: unknown, allowed: Set<string>, label: string, sink: Set<string>): void {
+  if (!Array.isArray(list)) return
+  for (const record of list) {
+    if (!isRecord(record)) continue
+    for (const key of Object.keys(record)) if (!allowed.has(key)) sink.add(`${label}.${key}`)
   }
 }
 

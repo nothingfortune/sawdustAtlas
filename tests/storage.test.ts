@@ -1,6 +1,55 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearPreImportSnapshot, loadData, loadPreImportSnapshot, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
+import { clearPreImportSnapshot, importData, loadData, loadPreImportSnapshot, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
 import type { AtlasData } from '../src/types'
+
+describe('importData (PLAT-004)', () => {
+  it('rejects a non-object file with a clear error', () => {
+    const result = importData('just a string')
+    expect(result.ok).toBe(false)
+    expect(result.data).toBeNull()
+    expect(result.errors[0]).toMatch(/not a SawdustAtlas backup/i)
+  })
+
+  it('rejects a backup missing its shops/boards lists', () => {
+    const result = importData({ shops: [] }) // boards missing
+    expect(result.ok).toBe(false)
+    expect(result.errors.some(error => /boards/.test(error))).toBe(true)
+  })
+
+  it('reports project counts on a valid import', () => {
+    const result = importData({ schemaVersion: 2, shops: [{ id: 's' }], boards: [{ id: 'b' }, { id: 'b2' }], composites: [] })
+    expect(result.ok).toBe(true)
+    expect(result.counts).toMatchObject({ shops: 1, boards: 2, composites: 0 })
+    expect(result.data?.schemaVersion).toBe(2)
+  })
+
+  it('warns about unrecognized top-level and record fields instead of dropping them silently', () => {
+    const result = importData({ schemaVersion: 2, shops: [], boards: [{ id: 'b', notes: 'hi', favorite: true }], extras: {} })
+    expect(result.warnings.some(w => /top-level field/.test(w) && /extras/.test(w))).toBe(true)
+    expect(result.warnings.some(w => /unrecognized field/.test(w) && /board\.notes/.test(w))).toBe(true)
+  })
+
+  it('warns when a strip references an unknown wood (but not for default species)', () => {
+    const unknown = importData({ schemaVersion: 2, shops: [], boards: [{ id: 'b', strips: [{ id: 'x', speciesId: 'mystery-wood', width: 40 }] }] })
+    expect(unknown.warnings.some(w => /unknown/.test(w) && /mystery-wood/.test(w))).toBe(true)
+    const known = importData({ schemaVersion: 2, shops: [], boards: [{ id: 'b', strips: [{ id: 'x', speciesId: 'walnut', width: 40 }] }] })
+    expect(known.warnings.some(w => /unknown/.test(w))).toBe(false) // walnut is a default species
+  })
+
+  it('imports a newer-than-app backup but warns it may lose data', () => {
+    const result = importData({ schemaVersion: 999, shops: [], boards: [] })
+    expect(result.ok).toBe(true)
+    expect(result.warnings.some(w => /newer version/.test(w))).toBe(true)
+  })
+
+  it('runs migrations through the import path (v1 offsets -> fractions)', () => {
+    const result = importData({
+      schemaVersion: 1, shops: [],
+      boards: [{ id: 'b', construction: 'end', strips: [{ id: 'a', speciesId: 'walnut', width: 40 }, { id: 'c', speciesId: 'maple', width: 40 }], endGrain: { stockThickness: 38, rowOffsets: [0, 20] } }],
+    })
+    expect(result.data?.boards[0]?.endGrain.rowOffsets).toEqual([0, 0.5])
+  })
+})
 
 // A deterministic in-memory localStorage so the persistence tests don't depend on
 // a DOM environment. setItem can be overridden per-test to simulate quota errors.

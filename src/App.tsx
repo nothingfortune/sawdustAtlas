@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
-import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
+import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot } from './storage'
+import type { ImportResult } from './storage'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
@@ -34,6 +35,8 @@ export default function App() {
   const [lengthUnit, setLengthUnit] = useState<LengthUnit>('metric')
   // Workspace captured before the last import, recoverable across reloads.
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
+  // Result of the most recent import, shown in a confirmation/error dialog.
+  const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
   const dataRef = useRef(data)
 
@@ -189,18 +192,25 @@ export default function App() {
   async function importFile(file?: File) {
     if (!file) return
     if (!window.confirm('Import this backup and replace the projects currently saved in this browser? Export a backup first if you may need the current work.')) return
+    let parsed: unknown
     try {
-      const next = JSON.parse(await file.text()) as AtlasData
-      if (!Array.isArray(next.shops) || !Array.isArray(next.boards)) throw new Error()
-      const normalized = normalizeData(next)
+      parsed = JSON.parse(await file.text())
+    } catch {
+      setImportResult({ ok: false, data: null, counts: { shops: 0, boards: 0, composites: 0, woods: 0 }, warnings: [], errors: ['That file is not valid JSON.'] })
+      return
+    }
+    const result = importData(parsed)
+    if (result.ok && result.data) {
       const previous = dataRef.current
       savePreImportSnapshot(previous)
       setPreImport(previous)
-      commitData(() => normalized)
-      setActiveShop(normalized.shops[0]?.id ?? '')
-      setActiveBoard(normalized.boards[0]?.id ?? '')
+      commitData(() => result.data!)
+      setActiveShop(result.data.shops[0]?.id ?? '')
+      setActiveBoard(result.data.boards[0]?.id ?? '')
       setView('home')
-    } catch { window.alert('That file is not a valid SawdustAtlas backup.') }
+    }
+    // Show the summary (counts + warnings) on success, or the errors on failure.
+    setImportResult(result)
   }
   const restorePreImport = () => {
     if (!preImport) return
@@ -292,9 +302,30 @@ export default function App() {
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+    {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
     <BuildBadge />
     </div>
   </UnitSystemProvider>
+}
+
+// Post-import confirmation: on success, counts + anything not carried over + a prompt
+// to back up the new workspace (the prior one is recoverable via Undo import). On
+// failure, the validation errors. Replaces the old window.alert.
+function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: ImportResult; onExportBackup: () => void; onClose: () => void }) {
+  const { ok, counts, warnings, errors } = result
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div className="import-dialog" role="dialog" aria-modal="true" aria-label={ok ? 'Import summary' : 'Import failed'}>
+      <header><strong>{ok ? 'Backup imported' : "Couldn't import that file"}</strong></header>
+      {ok
+        ? <p className="import-counts">Imported <b>{counts.shops}</b> shop{counts.shops === 1 ? '' : 's'}, <b>{counts.boards}</b> board{counts.boards === 1 ? '' : 's'}, and <b>{counts.composites}</b> composite{counts.composites === 1 ? '' : 's'}. This replaced your previous workspace — use <b>Undo import</b> in the sidebar to get it back.</p>
+        : <ul className="import-errors">{errors.map(error => <li key={error}>{error}</li>)}</ul>}
+      {ok && warnings.length > 0 && <div className="import-warnings"><span className="eyebrow">HEADS UP</span><ul>{warnings.map(warning => <li key={warning}>{warning}</li>)}</ul></div>}
+      <footer>
+        {ok && <button className="button" onClick={onExportBackup}><Upload size={15} />Export a backup now</button>}
+        <button className="button secondary" onClick={onClose}>{ok ? 'Done' : 'Close'}</button>
+      </footer>
+    </div>
+  </div>
 }
 
 function NavButton({ active, icon, label, open, onClick }: { active: boolean, icon: ReactNode, label: string, open: boolean, onClick: () => void }) {

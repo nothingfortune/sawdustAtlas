@@ -11,6 +11,16 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+
+# Build provenance for the in-app badge: .dockerignore strips .git, so the build
+# can't read git here. Default the env label to "production"; CI can pass exact
+# commit info with --build-arg BUILD_NUMBER=… BUILD_SHA=… BUILD_BRANCH=…
+ARG BUILD_ENV=production
+ARG BUILD_NUMBER
+ARG BUILD_SHA
+ARG BUILD_BRANCH
+ENV BUILD_ENV=$BUILD_ENV BUILD_NUMBER=$BUILD_NUMBER BUILD_SHA=$BUILD_SHA BUILD_BRANCH=$BUILD_BRANCH
+
 RUN pnpm build
 
 FROM nginx:1.27-alpine

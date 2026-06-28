@@ -7,7 +7,7 @@ import { useUnitSystem } from '../unitSystem'
 export function ScaleBar({ pxPerMm }: { pxPerMm: number }) {
   const { lengthUnit } = useUnitSystem()
   if (!(pxPerMm > 0)) return null
-  const { mm } = scaleBarValue(pxPerMm)
+  const { mm } = scaleBarValue(pxPerMm, 120, lengthUnit)
   if (!(mm > 0)) return null
   const k = 1 / pxPerMm
   const cap = 3 * k

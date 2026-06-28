@@ -26,7 +26,7 @@ import { createId } from '../id'
 import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
-import { convertMetricText, formatDimensions, formatLength, formatNumber } from '../domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 import { calculatePrice, classifyBoard } from '../domain/pricing'
 import { PriceBreakdownCard } from './board/PriceBreakdownCard'
@@ -97,7 +97,9 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
   const governingLength = project.construction === 'end'
     ? Math.max(project.endGrain.sourceLength, end.finalLength, 1)
     : Math.max(project.length, 1)
-  const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56))
+  // In imperial (Preston's button) snap the fit so ½" lands on whole pixels, unless
+  // the user is driving the zoom directly (the studio pop-out's pinch path).
+  const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56), lengthUnit === 'imperial' ? { snapUnitMm: MM_PER_INCH / 2 } : {})
 
   const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
   const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
@@ -322,6 +324,7 @@ function PreviewPopout({ tabs, activeId, woods, onSelect, onClose }: { tabs: Stu
 
 function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDismiss }: { pattern: (typeof BOARD_PATTERNS)[number] | undefined; current: BoardProject; preview: BoardProject; woods: WoodSpecies[]; onApply: () => void; onDismiss: () => void }) {
   const dialogRef = useModalDialog<HTMLDivElement>(onDismiss)
+  const { lengthUnit } = useUnitSystem()
   if (!pattern) return null
   const currentMetrics = calculateEndGrainMetrics(current)
   const previewMetrics = calculateEndGrainMetrics(preview)
@@ -329,7 +332,7 @@ function PatternPreviewDialog({ pattern, current, preview, woods, onApply, onDis
   const previewTemplate = buildEndGrainTemplate(preview)
   const lengthMm = Math.max(currentMetrics.finalLength, previewMetrics.finalLength, 1)
   const widthMm = Math.max(currentMetrics.panelWidth, previewMetrics.panelWidth, 1)
-  const { pxPerMm } = resolveScale(lengthMm, 420)
+  const { pxPerMm } = resolveScale(lengthMm, 420, lengthUnit === 'imperial' ? { snapUnitMm: MM_PER_INCH / 2 } : {})
   return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onDismiss() }}>
     <div ref={dialogRef} tabIndex={-1} className="pattern-dialog" role="dialog" aria-modal="true" aria-label={`Preview ${pattern.name} pattern`}>
       <header>

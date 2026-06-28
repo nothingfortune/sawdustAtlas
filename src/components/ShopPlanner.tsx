@@ -228,6 +228,12 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     </div>
     <div className={`tool-panel left-panel${leftOpen ? ' open' : ''}`}>
       <button className="drawer-close" onClick={() => setLeftOpen(false)} aria-label="Close objects panel"><X/></button>
+      <div className="panel-section">
+        <h3>Room size</h3>
+        <div className="field-row"><Field label="Width (mm)" value={project.width} min={1000} onChange={width => resizeRoom({ width })}/><Field label="Depth (mm)" value={project.depth} min={1000} onChange={depth => resizeRoom({ depth })}/></div>
+        <Field label="Grid spacing (mm)" value={project.gridSize} min={100} step={50} onChange={gridSize => resizeRoom({ gridSize })}/>
+        <p className="zone-help">The floor stays rectangular. Use no-go zones to carve out alcoves, utility chases, stairs, posts, and other unusable floor area.</p>
+      </div>
       <h3>Objects</h3><p>Click to add to your floor plan.</p>
       <div className="template-list">{SHOP_OBJECT_TEMPLATES.map(template => <button key={template.name} onClick={() => addItem(template)}><span style={{ background: template.color }}><ObjectIcon kind={template.kind}/></span><div><b>{template.name}</b><small>{formatDimensions([template.width, template.depth], lengthUnit)}</small></div><Plus/></button>)}</div>
       <div className="panel-section custom-object-form">
@@ -239,12 +245,6 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         <Field label="Working clearance (mm)" value={customObject.clearance} onChange={clearance => setCustomObject(current => ({ ...current, clearance }))}/>
         <ColorField value={customObject.color} onChange={color => setCustomObject(current => ({ ...current, color }))}/>
         <button className="button full" onClick={() => addItem(customObject)}><Plus/>Add custom object</button>
-      </div>
-      <div className="panel-section">
-        <h3>Room size</h3>
-        <div className="field-row"><Field label="Width (mm)" value={project.width} min={1000} onChange={width => resizeRoom({ width })}/><Field label="Depth (mm)" value={project.depth} min={1000} onChange={depth => resizeRoom({ depth })}/></div>
-        <Field label="Grid spacing (mm)" value={project.gridSize} min={100} step={50} onChange={gridSize => resizeRoom({ gridSize })}/>
-        <p className="zone-help">The floor stays rectangular. Use no-go zones to carve out alcoves, utility chases, stairs, posts, and other unusable floor area.</p>
       </div>
       <div className="panel-section">
         <div className="panel-title-row"><div><h3>Floor shape</h3><p>Draw rectangular out-of-bounds areas directly on the floor.</p></div><button className={`selection-chip ${drawMode ? 'active' : ''}`} onClick={() => { setDrawMode(active => !active); setSelected('') }}>{drawMode ? 'Drawing' : 'Draw'}</button></div>

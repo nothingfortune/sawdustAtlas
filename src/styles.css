@@ -17,7 +17,7 @@ button { cursor: pointer; }
 .sidebar.collapsed .brand { justify-content: center; padding-left: 0; padding-right: 0; }
 .sidebar.collapsed .nav-button { justify-content: center; padding-left: 0; padding-right: 0; }
 .sidebar.collapsed .nav-label { text-align: center; margin-left: 0; margin-right: 0; }
-.brand { display: flex; gap: 11px; align-items: center; padding: 0 5px 29px; }
+.brand { display: flex; gap: 11px; align-items: center; padding: 0 5px 29px; background: none; border: 0; cursor: pointer; color: inherit; font: inherit; text-align: left; }
 .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #819083; transform: rotate(-8deg); flex: none; }
 /* The label block — scoped to the div *after* the brand mark so that when the sidebar
    collapses (label removed), this rule can't land on the now-lone brand mark and flip it

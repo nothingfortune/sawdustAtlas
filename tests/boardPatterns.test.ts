@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, evenStripCount, gradientStrips, pickSpeciesPair } from '../src/domain/boardPatterns'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, evenStripCount, gradientStrips, pickSpeciesPair, shuffleStripsAvoidingAdjacent } from '../src/domain/boardPatterns'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: WoodSpecies[] = [
@@ -99,6 +99,29 @@ describe('strip arrangement reorderings', () => {
   it('gradient does not mutate its input', () => {
     const strips = [strip('1', 'a', 30), strip('2', 'a', 10)]
     gradientStrips(strips)
+    expect(strips.map(s => s.id)).toEqual(['1', '2'])
+  })
+
+  const adjacentDupes = (strips: BoardStrip[]) =>
+    strips.filter((s, i) => i > 0 && s.speciesId === strips[i - 1]!.speciesId).length
+
+  it('randomize never seats two of the same species side by side when separable', () => {
+    const strips = [strip('1', 'a', 10), strip('2', 'a', 20), strip('3', 'b', 30), strip('4', 'b', 40)]
+    const result = shuffleStripsAvoidingAdjacent(strips, () => 0)
+    expect(adjacentDupes(result)).toBe(0)
+    expect(new Set(result)).toEqual(new Set(strips)) // same strip objects, only reordered
+  })
+
+  it('randomize keeps every strip even when a species is too dominant to fully separate', () => {
+    const strips = [strip('1', 'a', 10), strip('2', 'a', 20), strip('3', 'a', 30), strip('4', 'b', 40)]
+    const result = shuffleStripsAvoidingAdjacent(strips, () => 0.5)
+    expect(result).toHaveLength(4)
+    expect(new Set(result.map(s => s.id))).toEqual(new Set(['1', '2', '3', '4']))
+  })
+
+  it('randomize does not mutate its input', () => {
+    const strips = [strip('1', 'a', 30), strip('2', 'b', 10)]
+    shuffleStripsAvoidingAdjacent(strips, () => 0)
     expect(strips.map(s => s.id)).toEqual(['1', '2'])
   })
 })

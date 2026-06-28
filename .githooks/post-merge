@@ -1,0 +1,26 @@
+#!/bin/sh
+# Committed dev hook (wired by `pnpm install` via the package.json "prepare" script,
+# which points core.hooksPath here). After a merge/pull that lands on `develop`,
+# rebuild and (re)start the local preview container so http://localhost:8080 tracks
+# develop, with the in-app build badge stamped from git (see scripts/container.sh).
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+[ "$branch" = "develop" ] || exit 0
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$root" || exit 0
+
+# Need the Docker daemon; if it's not up, hint and get out of the way (never block
+# or fail the merge/pull).
+if ! docker info >/dev/null 2>&1; then
+  echo "[post-merge] develop updated, but Docker isn't running. Start Docker, then: pnpm container  (then open http://localhost:8080)" >&2
+  exit 0
+fi
+
+log="$root/.git/sawdust-container-build.log"
+echo "[post-merge] develop updated -> rebuilding container (badge stamped from git) in the background." >&2
+echo "[post-merge]   log:  $log" >&2
+echo "[post-merge]   app:  http://localhost:8080  (ready once the build finishes)" >&2
+# Detach: a docker build can take minutes; the merge/pull must return immediately.
+nohup sh "$root/scripts/container.sh" >"$log" 2>&1 &
+exit 0

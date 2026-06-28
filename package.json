@@ -9,6 +9,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "dev": "vite",
     "dev:lan": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",

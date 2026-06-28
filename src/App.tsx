@@ -4,6 +4,7 @@ import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, 
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded } from './storage'
 import type { ImportResult } from './storage'
+import { useModalDialog } from './components/useModalDialog'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -330,8 +331,9 @@ export default function App() {
 // failure, the validation errors. Replaces the old window.alert.
 function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: ImportResult; onExportBackup: () => void; onClose: () => void }) {
   const { ok, counts, warnings, errors } = result
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
   return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
-    <div className="import-dialog" role="dialog" aria-modal="true" aria-label={ok ? 'Import summary' : 'Import failed'}>
+    <div ref={dialogRef} tabIndex={-1} className="import-dialog" role="dialog" aria-modal="true" aria-label={ok ? 'Import summary' : 'Import failed'}>
       <header><strong>{ok ? 'Backup imported' : "Couldn't import that file"}</strong></header>
       {ok
         ? <p className="import-counts">Imported <b>{counts.shops}</b> shop{counts.shops === 1 ? '' : 's'}, <b>{counts.boards}</b> board{counts.boards === 1 ? '' : 's'}, and <b>{counts.composites}</b> composite{counts.composites === 1 ? '' : 's'}. This replaced your previous workspace — use <b>Undo import</b> in the sidebar to get it back.</p>
@@ -349,8 +351,9 @@ function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: Impo
 // browser-local, how backups work, units, and that kerf/allowances drive accuracy.
 // Shown once (gated by the onboarding flag); reopenable from Home.
 function WelcomeDialog({ onExportBackup, onClose }: { onExportBackup: () => void, onClose: () => void }) {
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
   return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
-    <div className="welcome-dialog" role="dialog" aria-modal="true" aria-label="Welcome to SawdustAtlas">
+    <div ref={dialogRef} tabIndex={-1} className="welcome-dialog" role="dialog" aria-modal="true" aria-label="Welcome to SawdustAtlas">
       <header><span className="eyebrow">WELCOME</span><strong>A few things to know</strong></header>
       <ul className="welcome-points">
         <li><b>Your data lives in this browser, on this device.</b> There's no cloud or account — clearing the browser or switching devices won't carry it over on its own.</li>
@@ -377,16 +380,23 @@ function WarningCenter({ warnings, onNavigate }: { warnings: WorkspaceWarning[],
     <button className={`warning-pill ${worst}`} onClick={() => setOpen(value => !value)} aria-expanded={open} aria-label={`${warnings.length} workspace issue${warnings.length === 1 ? '' : 's'} to review`}>
       <TriangleAlert size={15} />{warnings.length}
     </button>
-    {open && <>
-      <div className="warning-scrim" role="presentation" onClick={() => setOpen(false)} />
-      <div className="warning-menu" role="menu" aria-label="Workspace issues">
-        <div className="warning-menu-head">{warnings.length} issue{warnings.length === 1 ? '' : 's'} to review</div>
-        {warnings.map(warning => <button key={warning.id} role="menuitem" className={`warning-row ${warning.severity}`} disabled={!warning.location} onClick={() => { onNavigate(warning.location); setOpen(false) }}>
-          <TriangleAlert size={13} /><span>{warning.message}</span>
-        </button>)}
-      </div>
-    </>}
+    {open && <WarningMenu warnings={warnings} onNavigate={onNavigate} onClose={() => setOpen(false)} />}
   </div>
+}
+
+// The open dropdown, split out so useModalDialog runs on mount: focuses the menu,
+// closes on Escape, and restores focus to the pill when it closes.
+function WarningMenu({ warnings, onNavigate, onClose }: { warnings: WorkspaceWarning[], onNavigate: (location?: WarningLocation) => void, onClose: () => void }) {
+  const menuRef = useModalDialog<HTMLDivElement>(onClose)
+  return <>
+    <div className="warning-scrim" role="presentation" onClick={onClose} />
+    <div ref={menuRef} tabIndex={-1} className="warning-menu" role="menu" aria-label="Workspace issues">
+      <div className="warning-menu-head">{warnings.length} issue{warnings.length === 1 ? '' : 's'} to review</div>
+      {warnings.map(warning => <button key={warning.id} role="menuitem" className={`warning-row ${warning.severity}`} disabled={!warning.location} onClick={() => { onNavigate(warning.location); onClose() }}>
+        <TriangleAlert size={13} /><span>{warning.message}</span>
+      </button>)}
+    </div>
+  </>
 }
 
 function NavButton({ active, icon, label, open, onClick }: { active: boolean, icon: ReactNode, label: string, open: boolean, onClick: () => void }) {

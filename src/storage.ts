@@ -1,11 +1,14 @@
 import type { AssemblyCell, AtlasData, BoardProject, BuildAllowances, CompositeBoard, CompositeCut, CompositePanel, CompositeRow, EndGrainSettings, PricingSettings, ShopBlockedZone, ShopItem, ShopProject, WoodSpecies } from './types'
 import { DEFAULT_PRICING, defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
+import { averageStripWidth } from './domain/boardGeometry'
 import { normalizeShopItem } from './domain/shopObjects'
 import { createId } from './id'
 
 const KEY = 'sawdust-atlas:v1'
-export const CURRENT_SCHEMA_VERSION = 1
+// v2: rowOffsets store a fraction of one cell (resolved to mm at render) rather than
+// an absolute mm value, so running bonds keep tracking after strip widths are edited.
+export const CURRENT_SCHEMA_VERSION = 2
 
 export function loadData(): AtlasData {
   try {
@@ -31,25 +34,37 @@ export function normalizeData(data: Partial<AtlasData>): AtlasData {
   // legacy board's per-board allowances (migrating drumSanding), then apply that
   // one setup to every board so the domain (which reads board.allowances) agrees.
   const allowances = normalizeAllowances((data.allowances ?? boards[0]?.['allowances']) as (BuildAllowances & { drumSanding?: number }) | undefined)
+  // Pre-v2 saves stored running-bond offsets in absolute mm; v2 stores them as a
+  // fraction of one cell (the average strip width) so they track edited widths.
+  const incomingVersion = typeof data.schemaVersion === 'number' ? data.schemaVersion : 1
   // Migrating Phase-1 composites can spawn new boards (their inline strips become
   // real boards); collect them in a sink and append to the boards list.
   const migratedBoards: BoardProject[] = []
-  const normalizedBoards = boards.map((board): BoardProject => ({
-    id: stringValue(board['id'], createId()),
-    name: stringValue(board['name'], 'Imported cutting board'),
-    length: finiteNumber(board['length'], 450),
-    thickness: finiteNumber(board['thickness'], 38),
-    updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
-    construction: board['construction'] === 'end' ? 'end' : 'edge',
-    allowances,
-    strips: records(board['strips']).map(strip => ({
+  const normalizedBoards = boards.map((board): BoardProject => {
+    const strips = records(board['strips']).map(strip => ({
       id: stringValue(strip['id'], createId()),
       speciesId: stringValue(strip['speciesId'], normalizedWoods[0]?.id ?? 'walnut'),
       width: finiteNumber(strip['width'], 38),
       trailingAngle: signedFinite(strip['trailingAngle'], 0),
-    })),
-    endGrain: normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38)),
-  }))
+    }))
+    const endGrain = normalizeEndGrain(board['endGrain'], finiteNumber(board['thickness'], 38))
+    if (incomingVersion < 2 && endGrain.rowOffsets?.length) {
+      const cell = averageStripWidth(strips)
+      // No strips means no cell to scale against; leave the values as-is.
+      if (cell > 0) endGrain.rowOffsets = endGrain.rowOffsets.map(mm => mm / cell)
+    }
+    return {
+      id: stringValue(board['id'], createId()),
+      name: stringValue(board['name'], 'Imported cutting board'),
+      length: finiteNumber(board['length'], 450),
+      thickness: finiteNumber(board['thickness'], 38),
+      updatedAt: stringValue(board['updatedAt'], new Date().toISOString()),
+      construction: board['construction'] === 'end' ? 'end' : 'edge',
+      allowances,
+      strips,
+      endGrain,
+    }
+  })
   // Composites reference boards (to infer construction) and can spawn migrated
   // boards, so normalize them after the boards list exists.
   const composites = records(data.composites).map(c => normalizeComposite(c, migratedBoards, allowances, normalizedBoards))

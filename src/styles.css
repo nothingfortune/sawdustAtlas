@@ -33,6 +33,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .construction-toggle { display:grid;grid-template-columns:1fr 1fr;margin:10px 0 4px; }.construction-toggle button { border:1px solid var(--line);background:white;padding:9px;font-size:11px; }.construction-toggle button.active { background:var(--green);color:white;border-color:var(--green); }
 
 .geometry-errors { max-width:820px;margin:18px auto 0;padding:11px 13px;border:1px solid #b94f43;background:#f4dfda;color:#7a302b;display:flex;flex-direction:column;gap:3px;font-size:10px; }.geometry-errors strong { font-size:11px; }
+.geometry-warnings { max-width:820px;margin:12px auto 0;padding:11px 13px;border:1px solid #d3ad8d;background:#f4e9da;color:#7a5a32;display:flex;flex-direction:column;gap:3px;font-size:10px; }.geometry-warnings strong { font-size:11px; }
 .step-heading { display:flex;gap:12px;align-items:center;margin-bottom:14px; }.step-heading > span { width:27px;height:27px;border-radius:50%;background:var(--green);color:white;display:grid;place-items:center;font:11px 'DM Mono'; }.step-heading h3 { margin:0 0 2px;font-size:13px; }.step-heading p { margin:0;color:#7a8079;font-size:10px; }.waste-card { margin-top:18px;padding:12px;background:#eee1d3;color:#7b4d31;display:flex;gap:10px;align-items:center; }.waste-card div { display:flex;flex-direction:column; }.waste-card span { font-size:11px;font-weight:700; }.waste-card b { font-size:9px;font-weight:500;margin-top:2px; }.wood-usage { margin-top:14px;border:1px solid var(--line);background:white;padding:11px; }.wood-usage > div { display:grid;grid-template-columns:13px 1fr auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #ece9e1; }.wood-usage > div:last-child { border:0; }.wood-usage i { width:12px;height:25px; }.wood-usage span:not(.eyebrow) { font-size:9px;display:flex;flex-direction:column; }.wood-usage small { color:#93978f;margin-top:2px; }.wood-usage b { font:8px 'DM Mono';color:#9a6242; }.row-tools > p { margin:0 0 9px;color:#858a83;font-size:10px; }.row-tools > div { display:grid;grid-template-columns:1fr 1fr;gap:5px; }.row-tools button { border:1px solid var(--line);background:white;padding:7px 4px;font-size:9px; }.strip-row { grid-template-columns:17px 18px minmax(65px,1fr) 48px 20px 48px 12px 25px; }
 
 .build-summary { max-width:780px;margin:18px auto 0;border:1px solid #c4c4bd;background:#f3f1ea; }.build-summary-head { display:grid;grid-template-columns:1fr auto auto;gap:18px;padding:9px 16px;border-bottom:1px solid #d6d5cd; }.build-summary-head span { text-align:right; }.build-summary-head span:first-child { text-align:left;color:#9a6242; }.build-summary-row { display:grid;grid-template-columns:1fr auto auto;gap:18px;align-items:baseline;padding:8px 16px;border-bottom:1px solid #e4e2da; }.build-summary-row:last-child { border:0; }.build-summary-row > span { font-size:11px;display:flex;flex-direction:column; }.build-summary-row small { font:8px 'DM Mono';color:#969a91;margin-top:3px;text-transform:uppercase;letter-spacing:.06em; }.build-summary-row b { font:11px 'DM Mono';text-align:right;min-width:64px; }.build-summary-row b.finished { color:#5d6b60; }.build-summary-row.total { background:#ece9e1; }.build-summary-row.total b { color:#9a6242; }
@@ -444,11 +445,17 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .popout-body .pinch-content { width:100%; height:100%; }
 .preview-popout .studio-note { padding:10px 2px 0; }
 
+/* Build provenance badge: a small monochrome chip pinned to the bottom-right
+   corner so previews and test builds are identifiable at a glance. pointer-events
+   are off so it never intercepts clicks on the app beneath it. Hidden when
+   printing (see @media print). */
+.build-badge { position:fixed; right:10px; bottom:9px; z-index:20; pointer-events:none; font:9px 'DM Mono'; letter-spacing:.04em; color:#5d6b60; background:#f7f5efe6; border:1px solid var(--line); border-radius:3px; padding:4px 8px; opacity:.7; backdrop-filter:blur(4px); user-select:none; }
+
 @media print {
   @page { margin:14mm; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body { min-width:0;background:#fff; }
-  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio { display:none !important; }
+  .sidebar, .topbar, .designer-toolbar, .board-panel, .panel-fab, .panel-scrim, .drawer-close, .zoom-reset, .board-intro, .preview-studio, .build-badge { display:none !important; }
   main { margin:0 !important;width:100% !important; }
   .workspace { min-height:0; }
   .board-layout { height:auto;display:block;overflow:visible; }

@@ -1,8 +1,11 @@
-import type { BoardProject, WoodSpecies } from '../types'
+import type { BoardProject, BoardStrip, WoodSpecies } from '../types'
 import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
 export { CUBIC_MM_PER_BOARD_FOOT } from './units'
 const EPSILON = 1e-9
+// Below this ratio between a strip's two faces, the angled face is a near-pointed
+// sliver — geometrically valid but a poor glue joint, so we warn (see buildEndGrainTemplate).
+const THIN_FACE_RATIO = 0.3
 
 export interface TemplatePolygon {
   id: string
@@ -18,6 +21,7 @@ export interface EndGrainTemplate {
   finishedWidth: number
   polygons: TemplatePolygon[]
   errors: string[]
+  warnings: string[]
 }
 
 export interface EndGrainMetrics {
@@ -40,6 +44,7 @@ export interface EndGrainMetrics {
   totalWastePercent: number
   finishedBoardFeet: number
   errors: string[]
+  warnings: string[]
 }
 
 export interface WoodUsage {
@@ -58,9 +63,25 @@ interface StripVolume {
   crosscutWaste: number
 }
 
+// Mean strip width — the running-bond "cell" that per-slice offsets are a fraction of.
+export function averageStripWidth(strips: readonly BoardStrip[]): number {
+  if (strips.length === 0) return 0
+  return strips.reduce((total, strip) => total + nonNegative(strip.width), 0) / strips.length
+}
+
+// Resolve a stored running-bond offset (a fraction of one cell) to a millimeter shift
+// wrapped into [0, height). This is where the offset tracks the current geometry: the
+// same stored fraction yields a different mm shift as the strips (cell width) change.
+export function resolveOffsetMm(offsetFraction: number, cellWidthMm: number, panelHeightMm: number): number {
+  if (!(panelHeightMm > 0)) return 0
+  const mm = offsetFraction * cellWidthMm
+  return ((mm % panelHeightMm) + panelHeightMm) % panelHeightMm
+}
+
 export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
   const thickness = nonNegative(project.endGrain.stockThickness)
   const errors: string[] = []
+  const warnings: string[] = []
   let left = 0
   let right = 0
   let min = 0
@@ -71,6 +92,11 @@ export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
     const angle = clampAngle(strip.trailingAngle)
     const rightWidth = width + thickness * Math.tan(angle * Math.PI / 180)
     if (rightWidth <= EPSILON) errors.push(`Strip ${index + 1} closes or crosses on its angled face.`)
+    else if (Math.min(width, rightWidth) < THIN_FACE_RATIO * Math.max(width, rightWidth)) {
+      // A face this much narrower than its opposite is a near-pointed sliver: makeable
+      // in theory but a poor glue surface, so flag it without failing the geometry.
+      warnings.push(`Strip ${index + 1} tapers to a ${Math.min(width, rightWidth).toFixed(1)} mm point on its angled face — widen the strip or reduce the angle.`)
+    }
     const nextLeft = left + width
     const nextRight = right + rightWidth
     const ys = [left, nextLeft, nextRight, right]
@@ -96,6 +122,7 @@ export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
       points: shape.coords.map(([x, y]) => `${x},${y - min}`).join(' '),
     })),
     errors,
+    warnings,
   }
 }
 
@@ -108,6 +135,7 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
   const trimAllowance = Math.min(sourceLength, nonNegative(settings.trimAllowance))
   const template = buildEndGrainTemplate(project)
   const errors = [...template.errors]
+  const warnings = [...template.warnings]
 
   if (sourceLength <= EPSILON) errors.push('Source length must be greater than zero.')
   if (stockThickness <= EPSILON) errors.push('Stock thickness must be greater than zero.')
@@ -165,6 +193,7 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
     totalWastePercent: sourceVolume > EPSILON ? totalWasteVolume / sourceVolume * 100 : 0,
     finishedBoardFeet: toBoardFeet(finishedVolume),
     errors,
+    warnings,
   }
 }
 

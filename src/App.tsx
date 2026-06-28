@@ -6,6 +6,7 @@ import { loadData, saveData, downloadData, normalizeData, savePreImportSnapshot,
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
+import { BuildBadge } from './components/BuildBadge'
 import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
 import { WoodLibrary } from './components/WoodLibrary'
@@ -291,6 +292,7 @@ export default function App() {
       </section>
     </main>
     <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+    <BuildBadge />
     </div>
   </UnitSystemProvider>
 }

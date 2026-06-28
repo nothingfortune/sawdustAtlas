@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
-import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
+import { applySliceOrder, clampTransforms, readSliceStates } from '../domain/boardSlices'
 import type { SliceState } from '../domain/boardSlices'
 import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
@@ -48,9 +48,11 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     if (!project) return null
     const end = calculateEndGrainMetrics(project)
     const sliceStates = readSliceStates(project.endGrain, end.sliceCount)
-    const build = calculateBuildDimensions(project)
+    // Reuse the single `end` computation through the rest of the pipeline rather than
+    // recomputing the geometry inside each of these.
+    const build = calculateBuildDimensions(project, end)
     const template = buildEndGrainTemplate(project)
-    const cutPlan = generateCuttingBoardPlan(project, woods)
+    const cutPlan = generateCuttingBoardPlan(project, woods, build, end)
     const woodUsage = calculateWoodUsage(project, woods, end)
     const woodById = new Map(woods.map(wood => [wood.id, wood]))
     const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
@@ -80,7 +82,14 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
   const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
-  const updateEnd = (patch: Partial<EndGrainSettings>) => update({ endGrain: { ...project.endGrain, ...patch } })
+  // Apply an end-grain settings patch, then clamp the per-slice transform arrays to
+  // the resulting slice count so a count that shrank (e.g. thicker slices) can't keep
+  // stale transforms that would resurrect if the count later grew back.
+  const updateEnd = (patch: Partial<EndGrainSettings>) => {
+    const nextSettings = { ...project.endGrain, ...patch }
+    const count = calculateEndGrainMetrics({ ...project, endGrain: nextSettings }).sliceCount
+    update({ endGrain: { ...nextSettings, ...clampTransforms(nextSettings, count) } })
+  }
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
   const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
@@ -137,6 +146,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
         <BuildSheetHeader project={project} build={build} boardFeet={boardFeet} estimatedCost={estimatedCost} price={price}/>
         <div className="board-intro"><span className="eyebrow">LIVE PREVIEW</span><h2>{project.name}</h2><p>{project.construction === 'end' ? 'End-grain workflow · measurements before final surfacing' : 'Edge-grain board · finished dimensions'}</p></div>
         {project.construction === 'end' && end.errors.length > 0 && <div className="geometry-errors"><strong>Geometry needs attention</strong>{end.errors.map(error => <span key={error}>{error}</span>)}</div>}
+        {project.construction === 'end' && end.warnings.length > 0 && <div className="geometry-warnings"><strong>Check the geometry</strong>{end.warnings.map(warning => <span key={warning}>{warning}</span>)}</div>}
 
         <HowItsBuilt project={project} woods={woods} metrics={end} template={template} pxPerMm={pxPerMm} edgeWidth={width}/>
 

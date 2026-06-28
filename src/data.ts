@@ -21,7 +21,7 @@ export const DEFAULT_PRICING: PricingSettings = {
 }
 
 export const starterData: AtlasData = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
   pricing: { ...DEFAULT_PRICING },

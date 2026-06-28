@@ -1,5 +1,6 @@
 import type { BoardProject, BuildAllowances } from '../types'
 import { calculateEndGrainMetrics } from './boardGeometry'
+import type { EndGrainMetrics } from './boardGeometry'
 import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
 
 // Build allowances describe how much oversized rough stock must be relative to the
@@ -61,7 +62,9 @@ export function roughStripStockWidth(project: BoardProject, stripRoughWidth: num
   return stripRoughWidth + Math.max(0, angleShift)
 }
 
-export function calculateBuildDimensions(project: BoardProject): BuildDimensions {
+// `metrics` may be supplied by a caller that already computed it (the designer
+// pipeline), avoiding a redundant recompute; it is ignored for edge-grain boards.
+export function calculateBuildDimensions(project: BoardProject, metrics?: EndGrainMetrics): BuildDimensions {
   const allowance = resolveAllowances(project)
   const surfacing = nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.routerTable)
   const rip = nonNegative(allowance.ripAllowance)
@@ -85,9 +88,9 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
   })
 
   if (project.construction === 'end') {
-    const metrics = calculateEndGrainMetrics(project)
-    const finishedLength = metrics.finalLength
-    const finishedWidth = metrics.finishedWidth
+    const endMetrics = metrics ?? calculateEndGrainMetrics(project)
+    const finishedLength = endMetrics.finalLength
+    const finishedWidth = endMetrics.finishedWidth
     const finishedThickness = nonNegative(project.endGrain.sliceThickness)
     const roughStockVolume = project.strips.reduce((volume, strip, index) => {
       const stockWidth = roughStripStockWidth(project, stripRoughWidths[index] ?? 0, strip.trailingAngle)
@@ -101,8 +104,8 @@ export function calculateBuildDimensions(project: BoardProject): BuildDimensions
       thickness: thickness(finishedThickness),
       stripRoughWidths,
       roughBoardFeet,
-      finishedBoardFeet: metrics.finishedBoardFeet,
-      removedBoardFeet: Math.max(0, roughBoardFeet - metrics.finishedBoardFeet),
+      finishedBoardFeet: endMetrics.finishedBoardFeet,
+      removedBoardFeet: Math.max(0, roughBoardFeet - endMetrics.finishedBoardFeet),
     }
   }
 

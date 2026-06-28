@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../src/domain/boardGeometry'
+import { averageStripWidth, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage, resolveOffsetMm } from '../src/domain/boardGeometry'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: readonly WoodSpecies[] = [
@@ -172,5 +172,54 @@ describe('material accounting', () => {
     const metrics = calculateEndGrainMetrics(project)
     expect(metrics.errors.some(error => /closes or crosses/.test(error))).toBe(true)
     expect(metrics.errors.some(error => /conservation/.test(error))).toBe(false)
+  })
+})
+
+describe('running-bond offset resolution (render-time tracking)', () => {
+  const w = (width: number): BoardStrip => ({ id: String(width), speciesId: 'walnut', width, trailingAngle: 0 })
+
+  it('averageStripWidth returns the mean strip width', () => {
+    expect(averageStripWidth([w(20), w(40)])).toBe(30)
+    expect(averageStripWidth([])).toBe(0)
+  })
+
+  it('scales a stored cell fraction by the current cell width, so edits track', () => {
+    expect(resolveOffsetMm(0.5, 40, 1000)).toBeCloseTo(20, 9)
+    expect(resolveOffsetMm(0.5, 24, 1000)).toBeCloseTo(12, 9) // narrower strips -> smaller shift
+    expect(resolveOffsetMm(0.5, 60, 1000)).toBeCloseTo(30, 9) // wider strips -> larger shift
+  })
+
+  it('wraps the resolved offset within the panel height', () => {
+    expect(resolveOffsetMm(1, 40, 30)).toBeCloseTo(10, 9) // 40 mm wrapped into a 30 mm panel
+    expect(resolveOffsetMm(-0.5, 40, 100)).toBeCloseTo(80, 9) // -20 -> +80
+  })
+
+  it('is zero for a degenerate (zero-height) panel', () => {
+    expect(resolveOffsetMm(0.5, 40, 0)).toBe(0)
+  })
+})
+
+describe('thin / pointed face warnings (P2)', () => {
+  it('warns when an angled strip tapers to a thin sliver without closing', () => {
+    const project = makeProject({}, [{ id: 'a', speciesId: 'walnut', width: 40, trailingAngle: -40 }])
+    project.endGrain.stockThickness = 40 // trailing face = 40 - 40*tan40 ≈ 6.4mm: thin but > 0
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.errors.some(error => /closes or crosses/.test(error))).toBe(false)
+    expect((metrics.warnings ?? []).some(warning => /thin|sliver|point|taper/i.test(warning))).toBe(true)
+  })
+
+  it('does not warn for a healthy rectangular board', () => {
+    const metrics = calculateEndGrainMetrics(makeProject())
+    expect(metrics.warnings ?? []).toEqual([])
+  })
+
+  it('does not warn for a gently angled board', () => {
+    const project = makeProject({}, [
+      { id: 'a', speciesId: 'walnut', width: 40, trailingAngle: 15 },
+      { id: 'b', speciesId: 'maple', width: 40, trailingAngle: -15 },
+    ])
+    project.endGrain.stockThickness = 20 // faces ≈ 40 ± 5.4 → ratio ~0.87, fine
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.warnings ?? []).toEqual([])
   })
 })

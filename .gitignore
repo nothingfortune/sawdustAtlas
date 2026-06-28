@@ -15,3 +15,4 @@ playwright/.cache/
 .agents/
 .superpowers/
 .worktrees/
+claude.md

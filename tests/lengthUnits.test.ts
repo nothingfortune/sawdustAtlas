@@ -12,6 +12,16 @@ describe('snapMmToFoot', () => {
     expect(snapMmToFoot(100)).toBeCloseTo(MM_PER_FOOT, 6)
     expect(snapMmToFoot(0)).toBeCloseTo(MM_PER_FOOT, 6)
   })
+
+  // Regression for the "only the exact 300 mm default snapped" bug: assert the
+  // invariant (whole feet, >= 1 ft) holds for EVERY spacing, not one happy value.
+  it('yields a whole number of feet for any grid spacing', () => {
+    for (let mm = 50; mm <= 3000; mm += 25) {
+      const feet = snapMmToFoot(mm) / MM_PER_FOOT
+      expect(Math.abs(feet - Math.round(feet))).toBeLessThan(1e-9) // a whole foot (modulo float)
+      expect(Math.round(feet)).toBeGreaterThanOrEqual(1)
+    }
+  })
 })
 
 describe('snapLengthMm', () => {

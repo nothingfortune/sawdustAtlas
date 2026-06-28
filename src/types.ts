@@ -47,6 +47,8 @@ export interface WoodSpecies {
   color: string
   accent: string
   pricePerBoardFoot: number
+  /** Where to buy it — free-text store / vendor / SKU note. Absent when not set. */
+  availableAt?: string
 }
 
 export interface BoardStrip {

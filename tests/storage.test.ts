@@ -129,6 +129,16 @@ describe('workspace storage migration', () => {
     expect(normalized.woods.find(wood => wood.id === 'mystery')).toMatchObject({ name: 'mystery', pricePerBoardFoot: 0 })
   })
 
+  it('keeps a wood\'s trimmed "available at" vendor note, and omits it when blank', () => {
+    const data = { shops: [], boards: [], woods: [
+      { id: 'w1', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12, availableAt: '  Rockler, aisle 4  ' },
+      { id: 'w2', name: 'Maple', color: '#dbc59b', accent: '#f0dfb9', pricePerBoardFoot: 8, availableAt: '   ' },
+    ] } as unknown as AtlasData
+    const woods = normalizeData(data).woods
+    expect(woods.find(w => w.id === 'w1')?.availableAt).toBe('Rockler, aisle 4')
+    expect(woods.find(w => w.id === 'w2')).not.toHaveProperty('availableAt')
+  })
+
   it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
     const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
     expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'pricing', 'schemaVersion', 'shops', 'woods'])

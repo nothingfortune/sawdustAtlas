@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, parseLengthInput, snapLengthMm } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
+
+describe('snapMmToFoot', () => {
+  it('rounds any grid spacing to the nearest whole foot', () => {
+    expect(snapMmToFoot(300)).toBeCloseTo(MM_PER_FOOT, 6) // ~0.98 ft -> 1 ft
+    expect(snapMmToFoot(600)).toBeCloseTo(MM_PER_FOOT * 2, 6) // ~1.97 ft -> 2 ft
+    expect(snapMmToFoot(900)).toBeCloseTo(MM_PER_FOOT * 3, 6) // ~2.95 ft -> 3 ft
+  })
+
+  it('never returns less than one foot', () => {
+    expect(snapMmToFoot(100)).toBeCloseTo(MM_PER_FOOT, 6)
+    expect(snapMmToFoot(0)).toBeCloseTo(MM_PER_FOOT, 6)
+  })
+})
 
 describe('snapLengthMm', () => {
   const IN = 25.4

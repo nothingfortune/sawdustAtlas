@@ -1,6 +1,15 @@
 services:
   sawdust-atlas:
-    build: .
+    build:
+      context: .
+      # Stamp the in-app build badge. .dockerignore strips .git, so the build can't
+      # read git itself — these come from the host environment (set by `pnpm container`),
+      # defaulting to a "container" env label and empty git fields when not provided.
+      args:
+        BUILD_ENV: ${BUILD_ENV:-container}
+        BUILD_NUMBER: ${BUILD_NUMBER:-}
+        BUILD_SHA: ${BUILD_SHA:-}
+        BUILD_BRANCH: ${BUILD_BRANCH:-}
     container_name: sawdust-atlas
     restart: unless-stopped
     ports:

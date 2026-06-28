@@ -231,8 +231,10 @@ function buildStudioTabs({ project, metrics, template, edgeWidth, sliceState, sl
       render: () => <LongGrainFace strips={project.strips} lengthMm={source}/> },
     { id: 'crosscut', label: 'Crosscut', wMm: source, hMm: panel, note: `${metrics.sliceCount} slices cut across the grain at ${formatLength(project.endGrain.sliceThickness, lengthUnit)}`,
       render: px => <><LongGrainFace strips={project.strips} lengthMm={source}/><CrosscutOverlay project={project} metrics={metrics} heightMm={panel} pxPerMm={px}/></> },
-    { id: 'turn', label: '90° turn', wMm: finalLen, hMm: panel, note: 'Slices stood on end and re-glued into the end-grain panel',
-      render: (px, idp) => <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} clipIdPrefix={`${idp}-turn`}/> },
+    { id: 'turn', label: '90° turn', wMm: finalLen, hMm: panel, note: 'Slices stood on end and re-glued into the end-grain panel · tap a slice to rotate/flip · drag to reorder',
+      render: (px, idp, interactive) => interactive
+        ? <DraggableAssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} onToggleRow={onToggleRow} onReorder={onReorder} clipIdPrefix={`${idp}-turn`}/>
+        : <AssembledBoard project={project} template={template} sliceCount={metrics.sliceCount} pxPerMm={px} clipIdPrefix={`${idp}-turn`}/> },
   ]
   if (sliceState) {
     tabs.push({ id: 'wafer', label: 'Single wafer', wMm: Math.max(project.endGrain.stockThickness, 1), hMm: Math.max(template.height, 1),

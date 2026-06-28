@@ -19,8 +19,11 @@ button { cursor: pointer; }
 .sidebar.collapsed .nav-label { text-align: center; margin-left: 0; margin-right: 0; }
 .brand { display: flex; gap: 11px; align-items: center; padding: 0 5px 29px; }
 .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #819083; transform: rotate(-8deg); flex: none; }
-.brand div:last-child { display: flex; flex-direction: column; letter-spacing: .03em; }
-.brand div strong { font-size: 15px; line-height: 1; }.brand div span { font: 10px 'DM Mono'; letter-spacing: .26em; color: #9ca99d; margin-top: 4px; }
+/* The label block — scoped to the div *after* the brand mark so that when the sidebar
+   collapses (label removed), this rule can't land on the now-lone brand mark and flip it
+   from grid-centered to flex-column, which lifted the ruler glyph (the "jumps up" bug). */
+.brand-mark + div { display: flex; flex-direction: column; letter-spacing: .03em; }
+.brand-mark + div strong { font-size: 15px; line-height: 1; }.brand-mark + div span { font: 10px 'DM Mono'; letter-spacing: .26em; color: #9ca99d; margin-top: 4px; }
 .collapse-button { position: absolute; top: 28px; right: -12px; border: 1px solid #38483c; color: #c9d1c9; background: #203027; border-radius: 50%; width: 25px; height: 25px; display: grid; place-items: center; padding: 0; }
 .sidebar nav { flex: 1; }.nav-label { color: #718076; font: 10px 'DM Mono'; letter-spacing: .18em; margin: 25px 12px 8px; }
 .nav-button { border: 0; color: #aeb9af; background: transparent; width: 100%; min-height: 43px; padding: 0 12px; border-radius: 6px; display: flex; align-items: center; gap: 12px; text-align: left; white-space: nowrap; }

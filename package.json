@@ -18,7 +18,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "preview": "vite preview",
-    "serve:lan": "pnpm build && vite preview --host 0.0.0.0 --port 4173"
+    "serve:lan": "pnpm build && vite preview --host 0.0.0.0 --port 4173",
+    "container": "sh scripts/container.sh"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.2",

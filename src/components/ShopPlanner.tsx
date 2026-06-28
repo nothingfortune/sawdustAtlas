@@ -6,7 +6,7 @@ import { createId } from '../id'
 import { NumberField as Field } from './fields'
 import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
 import type { ShopObjectDefinition } from '../domain/shopObjects'
-import { getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../domain/shopGeometry'
+import { getBlockedZoneConflicts, getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
 import type { Point2D } from '../domain/shopGeometry'
 import { formatDimensions, formatLength, formatLengthValue, MM_PER_FOOT, snapMmToFoot } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
@@ -399,13 +399,6 @@ function AngledShopView({ project, selected, onSelect }: { project: ShopProject,
       <text x={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).x} y={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).y}>{item.name}</text>
     </g>)}
   </svg></div>
-}
-
-function getBlockedZoneConflicts(project: ShopProject) {
-  return project.items.map(item => ({
-    item,
-    zones: project.blockedZones.filter(zone => polygonsOverlap(getShopItemFootprint(item), getBlockedZoneFootprint(zone))),
-  })).filter(conflict => conflict.zones.length > 0)
 }
 
 function zoneFromPoints(start: Point2D, end: Point2D): ShopBlockedZone {

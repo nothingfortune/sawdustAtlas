@@ -60,6 +60,25 @@ test.describe('cutting board designer', () => {
     await expect(label1).toHaveText('N')
   })
 
+  test('the 90° turn preview rotates wafers too, not only the finished board', async ({ page }) => {
+    await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
+    const popout = page.locator('.preview-popout')
+    await expect(popout).toBeVisible()
+    await popout.getByRole('tab', { name: '90° turn' }).click()
+
+    const slot0 = popout.locator('g[data-slot="0"]')
+    const label0 = slot0.locator('text.slice-label')
+    await expect(label0).toHaveText('N')
+
+    const box = await slot0.boundingBox()
+    if (!box) throw new Error('slice 0 not visible on the 90° turn tab')
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.up()
+
+    await expect(label0).not.toHaveText('N')
+  })
+
   test('pop-out close button is reachable above the chrome', async ({ page }) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const close = page.getByRole('button', { name: 'Close preview' })

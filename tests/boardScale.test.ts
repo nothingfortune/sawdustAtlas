@@ -130,6 +130,36 @@ describe('scaleBarValue', () => {
   })
 })
 
+// Invariants asserted across a RANGE of scales, not a single happy value — the gap
+// that let the grid bug ("tested only the default") through.
+describe('imperial scale invariants (regression)', () => {
+  const half = MM_PER_INCH / 2
+
+  it('every imperial tick step is a whole number of half-inches at any scale', () => {
+    for (let px = 0.1; px <= 6; px = Math.round((px + 0.1) * 100) / 100) {
+      const halves = niceTickStep(px, 64, 'imperial') / half
+      expect(Math.abs(halves - Math.round(halves))).toBeLessThan(1e-6)
+    }
+  })
+
+  it('imperial scale-bar value is a whole number of half-inches at any scale', () => {
+    for (let px = 0.05; px <= 4; px = Math.round((px + 0.05) * 100) / 100) {
+      const halves = scaleBarValue(px, 120, 'imperial').mm / half
+      expect(Math.abs(halves - Math.round(halves))).toBeLessThan(1e-6)
+    }
+  })
+
+  it('snapScaleToUnit aligns the base unit to whole pixels and never enlarges', () => {
+    for (let px = 0.1; px <= 6; px = Math.round((px + 0.1) * 100) / 100) {
+      const snapped = snapScaleToUnit(px, half)
+      expect(snapped).toBeLessThanOrEqual(px + 1e-9)
+      const unitPx = snapped * half
+      const wholePixel = Math.abs(unitPx - Math.round(unitPx)) < 1e-6
+      expect(wholePixel || snapped === px).toBe(true) // unchanged only when sub-pixel
+    }
+  })
+})
+
 describe('resolveScale imperial snapping', () => {
   it('snaps the resolved scale so the base unit lands on whole pixels', () => {
     const result = resolveScale(460, 800, { targetPxPerMm: 0.7, snapUnitMm: MM_PER_INCH / 2 })

@@ -8,7 +8,10 @@ test.describe('cutting board designer', () => {
     await page.addInitScript(() => window.localStorage.clear())
     await page.goto('/')
     await page.getByRole('button', { name: 'Cutting boards' }).click()
-    // Seed board is edge-grain; switch to end-grain to get wafers + slice tools.
+    // 'Cutting boards' opens the gallery; open the seed board, then switch to
+    // end-grain for wafers + slice tools. (Beforehand this clicked 'End grain'
+    // straight away and silently rotted when the gallery was introduced.)
+    await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
     await page.getByRole('button', { name: 'End grain', exact: true }).click()
   })
 

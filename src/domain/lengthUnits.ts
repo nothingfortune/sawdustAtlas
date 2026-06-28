@@ -1,7 +1,15 @@
 export type LengthUnit = 'metric' | 'imperial'
 
 export const MM_PER_INCH = 25.4
+export const MM_PER_FOOT = MM_PER_INCH * 12
 const IMPERIAL_DENOMINATOR = 32
+
+// Round a millimetre length to the nearest whole foot (minimum one foot). Used by
+// the imperial workshop grid so the floor always reads in round feet regardless of
+// the underlying grid spacing.
+export function snapMmToFoot(mm: number): number {
+  return Math.max(MM_PER_FOOT, Math.round(mm / MM_PER_FOOT) * MM_PER_FOOT)
+}
 const METRIC_TOKEN = /(-?\d+(?:\.\d+)?)\s*mm\b/gi
 
 export function formatNumber(value: number, digits = 2): string {

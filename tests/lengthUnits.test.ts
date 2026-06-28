@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, parseLengthInput, snapLengthMm } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
+
+describe('snapMmToFoot', () => {
+  it('rounds any grid spacing to the nearest whole foot', () => {
+    expect(snapMmToFoot(300)).toBeCloseTo(MM_PER_FOOT, 6) // ~0.98 ft -> 1 ft
+    expect(snapMmToFoot(600)).toBeCloseTo(MM_PER_FOOT * 2, 6) // ~1.97 ft -> 2 ft
+    expect(snapMmToFoot(900)).toBeCloseTo(MM_PER_FOOT * 3, 6) // ~2.95 ft -> 3 ft
+  })
+
+  it('never returns less than one foot', () => {
+    expect(snapMmToFoot(100)).toBeCloseTo(MM_PER_FOOT, 6)
+    expect(snapMmToFoot(0)).toBeCloseTo(MM_PER_FOOT, 6)
+  })
+
+  // Regression for the "only the exact 300 mm default snapped" bug: assert the
+  // invariant (whole feet, >= 1 ft) holds for EVERY spacing, not one happy value.
+  it('yields a whole number of feet for any grid spacing', () => {
+    for (let mm = 50; mm <= 3000; mm += 25) {
+      const feet = snapMmToFoot(mm) / MM_PER_FOOT
+      expect(Math.abs(feet - Math.round(feet))).toBeLessThan(1e-9) // a whole foot (modulo float)
+      expect(Math.round(feet)).toBeGreaterThanOrEqual(1)
+    }
+  })
+})
 
 describe('snapLengthMm', () => {
   const IN = 25.4

@@ -95,6 +95,27 @@ export function gradientStrips(strips: readonly BoardStrip[]): BoardStrip[] {
   return [...strips].sort((a, b) => a.width - b.width)
 }
 
+// "Randomize" that doesn't look clumpy: shuffle the strip order, then de-clump so no
+// two neighbours share a species when that's achievable. Best-effort — if one species
+// is too dominant to separate, the leftover adjacencies stay. Same strips, only
+// reordered; rng is injectable for tests (defaults to Math.random).
+export function shuffleStripsAvoidingAdjacent(strips: readonly BoardStrip[], rng: () => number = Math.random): BoardStrip[] {
+  const result = [...strips]
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1))
+    const swap = result[i]!; result[i] = result[j]!; result[j] = swap
+  }
+  // Forward pass: when a strip matches its left neighbour, swap in the first later
+  // strip of a different species. Subsequent clashes are handled as the pass reaches them.
+  for (let i = 1; i < result.length; i += 1) {
+    if (result[i]!.speciesId !== result[i - 1]!.speciesId) continue
+    const candidate = result.findIndex((strip, index) => index > i && strip.speciesId !== result[i - 1]!.speciesId)
+    if (candidate === -1) continue
+    const swap = result[i]!; result[i] = result[candidate]!; result[candidate] = swap
+  }
+  return result
+}
+
 export function applyBoardPattern(
   patternId: BoardPatternId,
   project: BoardProject,

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Copy, Eye, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import { ArrowUpNarrowWide, Check, ChevronDown, Copy, Eye, FlipHorizontal2, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
@@ -24,7 +24,7 @@ import { FaceShiftWedge } from './board/FaceShiftWedge'
 import type { BoardProject, BoardStrip, EndGrainSettings, PriceBreakdown, PricingSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
 import { NumberField as Field } from './fields'
-import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips } from '../domain/boardPatterns'
+import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips, shuffleStripsAvoidingAdjacent } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
 import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
@@ -110,13 +110,9 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
 
   const alternateArrangement = () => update({ strips: alternateStrips(project.strips) })
   const gradientArrangement = () => update({ strips: gradientStrips(project.strips) })
-  const randomizeArrangement = () => {
-    const shuffled = [...project.strips]
-    for (let i = shuffled.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); const swap = shuffled[i]!; shuffled[i] = shuffled[j]!; shuffled[j] = swap }
-    // Reorder in place: keep each strip's id so StripList rows move rather than
-    // remount (which would drop focus and re-key every row).
-    update({ strips: shuffled })
-  }
+  // Reorder in place (each strip keeps its id, so StripList rows move rather than
+  // remount and drop focus). Avoids seating two of the same species side by side.
+  const randomizeArrangement = () => update({ strips: shuffleStripsAvoidingAdjacent(project.strips) })
   const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
   const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
     const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
@@ -181,7 +177,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
           <StripList strips={project.strips} woods={woods} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
           <button className="add-strip" onClick={() => addStrip()}><Plus/>Add strip</button>
         </div>
-        <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement}><Layers3/>Alternate</button><button onClick={gradientArrangement}><RotateCcw/>Gradient</button><button onClick={randomizeArrangement}><Shuffle/>Randomize</button><button onClick={mirrorPattern}><Layers3/>Mirror</button><button onClick={duplicatePattern}><Copy/>Repeat</button><button onClick={reverseStrips}><RotateCcw/>Reverse</button></div></div>
+        <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement} title="Alternate strips between two species"><Layers3/>Alternate</button><button onClick={gradientArrangement} title="Order strips by width, narrow → wide"><ArrowUpNarrowWide/>By width</button><button onClick={randomizeArrangement} title="Shuffle strip order without placing two of the same species side by side"><Shuffle/>Randomize</button><button onClick={mirrorPattern} title="Duplicate the strips in reverse to mirror the layout"><FlipHorizontal2/>Mirror</button><button onClick={duplicatePattern} title="Repeat the current strips again after themselves"><Copy/>Repeat</button><button onClick={reverseStrips} title="Reverse the strip order"><RotateCcw/>Reverse</button></div></div>
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>Per-row override</h3><p>Rotate and flip are distinct when a strip has an angle.</p><div><button onClick={() => setRowPattern('same')}>All same</button><button onClick={() => setRowPattern('rotate')}>Rotate alternate</button><button onClick={() => setRowPattern('flip')}>Flip alternate</button><button onClick={() => setRowPattern('invert')}>Invert all</button></div></div>}
         <div className="panel-section milling-hint"><h3>Milling &amp; wood</h3><p>Milling allowances and the wood library are now shared workspace modules — find them in the left sidebar under Library.</p></div>
       </aside>

@@ -1,5 +1,6 @@
 import type { BoardProject } from '../../types'
 import type { EndGrainTemplate } from '../../domain/boardGeometry'
+import { averageStripWidth, resolveOffsetMm } from '../../domain/boardGeometry'
 import type { SliceState } from '../../domain/boardSlices'
 import { EndGrainFace } from './EndGrainFace'
 
@@ -15,7 +16,9 @@ export function SliceFace({ project, template, state, clipId }: { project: Board
       : state.flipped
         ? `translate(${thickness} 0) scale(-1 1)`
         : undefined
-  const offset = (((state.offset % height) + height) % height)
+  // state.offset is a fraction of one cell; resolve to mm against the live strip
+  // widths here so the running bond tracks edits to the strips at render time.
+  const offset = resolveOffsetMm(state.offset, averageStripWidth(project.strips), height)
   const face = <g transform={transform}><EndGrainFace polygons={template.polygons}/></g>
   if (offset <= 0.01) return face
   return <g clipPath={`url(#${clipId})`}>

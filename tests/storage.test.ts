@@ -17,7 +17,33 @@ class MemoryStorage {
 describe('workspace storage migration', () => {
   it('stamps normalized data with the current schema version', () => {
     const legacy = { shops: [], boards: [] } as unknown as AtlasData
-    expect(normalizeData(legacy).schemaVersion).toBe(1)
+    expect(normalizeData(legacy).schemaVersion).toBe(2)
+  })
+
+  it('migrates legacy millimeter row offsets to cell fractions (schema 1 -> 2)', () => {
+    const data = {
+      schemaVersion: 1, shops: [],
+      boards: [{
+        id: 'b', name: 'Bond', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [{ id: 's1', speciesId: 'walnut', width: 40, trailingAngle: 0 }, { id: 's2', speciesId: 'maple', width: 40, trailingAngle: 0 }],
+        endGrain: { stockThickness: 38, rowOffsets: [0, 20] },
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.endGrain.rowOffsets).toEqual([0, 0.5]) // 20 mm / 40 mm cell
+  })
+
+  it('leaves schema-2 fractional offsets unchanged', () => {
+    const data = {
+      schemaVersion: 2, shops: [],
+      boards: [{
+        id: 'b', name: 'Bond', length: 400, thickness: 38, construction: 'end', updatedAt: '',
+        strips: [{ id: 's1', speciesId: 'walnut', width: 40, trailingAngle: 0 }],
+        endGrain: { stockThickness: 38, rowOffsets: [0, 0.5] },
+      }],
+    } as unknown as AtlasData
+    const board = normalizeData(data).boards[0]!
+    expect(board.endGrain.rowOffsets).toEqual([0, 0.5])
   })
 
   it('adds the default wood library to legacy saves', () => {
@@ -215,7 +241,7 @@ describe('saveData / loadData persistence', () => {
 
   it('falls back to starter data when the stored JSON is not an object or is malformed (TEST3)', () => {
     localStorage.setItem('sawdust-atlas:v1', '"a plain string"')
-    expect(loadData().schemaVersion).toBe(1)
+    expect(loadData().schemaVersion).toBe(2)
     localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
     expect(loadData().woods.length).toBeGreaterThan(0)
   })

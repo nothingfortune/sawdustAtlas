@@ -79,6 +79,14 @@ test.describe('cutting board designer', () => {
     await expect(label0).not.toHaveText('N')
   })
 
+  test('shows a rip & stock list with rip widths and per-species board feet', async ({ page }) => {
+    const card = page.locator('.stock-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText(/Rip & stock list/i)
+    await expect(card.locator('.stock-rip-row').first()).toBeVisible()
+    await expect(card).toContainText(/bf/)
+  })
+
   test('pop-out close button is reachable above the chrome', async ({ page }) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const close = page.getByRole('button', { name: 'Close preview' })

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { Link2, Minus, Plus, Trash2, X } from 'lucide-react'
+import { Link2, Minus, Plus, Square, Trash2, X } from 'lucide-react'
 import type { Sketch, SketchMember, SketchPoint, Vec } from '../domain/geometry2d'
 import { angleBetweenDeg, angleToAxes, bearingDeg, distance, lineIntersection, memberRectangle } from '../domain/geometry2d'
 import { createId } from '../id'
@@ -77,6 +77,23 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     const member: SketchMember = { id: createId(), aId: selectedPoints[0]!.id, bId: selectedPoints[1]!.id, widthMm: 18 }
     onChange({ ...sketch, members: [...sketch.members, member] })
     setSelected([`m:${member.id}`])
+  }
+  // From two opposite corners, build an axis-aligned rectangle: the two missing corners,
+  // four sides, and two diagonals (width 0 = construction lines). The diagonals bisect each
+  // corner, so selecting a diagonal + an adjacent side reads the bisection angle.
+  const makeRectangle = () => {
+    if (selectedPoints.length !== 2) return
+    const [p1, p3] = selectedPoints as [SketchPoint, SketchPoint]
+    if (p1.x === p3.x || p1.y === p3.y) return // degenerate (corners share an edge)
+    const p2: SketchPoint = { id: createId(), x: p3.x, y: p1.y }
+    const p4: SketchPoint = { id: createId(), x: p1.x, y: p3.y }
+    const line = (aId: string, bId: string): SketchMember => ({ id: createId(), aId, bId, widthMm: 0 })
+    const sides = [line(p1.id, p2.id), line(p2.id, p3.id), line(p3.id, p4.id), line(p4.id, p1.id)]
+    const diagAC = line(p1.id, p3.id)
+    const diagBD = line(p2.id, p4.id)
+    onChange({ points: [...sketch.points, p2, p4], members: [...sketch.members, ...sides, diagAC, diagBD] })
+    // Pre-select a diagonal + the side sharing p1 so the bisection angle shows immediately.
+    setSelected([`m:${diagAC.id}`, `m:${sides[0]!.id}`])
   }
   // Re-derive a member's far endpoint from a length + bearing off its near (a) end.
   const setMemberGeometry = (member: SketchMember, lengthMm: number, bearing: number) => {
@@ -171,6 +188,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
         </div>
         {mode === 'sketch' && <div className="geo-toolbar-actions">
           <button className="button secondary" disabled={selectedPoints.length !== 2} onClick={connect}><Link2 size={15}/>Connect</button>
+          <button className="button secondary" disabled={selectedPoints.length !== 2} onClick={makeRectangle} title="Build a rectangle from two opposite corners (with diagonals to bisect)"><Square size={15}/>Rectangle</button>
           <button className="button secondary" disabled={selected.length === 0} onClick={deleteSelected}><Trash2 size={15}/>Delete</button>
           <button className="button secondary" disabled={sketch.points.length === 0} onClick={clear}><X size={15}/>Clear</button>
           <button className="icon-button" aria-label="Zoom out" onClick={() => setZoom(z => Math.max(0.4, z - 0.2))}><Minus size={15}/></button>

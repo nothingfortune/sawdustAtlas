@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData } from '../src/storage'
+import { clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, loadSketch, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData, saveSketch } from '../src/storage'
 import type { AtlasData } from '../src/types'
 
 describe('importData (PLAT-004)', () => {
@@ -323,6 +323,25 @@ describe('onboarding flag (UX-004)', () => {
     expect(hasOnboarded()).toBe(false)
     markOnboarded()
     expect(hasOnboarded()).toBe(true)
+  })
+})
+
+describe('geometry sketch scratchpad (BOARD-026)', () => {
+  beforeEach(() => { vi.stubGlobal('localStorage', new MemoryStorage()) })
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  it('round-trips a sketch and defaults to empty', () => {
+    expect(loadSketch()).toEqual({ points: [], members: [] })
+    saveSketch({ points: [{ id: 'p', x: 10, y: 20 }], members: [] })
+    expect(loadSketch().points[0]).toMatchObject({ id: 'p', x: 10, y: 20 })
+  })
+
+  it('normalizes junk: members referencing missing points are dropped', () => {
+    saveSketch({ points: [{ id: 'a', x: 0, y: 0 }, { id: 'b', x: 1, y: 1 }], members: [
+      { id: 'm1', aId: 'a', bId: 'b', widthMm: 18 },
+      { id: 'm2', aId: 'a', bId: 'ghost', widthMm: 18 },
+    ] } as never)
+    expect(loadSketch().members.map(m => m.id)).toEqual(['m1'])
   })
 })
 

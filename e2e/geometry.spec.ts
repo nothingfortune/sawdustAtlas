@@ -41,6 +41,19 @@ test.describe('geometry calculator', () => {
     await expect(point).not.toHaveAttribute('cx', before ?? '')
   })
 
+  test('builds a rectangle from two corners and reads a bisection angle', async ({ page }) => {
+    const box = (await page.locator('.geo-canvas').boundingBox())!
+    await page.mouse.click(box.x + 200, box.y + 500) // corner 1
+    await page.mouse.click(box.x + 440, box.y + 300) // opposite corner (distinct x and y)
+    await expect(page.locator('.geo-point')).toHaveCount(2)
+    await page.getByRole('button', { name: 'Rectangle' }).click()
+    // 2 placed + 2 generated corners; 4 sides + 2 diagonals
+    await expect(page.locator('.geo-point')).toHaveCount(4)
+    await expect(page.locator('.geo-member')).toHaveCount(6)
+    // a diagonal + side are pre-selected -> the bisection (inside) angle shows
+    await expect(page.locator('.geo-readout')).toContainText(/inside angle/i)
+  })
+
   test('the compound-angle mode computes miter + bevel from two tilts', async ({ page }) => {
     await page.getByRole('tab', { name: 'Compound angle' }).click()
     await page.getByLabel('Tilt A degrees').fill('6')

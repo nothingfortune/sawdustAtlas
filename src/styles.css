@@ -584,3 +584,4 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .geo-readout-row { display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px; }
 .geo-readout-row b { font-variant-numeric:tabular-nums; }
 @media (max-width:900px) { .geometry-layout { grid-template-columns:1fr; } .geo-inspector { display:none; } }
+.geo-ref line { stroke:#b08a5e;stroke-width:1;stroke-dasharray:5 5;opacity:.5; }

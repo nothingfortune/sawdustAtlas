@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { distance, bearingDeg, angleBetweenDeg, lineIntersection, memberRectangle } from '../src/domain/geometry2d'
+import { distance, bearingDeg, angleBetweenDeg, angleToAxes, lineIntersection, memberRectangle } from '../src/domain/geometry2d'
 
 const v = (x: number, y: number) => ({ x, y })
 
@@ -30,6 +30,16 @@ describe('geometry2d', () => {
     expect(ext?.point.x).toBeCloseTo(2, 6)
     expect(ext?.withinBoth).toBe(false)
     expect(lineIntersection(v(0, 0), v(1, 0), v(0, 1), v(1, 1))).toBeNull() // parallel
+  })
+
+  it('angleToAxes gives acute angles (0..90) to horizontal and vertical, sign-independent', () => {
+    expect(angleToAxes(v(0, 0), v(10, 0))).toEqual({ fromHorizontalDeg: 0, fromVerticalDeg: 90 })
+    expect(angleToAxes(v(0, 0), v(0, 10))).toEqual({ fromHorizontalDeg: 90, fromVerticalDeg: 0 })
+    const diag = angleToAxes(v(0, 0), v(10, 10))
+    expect(diag.fromHorizontalDeg).toBeCloseTo(45, 6)
+    expect(diag.fromVerticalDeg).toBeCloseTo(45, 6)
+    // a leg leaning the other way reads the same acute angles
+    expect(angleToAxes(v(0, 0), v(-10, -10)).fromHorizontalDeg).toBeCloseTo(45, 6)
   })
 
   it('memberRectangle offsets +/- width/2 perpendicular to the centerline', () => {

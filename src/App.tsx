@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
-import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded } from './storage'
+import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
+import { GeometryCalculator } from './components/GeometryCalculator'
+import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
@@ -36,6 +38,9 @@ export default function App() {
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
   const [lengthUnit, setLengthUnit] = useState<LengthUnit>('metric')
+  // Geometry calculator scratchpad (BOARD-026): its own state, autosaved to its own key.
+  const [sketch, setSketch] = useState<Sketch>(loadSketch)
+  useEffect(() => { saveSketch(sketch) }, [sketch])
   // Workspace captured before the last import, recoverable across reloads.
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
@@ -251,6 +256,7 @@ export default function App() {
         <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
         <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
         <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
+        <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => setView('geometry')} />
         <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
         <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => setView('pricing')} />
       </nav>
@@ -262,7 +268,7 @@ export default function App() {
     </aside>
     <main>
       <header className="topbar">
-        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
+        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
         <div className="topbar-actions">
           <WarningCenter warnings={warnings} onNavigate={goToWarning} />
           {saveOk
@@ -314,6 +320,7 @@ export default function App() {
             : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
         })()}
         {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
+        {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={setSketch} />}
         {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
         {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
       </section>

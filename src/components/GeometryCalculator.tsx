@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Link2, Minus, Plus, Trash2, X } from 'lucide-react'
 import type { Sketch, SketchMember, SketchPoint, Vec } from '../domain/geometry2d'
 import { angleBetweenDeg, angleToAxes, bearingDeg, distance, lineIntersection, memberRectangle } from '../domain/geometry2d'
@@ -52,6 +52,24 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   }
   const updatePoint = (id: string, patch: Partial<SketchPoint>) =>
     onChange({ ...sketch, points: sketch.points.map(point => point.id === id ? { ...point, ...patch } : point) })
+  // Drag a point to move it; a press with no movement is treated as a select (toggle).
+  const dragRef = useRef<{ id: string; moved: boolean } | null>(null)
+  const onPointDown = (event: ReactPointerEvent, id: string) => {
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { id, moved: false }
+  }
+  const onPointMove = (event: ReactPointerEvent) => {
+    if (!dragRef.current) return
+    const mm = toMm(event.clientX, event.clientY)
+    dragRef.current.moved = true
+    updatePoint(dragRef.current.id, { x: Math.max(0, snap(mm.x)), y: Math.max(0, snap(mm.y)) })
+  }
+  const onPointUp = (id: string) => {
+    const drag = dragRef.current
+    dragRef.current = null
+    if (drag && !drag.moved) toggle(`p:${id}`)
+  }
   const connect = () => {
     if (selectedPoints.length !== 2) return
     const member: SketchMember = { id: createId(), aId: selectedPoints[0]!.id, bId: selectedPoints[1]!.id, widthMm: 18 }
@@ -116,6 +134,32 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   const singleMember = single?.startsWith('m:') ? memberById.get(single.slice(2)) : undefined
   const singleMemberEnds = singleMember ? ends(singleMember) : null
 
+  // On-canvas visualization so the readouts read at a glance: an arc (with degree label)
+  // at the vertex two members share, plus dimension lines/labels rendered inline below.
+  const arcAt = (center: Vec, towardA: Vec, towardB: Vec, label: string) => {
+    const c = toScreen(center), pa = toScreen(towardA), pb = toScreen(towardB)
+    const r = 32
+    const a1 = Math.atan2(pa.y - c.y, pa.x - c.x), a2 = Math.atan2(pb.y - c.y, pb.x - c.x)
+    let delta = a2 - a1
+    while (delta > Math.PI) delta -= 2 * Math.PI
+    while (delta < -Math.PI) delta += 2 * Math.PI
+    const start = { x: c.x + r * Math.cos(a1), y: c.y + r * Math.sin(a1) }
+    const end = { x: c.x + r * Math.cos(a2), y: c.y + r * Math.sin(a2) }
+    const mid = a1 + delta / 2
+    return { d: `M ${start.x} ${start.y} A ${r} ${r} 0 0 ${delta > 0 ? 1 : 0} ${end.x} ${end.y}`, label, lx: c.x + (r + 18) * Math.cos(mid), ly: c.y + (r + 18) * Math.sin(mid) }
+  }
+  const angleArc = (() => {
+    if (selectedMembers.length !== 2) return null
+    const [m1, m2] = selectedMembers as [SketchMember, SketchMember]
+    const sharedId = [m1.aId, m1.bId].find(id => id === m2.aId || id === m2.bId)
+    if (!sharedId) return null
+    const vertex = pointById.get(sharedId)
+    const otherA = pointById.get(m1.aId === sharedId ? m1.bId : m1.aId)
+    const otherB = pointById.get(m2.aId === sharedId ? m2.bId : m2.aId)
+    if (!vertex || !otherA || !otherB) return null
+    return arcAt(vertex, otherA, otherB, `${formatNumber(angleBetweenDeg(vertex, otherA, vertex, otherB))}°`)
+  })()
+
   return <div className="geometry-layout">
     <div className="geo-main">
       <div className="geo-toolbar">
@@ -150,8 +194,22 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           {sketch.points.map(point => {
             const s = toScreen(point)
             const on = selected.includes(`p:${point.id}`)
-            return <circle key={point.id} className={`geo-point${on ? ' selected' : ''}`} data-geo-point cx={s.x} cy={s.y} r={6} onClick={event => { event.stopPropagation(); toggle(`p:${point.id}`) }}/>
+            return <circle key={point.id} className={`geo-point${on ? ' selected' : ''}`} data-geo-point cx={s.x} cy={s.y} r={7}
+              onPointerDown={event => onPointDown(event, point.id)} onPointerMove={onPointMove} onPointerUp={() => onPointUp(point.id)} onPointerCancel={() => { dragRef.current = null }}/>
           })}
+          {/* Visualized readouts */}
+          {selectedPoints.length === 2 && selectedMembers.length === 0 && (() => {
+            const a = toScreen(selectedPoints[0]!), b = toScreen(selectedPoints[1]!)
+            return <g className="geo-annot">
+              <line className="geo-dim" x1={a.x} y1={a.y} x2={b.x} y2={b.y}/>
+              <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 7} textAnchor="middle">{formatLength(distance(selectedPoints[0]!, selectedPoints[1]!), lengthUnit)}</text>
+            </g>
+          })()}
+          {selectedMembers.length === 1 && singleMemberEnds && (() => {
+            const a = toScreen(singleMemberEnds[0]), b = toScreen(singleMemberEnds[1])
+            return <text className="geo-annot" x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 9} textAnchor="middle">{formatLength(distance(singleMemberEnds[0], singleMemberEnds[1]), lengthUnit)}</text>
+          })()}
+          {angleArc && <g className="geo-annot"><path className="geo-arc" d={angleArc.d}/><text x={angleArc.lx} y={angleArc.ly} textAnchor="middle">{angleArc.label}</text></g>}
         </svg>
         {sketch.points.length === 0 && <div className="geo-empty">Tap anywhere to place your first point.</div>}
       </div>

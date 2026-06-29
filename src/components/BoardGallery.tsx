@@ -2,6 +2,8 @@ import type { BoardProject, CompositeBoard, WoodSpecies } from '../types'
 import { WoodPatterns } from './board/WoodPatterns'
 import { LongGrainFace } from './board/LongGrainFace'
 import { CroppedBoard } from './composite/FinalPreview'
+import { formatLength } from '../domain/lengthUnits'
+import { useUnitSystem } from './unitSystem'
 
 // True-to-scale mini of a composite's finished (cropped) board.
 function CompositeThumb({ composite, boards, woods }: { composite: CompositeBoard; boards: BoardProject[]; woods: WoodSpecies[] }) {
@@ -30,6 +32,7 @@ export function BoardGallery({ boards, composites, woods, onOpenBoard, onOpenCom
   onOpenComposite: (id: string) => void
   onCreateBoard: () => void
 }) {
+  const { lengthUnit } = useUnitSystem()
   return (
     <div className="board-gallery">
       <div className="gallery-grid">
@@ -41,7 +44,7 @@ export function BoardGallery({ boards, composites, woods, onOpenBoard, onOpenCom
           <button key={board.id} className="gallery-card" onClick={() => onOpenBoard(board.id)}>
             <div className="gallery-thumb-wrap"><BoardThumb board={board} woods={woods} /></div>
             <span className="gallery-name">{board.name}</span>
-            <span className="gallery-meta">{Math.round(board.length)} mm · {board.construction === 'end' ? 'End grain' : 'Edge grain'} · {board.strips.length} strips</span>
+            <span className="gallery-meta">{formatLength(board.length, lengthUnit)} · {board.construction === 'end' ? 'End grain' : 'Edge grain'} · {board.strips.length} strips</span>
           </button>
         ))}
         {composites.map(composite => (

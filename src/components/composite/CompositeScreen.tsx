@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { addRow, addWaferToRow, pieceKey } from '../../domain/compositeAssembly'
+import { DEFAULT_KERF_MM } from '../../data'
 import { createId } from '../../id'
 import { PartsBag } from './PartsBag'
 import { AssemblyDesk } from './AssemblyDesk'
@@ -19,7 +20,7 @@ export interface CompositeScreenProps {
   onBack: () => void
 }
 
-const defaultCut = () => ({ axis: 'x' as const, stripWidthMm: 25, kerfMm: 3, count: 4 })
+const defaultCut = () => ({ axis: 'x' as const, stripWidthMm: 25, kerfMm: DEFAULT_KERF_MM, count: 4 })
 
 export function CompositeScreen({ composite, boards, woods, pricing, onChange, onCreateBoardForPanel, onEditBoard, onBack }: CompositeScreenProps) {
   const [activeRowId, setActiveRowId] = useState(composite.rows[0]?.id ?? '')

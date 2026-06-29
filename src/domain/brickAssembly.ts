@@ -10,7 +10,7 @@ import { nonNegative, toBoardFeet } from './units'
 //   - a parameterized final assembly that alternates brick wafers and mortar
 //     separators, offsetting (or rotating) alternate strips by half a course.
 //
-// See docs/plans/BRICK_PATTERN_CORRECTION.md. UI wiring is a separate phase; the
+// See docs/plans/completedPlans/BRICK_PATTERN_CORRECTION.md. UI wiring is a separate phase; the
 // existing single-panel "Running bond" preset stays as an approximation until
 // this composite model is surfaced in the designer.
 

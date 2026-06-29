@@ -3,6 +3,9 @@
 
 export const CUBIC_MM_PER_BOARD_FOOT = 2_359_737.216
 export const ANGLE_LIMIT = 89
+// Below this a trailing angle counts as square (no bevel) — used to decide whether a strip
+// is angled when grouping/labelling cut setups.
+export const SQUARE_ANGLE_TOLERANCE_DEG = 0.001
 
 export function toBoardFeet(cubicMillimeters: number): number {
   return cubicMillimeters / CUBIC_MM_PER_BOARD_FOOT

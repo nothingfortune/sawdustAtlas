@@ -4,6 +4,7 @@ import type { EndGrainMetrics } from './boardGeometry'
 import { calculateStockRequirements } from './boardStock'
 import type { RipGroup, StockAssumptions } from './boardStock'
 import { calculateAngleSetup } from './boardAngle'
+import { SQUARE_ANGLE_TOLERANCE_DEG } from './units'
 
 // BOARD-025: the glanceable bench reference — what you set at the saw. Delegates to the
 // 023/024 calculators (single source of truth) and adds the crosscut summary from metrics.
@@ -31,7 +32,7 @@ export function summarizeBenchSetup(
   if (isEnd) {
     for (const strip of project.strips) {
       const angle = Math.round(strip.trailingAngle * 100) / 100
-      if (Math.abs(angle) <= 0.001) continue
+      if (Math.abs(angle) <= SQUARE_ANGLE_TOLERANCE_DEG) continue
       byAngle.set(angle, (byAngle.get(angle) ?? 0) + 1)
     }
   }

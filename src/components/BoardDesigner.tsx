@@ -12,6 +12,7 @@ import type { BuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
 import type { CuttingBoardPlan } from '../domain/boardCutPlan'
 import { resolveScale, fitPxPerMm } from '../domain/boardScale'
+import { SQUARE_ANGLE_TOLERANCE_DEG } from '../domain/units'
 import { useContainerWidth } from './useContainerWidth'
 import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
@@ -64,7 +65,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const bench = summarizeBenchSetup(project, woods, build, end)
     const angleRows = project.construction === 'end'
       ? [...new Map(project.strips
-          .filter(strip => Math.abs(strip.trailingAngle) > 0.001)
+          .filter(strip => Math.abs(strip.trailingAngle) > SQUARE_ANGLE_TOLERANCE_DEG)
           .map(strip => [Math.round(strip.trailingAngle * 100) / 100, strip] as const)).entries()]
           .map(([angle, strip]) => ({
             angle,
@@ -155,7 +156,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
 
   return <div className="board-layout">
     <div className="designer-toolbar">
-      <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div><div className="toolbar-finished-size"><span>Finished</span><b>{finishedSize}</b></div></div>
+      <div><span className="eyebrow">CUTTING BOARD DESIGNER</span><div className="project-switcher"><select aria-label="Select board" value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div><div className="toolbar-finished-size"><span>Finished</span><b>{finishedSize}</b></div></div>
       <div className="toolbar-actions"><button className="button secondary" onClick={onBack} aria-label="Back to boards">← Boards</button><button className="button secondary" onClick={() => onMakeComposite(project)} aria-label="Make a composite board from this design"><Layers3/>Make composite</button><button className="button secondary" onClick={() => window.print()} aria-label="Print build sheet"><Printer/>Print build sheet</button><button className="button secondary" onClick={onCreate}><Plus/>New design</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this design"><Trash2/>Delete</button></div>
     </div>
     <div className="board-main">

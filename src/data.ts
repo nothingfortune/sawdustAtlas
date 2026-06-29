@@ -2,6 +2,12 @@ import type { AtlasData, PricingSettings, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { createId } from './id'
 
+// Standard 1/8" table-saw blade kerf — shared by end-grain slicing and composite cuts so
+// the default never drifts between paths. Spread DEFAULT_END_GRAIN into a fresh object and
+// add the per-slice arrays (rowFlips, etc.) at the call site.
+export const DEFAULT_KERF_MM = 3.2
+export const DEFAULT_END_GRAIN = { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: DEFAULT_KERF_MM, trimAllowance: 20 }
+
 export const defaultSpecies = [
   { id: 'walnut', name: 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12.5 },
   { id: 'maple', name: 'Hard maple', color: '#dbc59b', accent: '#f0dfb9', pricePerBoardFoot: 8.75 },
@@ -40,7 +46,7 @@ export const starterData: AtlasData = {
   }],
   boards: [{
     id: createId(), name: 'Walnut & maple daily board', length: 460, thickness: 38, construction: 'edge', updatedAt: new Date().toISOString(),
-    endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] },
+    endGrain: { ...DEFAULT_END_GRAIN, rowFlips: [], rowRotations: [] },
     allowances: { ...DEFAULT_ALLOWANCES },
     strips: [
       { id: createId(), speciesId: 'walnut', width: 50, trailingAngle: 0 }, { id: createId(), speciesId: 'maple', width: 13, trailingAngle: 0 },

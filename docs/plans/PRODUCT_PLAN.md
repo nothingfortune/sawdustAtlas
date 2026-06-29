@@ -96,10 +96,10 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | 🔵 | BOARD-020 | Reusable wafer workflow | Research | Research | Decide whether user-created wafers/source panels should be independent recipes, references to other board projects, or an alternate direct-slice workflow. This should converge with `BOARD-008`. |
 | 🔵 | BOARD-021 | Direct slice creation | Research | Research | Explore an alternate entry point where users create slices directly, including custom cut angles and shapes, then generate the final preview and build plan from those slices. |
 | ⚪ | BOARD-022 | Interactive build instructions | Planned | Later | Provide step-by-step instructions derived from the current design, cuts, wood choices, allowances, and warnings; printable output remains covered by `BOARD-014` and bench/tablet execution by `UX-008`. |
-| ⚪ | BOARD-023 | Rip and stock requirement calculator | Planned | Next | Given finished size, strip widths or strip count, kerf, allowances, and slice plan, calculate the rough rip widths, required source-panel widths, purchased-stock width, and per-species board-foot requirements with explicit assumptions and units. |
-| ⚪ | BOARD-024 | Angle and setup calculator | Planned | Next | Convert between target pattern geometry and shop setup values: trailing angle, effective strip length/width change, angle-induced offset, wedge loss, and related saw-setup numbers. Outputs must stay tied to the same domain assumptions used by board generation. |
-| ⚪ | BOARD-025 | Setup cards and reference outputs | Planned | Next | Generate concise bench-side references for rip widths, angle settings, stop-block lengths, crosscut counts, and allowance assumptions for print and tablet viewing. This complements `BOARD-014` build sheets and should remain readable to non-CAD users. |
-| ⚪ | BOARD-026 | General angle & geometry calculator | Planned | Later | A general-purpose layout-geometry tool, available **both** as a standalone left-nav module **and** as a reusable component inside the board designer. Solve arbitrary angle/intersection/distance problems — e.g. X-style / splayed table legs: the angle between two members, where they intercept, and the distance between their top points. Broader than `BOARD-024` (which is only board trailing-angle setup numbers); scope and confirm exact calculations + UX separately before building. Pure geometry in `src/domain/**`. |
+_`BOARD-023/024/025` (rip & stock list, angle & setup, bench setup card) and `BOARD-026`
+(geometry calculator + compound-angle solver) shipped — see [COMPLETED.md](COMPLETED.md).
+The geometry tool's reusable-in-board-designer embedding and a true-3D model remain as
+future follow-ups._
 
 
 ### Shared Cut Planner and Stock

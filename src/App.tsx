@@ -5,6 +5,7 @@ import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProj
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
 import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
+import { DEFAULT_END_GRAIN, DEFAULT_KERF_MM } from './data'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
@@ -167,7 +168,7 @@ export default function App() {
   const createBoard = () => {
     const project: BoardProject = {
       id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'end', strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
+      endGrain: { ...DEFAULT_END_GRAIN, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
       allowances: { ...data.allowances },
     }
     commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board')
@@ -182,7 +183,7 @@ export default function App() {
   const createBoardForPanel = (construction: 'edge' | 'end'): string => {
     const project: BoardProject = {
       id: createId(), name: 'Untitled panel', length: 450, thickness: 38, construction, strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
+      endGrain: { ...DEFAULT_END_GRAIN, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
       allowances: { ...data.allowances },
     }
     commitData(current => ({ ...current, boards: [...current.boards, project] }))
@@ -192,7 +193,7 @@ export default function App() {
     const composite: CompositeBoard = {
       id: createId(), name: `${board.name} composite`,
       construction: board.construction,
-      panels: [{ id: createId(), boardId: board.id, cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 4 } }],
+      panels: [{ id: createId(), boardId: board.id, cut: { axis: 'x', stripWidthMm: 25, kerfMm: DEFAULT_KERF_MM, count: 4 } }],
       rows: [{ id: createId(), wafers: [] }], updatedAt: new Date().toISOString(),
     }
     commitData(current => ({ ...current, composites: [...current.composites, composite] }))
@@ -272,9 +273,9 @@ export default function App() {
           <div className="topbar-actions">
             <WarningCenter warnings={warnings} onNavigate={goToWarning} />
             {saveOk
-              ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
-              : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
-            <button className="backup-button" onClick={toggleLengthUnit} title="Toggle imperial / metric units">
+              ? <div className="save-state" role="status" aria-live="polite" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+              : <div className="save-state save-state-error" role="status" aria-live="polite" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
+            <button className="backup-button" onClick={toggleLengthUnit} aria-label={`Preston's button — toggle measurement units (currently ${lengthUnit})`} title="Toggle imperial / metric units">
               <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'}
             </button>
             <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
@@ -407,5 +408,5 @@ function WarningMenu({ warnings, onNavigate, onClose }: { warnings: WorkspaceWar
 }
 
 function NavButton({ active, icon, label, open, onClick }: { active: boolean, icon: ReactNode, label: string, open: boolean, onClick: () => void }) {
-  return <button className={`nav-button ${active ? 'active' : ''}`} aria-label={label} onClick={onClick}>{icon}{open && <span>{label}</span>}</button>
+  return <button className={`nav-button ${active ? 'active' : ''}`} aria-label={label} aria-current={active ? 'page' : undefined} onClick={onClick}>{icon}{open && <span>{label}</span>}</button>
 }

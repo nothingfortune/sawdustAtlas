@@ -246,89 +246,89 @@ export default function App() {
 
   return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
     <div className="app-shell">
-    <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
-      <button type="button" className="brand" onClick={() => setView('home')} aria-label="Go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
-      <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
-      <nav>
-        <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
-        <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
-        <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
-        <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
-        <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
-        <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
-        <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => setView('geometry')} />
-        <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
-        <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => setView('pricing')} />
-      </nav>
-      <div className="sidebar-bottom">
-        <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
-        <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
-        {preImport && <button className="nav-button" aria-label="Restore the workspace from before the last import" onClick={restorePreImport}><Undo2 />{sidebarOpen && <span>Undo import</span>}</button>}
-      </div>
-    </aside>
-    <main>
-      <header className="topbar">
-        <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
-        <div className="topbar-actions">
-          <WarningCenter warnings={warnings} onNavigate={goToWarning} />
-          {saveOk
-            ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
-            : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
-          <button className="backup-button" onClick={toggleLengthUnit} title="Toggle imperial / metric units">
-            <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to Sanity' : 'Preston - Click here'}
-          </button>
-          <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
-          <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
-          <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
+      <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
+        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
+        <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
+        <nav>
+          <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
+          <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
+          <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
+          <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
+          <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
+          <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
+          <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => setView('geometry')} />
+          <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
+          <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => setView('pricing')} />
+        </nav>
+        <div className="sidebar-bottom">
+          <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
+          <button className="nav-button" aria-label="Export backup" onClick={() => downloadData(data)}><Upload />{sidebarOpen && <span>Export backup</span>}</button>
+          {preImport && <button className="nav-button" aria-label="Restore the workspace from before the last import" onClick={restorePreImport}><Undo2 />{sidebarOpen && <span>Undo import</span>}</button>}
         </div>
-      </header>
-      <section className="workspace">
-        {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
-        {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
-        {view === 'boards' && boardsMode === 'gallery' && (
-          <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
-        )}
-        {view === 'boards' && boardsMode === 'board' && (
-          <BoardDesigner
-            projects={data.boards}
-            project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]}
-            woods={data.woods}
-            pricing={data.pricing}
-            onSelect={setActiveBoard}
-            onCreate={createBoard}
-            onChange={updateBoard}
-            onDelete={deleteBoard}
-            onMakeComposite={makeComposite}
-            onBack={() => setBoardsMode(boardBackTo)}
-          />
-        )}
-        {view === 'boards' && boardsMode === 'composite' && (() => {
-          const composite = data.composites.find(c => c.id === activeComposite)
-          return composite
-            ? (
-              <CompositeScreen
-                composite={composite}
-                boards={data.boards}
-                woods={data.woods}
-                pricing={data.pricing}
-                onChange={updateComposite}
-                onCreateBoardForPanel={createBoardForPanel}
-                onEditBoard={editPanelBoard}
-                onBack={() => setBoardsMode('gallery')}
-              />
-            )
-            : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
-        })()}
-        {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
-        {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={setSketch} />}
-        {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
-        {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
-      </section>
-    </main>
-    <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
-    {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
-    {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
-    <BuildBadge />
+      </aside>
+      <main>
+        <header className="topbar">
+          <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
+          <div className="topbar-actions">
+            <WarningCenter warnings={warnings} onNavigate={goToWarning} />
+            {saveOk
+              ? <div className="save-state" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
+              : <div className="save-state save-state-error" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
+            <button className="backup-button" onClick={toggleLengthUnit} title="Toggle imperial / metric units">
+              <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'}
+            </button>
+            <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
+            <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
+            <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
+          </div>
+        </header>
+        <section className="workspace">
+          {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
+          {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
+          {view === 'boards' && boardsMode === 'gallery' && (
+            <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+          )}
+          {view === 'boards' && boardsMode === 'board' && (
+            <BoardDesigner
+              projects={data.boards}
+              project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]}
+              woods={data.woods}
+              pricing={data.pricing}
+              onSelect={setActiveBoard}
+              onCreate={createBoard}
+              onChange={updateBoard}
+              onDelete={deleteBoard}
+              onMakeComposite={makeComposite}
+              onBack={() => setBoardsMode(boardBackTo)}
+            />
+          )}
+          {view === 'boards' && boardsMode === 'composite' && (() => {
+            const composite = data.composites.find(c => c.id === activeComposite)
+            return composite
+              ? (
+                <CompositeScreen
+                  composite={composite}
+                  boards={data.boards}
+                  woods={data.woods}
+                  pricing={data.pricing}
+                  onChange={updateComposite}
+                  onCreateBoardForPanel={createBoardForPanel}
+                  onEditBoard={editPanelBoard}
+                  onBack={() => setBoardsMode('gallery')}
+                />
+              )
+              : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+          })()}
+          {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
+          {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={setSketch} />}
+          {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
+          {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
+        </section>
+      </main>
+      <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+      {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+      {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
+      <BuildBadge />
     </div>
   </UnitSystemProvider>
 }

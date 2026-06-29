@@ -36,3 +36,12 @@ export function angleForOffset(offsetMm: number, stockThicknessMm: number): numb
   if (!(stockThicknessMm > 0)) return 0
   return clampAngle(Math.atan(offsetMm / stockThicknessMm) * 180 / Math.PI)
 }
+
+// The width of a strip's *opposite* (angled) face. `widthMm` is the reference face; a
+// positive trailing angle widens the far face, a negative one narrows it. Same
+// width + thickness*tan(angle) relation as board generation; clamped to >= 0 for display.
+export function angledFaceWidth(widthMm: number, stockThicknessMm: number, trailingAngleDeg: number): number {
+  const reference = Math.max(0, widthMm)
+  const opposite = reference + Math.max(0, stockThicknessMm) * Math.tan(clampAngle(trailingAngleDeg) * Math.PI / 180)
+  return Math.max(0, opposite)
+}

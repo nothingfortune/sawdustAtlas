@@ -130,5 +130,10 @@ test.describe('angle & setup card', () => {
     // the bench setup card (BOARD-025) also surfaces the saw angle high up
     await expect(page.locator('.bench-card')).toContainText(/SAW ANGLE/i)
     await expect(page.locator('.bench-card')).toContainText('30°')
+
+    // angled strip rows show both face widths so the asymmetry is visible
+    const hint = page.locator('.strip-face-hint').first()
+    await expect(hint).toBeVisible()
+    await expect(hint).toContainText(/Faces .+→/)
   })
 })

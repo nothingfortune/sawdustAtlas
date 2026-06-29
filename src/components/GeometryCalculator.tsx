@@ -6,6 +6,7 @@ import { angleBetweenDeg, angleToAxes, bearingDeg, distance, lineIntersection, m
 import { createId } from '../id'
 import { formatLength, formatNumber } from '../domain/lengthUnits'
 import { LengthInput } from './fields'
+import { CompoundAngleCalculator } from './CompoundAngleCalculator'
 import { useElementSize } from './useElementSize'
 import { useUnitSystem } from './unitSystem'
 
@@ -24,6 +25,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   const [zoom, setZoom] = useState(1)
   // Selection holds up to 2 tokens, FIFO: 'p:<id>' points, 'm:<id>' members.
   const [selected, setSelected] = useState<string[]>([])
+  const [mode, setMode] = useState<'sketch' | 'compound'>('sketch')
 
   const pxPerMm = 1.1 * zoom
   const toScreen = (p: Vec) => ({ x: PADDING + p.x * pxPerMm, y: size.height - PADDING - p.y * pxPerMm })
@@ -160,19 +162,23 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     return arcAt(vertex, otherA, otherB, `${formatNumber(angleBetweenDeg(vertex, otherA, vertex, otherB))}°`)
   })()
 
-  return <div className="geometry-layout">
+  return <div className={`geometry-layout${mode === 'compound' ? ' single' : ''}`}>
     <div className="geo-main">
       <div className="geo-toolbar">
-        <span className="eyebrow">GEOMETRY</span>
-        <div className="geo-toolbar-actions">
+        <div className="geo-modes" role="tablist">
+          <button role="tab" aria-selected={mode === 'sketch'} className={mode === 'sketch' ? 'active' : ''} onClick={() => setMode('sketch')}>Sketch</button>
+          <button role="tab" aria-selected={mode === 'compound'} className={mode === 'compound' ? 'active' : ''} onClick={() => setMode('compound')}>Compound angle</button>
+        </div>
+        {mode === 'sketch' && <div className="geo-toolbar-actions">
           <button className="button secondary" disabled={selectedPoints.length !== 2} onClick={connect}><Link2 size={15}/>Connect</button>
           <button className="button secondary" disabled={selected.length === 0} onClick={deleteSelected}><Trash2 size={15}/>Delete</button>
           <button className="button secondary" disabled={sketch.points.length === 0} onClick={clear}><X size={15}/>Clear</button>
           <button className="icon-button" aria-label="Zoom out" onClick={() => setZoom(z => Math.max(0.4, z - 0.2))}><Minus size={15}/></button>
           <button className="icon-button" aria-label="Zoom in" onClick={() => setZoom(z => Math.min(3, z + 0.2))}><Plus size={15}/></button>
-        </div>
+        </div>}
       </div>
-      <div className="geo-canvas-wrap" ref={containerRef}>
+      {mode === 'compound' && <CompoundAngleCalculator/>}
+      {mode === 'sketch' && <div className="geo-canvas-wrap" ref={containerRef}>
         <svg ref={svgRef} className="geo-canvas" width="100%" height="100%" role="img" aria-label="Geometry sketch">
           <rect x={0} y={0} width="100%" height="100%" fill="transparent" onClick={addPoint}/>
           {singleMemberEnds && (() => { const s = toScreen(singleMemberEnds[0]); return <g className="geo-ref">
@@ -212,9 +218,9 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           {angleArc && <g className="geo-annot"><path className="geo-arc" d={angleArc.d}/><text x={angleArc.lx} y={angleArc.ly} textAnchor="middle">{angleArc.label}</text></g>}
         </svg>
         {sketch.points.length === 0 && <div className="geo-empty">Tap anywhere to place your first point.</div>}
-      </div>
+      </div>}
     </div>
-    <aside className="geo-inspector">
+    {mode === 'sketch' && <aside className="geo-inspector">
       <h3>Sketch</h3>
       <p className="geo-hint">Tap to place points · select two and Connect · select members to measure.</p>
 
@@ -241,6 +247,6 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           ? <p className="geo-hint">Select two points, a member, or two members.</p>
           : <div className="geo-readout">{readouts.map(readout => <div key={readout.label} className="geo-readout-row"><span>{readout.label}</span><b>{readout.value}</b></div>)}</div>}
       </div>
-    </aside>
+    </aside>}
   </div>
 }

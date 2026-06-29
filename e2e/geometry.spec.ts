@@ -41,6 +41,20 @@ test.describe('geometry calculator', () => {
     await expect(point).not.toHaveAttribute('cx', before ?? '')
   })
 
+  test('the compound-angle mode computes miter + bevel from two tilts', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Compound angle' }).click()
+    await page.getByLabel('Tilt A degrees').fill('6')
+    await page.getByLabel('Tilt B degrees').fill('4')
+    const results = page.locator('.compound-results')
+    await expect(results).toContainText('Miter')
+    await expect(results).toContainText('6°')
+    await expect(results).toContainText('Bevel')
+    await expect(results).toContainText('4.02°')
+    // back to sketch keeps the canvas
+    await page.getByRole('tab', { name: 'Sketch' }).click()
+    await expect(page.locator('.geo-canvas')).toBeVisible()
+  })
+
   test('persists the sketch across reload', async ({ page }) => {
     const box = (await page.locator('.geo-canvas').boundingBox())!
     await page.mouse.click(box.x + 200, box.y + 200)

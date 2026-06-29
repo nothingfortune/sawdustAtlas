@@ -4,6 +4,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { BoardStrip, WoodSpecies } from '../types'
 import { formatLength, lengthUnitLabel } from '../domain/lengthUnits'
 import { angledFaceWidth } from '../domain/boardAngle'
+import { SQUARE_ANGLE_TOLERANCE_DEG } from '../domain/units'
 import { LengthInput } from './fields'
 import { useUnitSystem } from './unitSystem'
 
@@ -96,12 +97,12 @@ export function StripList({ strips, woods, construction, stockThicknessMm = 0, o
           }}
         ><GripVertical/></button>
         <span className="swatch" style={{ background: wood?.color ?? '#8c6a48' }}/>
-        <select value={strip.speciesId} onChange={event => onUpdateStrip(strip.id, { speciesId: event.target.value })}>{woods.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select>
+        <select aria-label={`Strip ${index + 1} species`} value={strip.speciesId} onChange={event => onUpdateStrip(strip.id, { speciesId: event.target.value })}>{woods.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select>
         <LengthInput ariaLabel={`Strip ${index + 1} width`} title={`Width in ${lengthUnitLabel(lengthUnit)}`} value={strip.width} min={1} onChange={value => onUpdateStrip(strip.id, { width: value })}/>
         <span>{lengthUnitLabel(lengthUnit)}</span>
         {construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => onUpdateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}
         <button aria-label={`Delete strip ${index + 1}`} onClick={() => onDeleteStrip(strip.id)}><Trash2/></button>
-        {construction === 'end' && Math.abs(strip.trailingAngle) > 0.001 && <span className="strip-face-hint" title="The two faces of this angled strip: the width you set, and the opposite (angled) face.">Faces {formatLength(strip.width, lengthUnit)} → {formatLength(angledFaceWidth(strip.width, stockThicknessMm, strip.trailingAngle), lengthUnit)}</span>}
+        {construction === 'end' && Math.abs(strip.trailingAngle) > SQUARE_ANGLE_TOLERANCE_DEG && <span className="strip-face-hint" title="The two faces of this angled strip: the width you set, and the opposite (angled) face.">Faces {formatLength(strip.width, lengthUnit)} → {formatLength(angledFaceWidth(strip.width, stockThicknessMm, strip.trailingAngle), lengthUnit)}</span>}
       </div>
     })}
   </div>

@@ -24,7 +24,7 @@ interface PatternContext {
 
 // Width of each generated preset strip. Bond offsets below are derived from this
 // (half-cell, third-cell, …) rather than hard-coded, so they stay correct if the
-// preset strip width ever changes. See docs/plans/BRICK_PATTERN_CORRECTION.md.
+// preset strip width ever changes. See docs/plans/completedPlans/BRICK_PATTERN_CORRECTION.md.
 const PRESET_STRIP_WIDTH = 40
 
 export const BOARD_PATTERNS = [

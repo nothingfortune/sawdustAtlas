@@ -223,7 +223,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
 
   return <div className="designer-layout">
     <div className="designer-toolbar">
-      <div><span className="eyebrow">WORKSHOP PLANNER</span><div className="project-switcher"><select value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div></div>
+      <div><span className="eyebrow">WORKSHOP PLANNER</span><div className="project-switcher"><select aria-label="Select workshop" value={project.id} onChange={event => onSelect(event.target.value)}>{projects.map(candidate => <option value={candidate.id} key={candidate.id}>{candidate.name}</option>)}</select><ChevronDown/></div></div>
       <div className="toolbar-actions"><button className={`button secondary ${drawMode ? 'active' : ''}`} onClick={() => { setDrawMode(active => !active); setSelected('') }}><PencilRuler/>{drawMode ? 'Done drawing' : 'Draw no-go zones'}</button><button className="button secondary" onClick={onCreate}><Plus/>New plan</button><button className="button secondary danger" onClick={() => onDelete(project.id)} aria-label="Delete this workshop"><Trash2/>Delete</button></div>
     </div>
     <div className={`tool-panel left-panel${leftOpen ? ' open' : ''}`}>
@@ -292,7 +292,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       <button className="drawer-close" onClick={() => setRightOpen(false)} aria-label="Close inspector"><X/></button>
       {item
         ? <>
-          <div className="inspector-heading"><div><span className="eyebrow">SELECTED OBJECT</span><input value={item.name} onChange={event => updateItem(item.id, { name: event.target.value })}/></div><button className="icon-button danger" onClick={removeItem}><Trash2/></button></div>
+          <div className="inspector-heading"><div><span className="eyebrow">SELECTED OBJECT</span><input aria-label="Object name" value={item.name} onChange={event => updateItem(item.id, { name: event.target.value })}/></div><button className="icon-button danger" aria-label="Delete object" onClick={removeItem}><Trash2/></button></div>
           <div className="field-row"><Field label="Width (mm)" value={item.width} min={1} onChange={value => updateItem(item.id, { width: value })}/><Field label="Depth (mm)" value={item.depth} min={1} onChange={value => updateItem(item.id, { depth: value })}/></div>
           <Field label="Height (mm)" value={item.height} min={1} onChange={value => updateItem(item.id, { height: value })}/>
           <Field label="Working clearance (mm)" value={item.clearance} onChange={value => updateItem(item.id, { clearance: value })}/>
@@ -300,7 +300,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
           <ColorField value={item.color} onChange={color => updateItem(item.id, { color })}/>
           <div className="field-label">Rotation</div><div className="rotation-buttons">{[0, 90, 180, 270].map(rotation => <button className={item.rotation === rotation ? 'active' : ''} onClick={() => updateItem(item.id, { rotation })} key={rotation}>{rotation}°</button>)}</div>
           <div className="panel-section feed-settings"><h3>Infeed / outfeed</h3><p>Direction is relative to the object and follows its rotation.</p>
-            <div className="feed-direction-buttons"><button className={item.feedDirection === null ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: null })}>Off</button>{([0, 90, 180, 270] as const).map(direction => <button className={item.feedDirection === direction ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: direction })} key={direction}>{direction === 0 ? '→' : direction === 90 ? '↓' : direction === 180 ? '←' : '↑'}</button>)}</div>
+            <div className="feed-direction-buttons"><button className={item.feedDirection === null ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: null })}>Off</button>{([0, 90, 180, 270] as const).map(direction => <button aria-label={`Feed ${direction === 0 ? 'right' : direction === 90 ? 'down' : direction === 180 ? 'left' : 'up'}`} className={item.feedDirection === direction ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: direction })} key={direction}>{direction === 0 ? '→' : direction === 90 ? '↓' : direction === 180 ? '←' : '↑'}</button>)}</div>
             {item.feedDirection !== null && <><div className="field-row"><Field label="Infeed (mm)" value={item.infeedClearance} onChange={infeedClearance => updateItem(item.id, { infeedClearance })}/><Field label="Outfeed (mm)" value={item.outfeedClearance} onChange={outfeedClearance => updateItem(item.id, { outfeedClearance })}/></div><Field label="Side margin (mm)" value={item.sideClearance} onChange={sideClearance => updateItem(item.id, { sideClearance })}/></>}
           </div>
           {selectedItemConflicts.length > 0 && <div className="planner-alert inspector-alert"><AlertTriangle/><span>Overlaps {selectedItemConflicts.map(conflict => conflict.name).join(', ')}.</span></div>}
@@ -317,7 +317,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
         </>
         : zone
           ? <>
-            <div className="inspector-heading"><div><span className="eyebrow">NO-GO ZONE</span><input value={zone.name} onChange={event => updateZone(zone.id, { name: event.target.value })}/></div><button className="icon-button danger" onClick={removeZone}><Trash2/></button></div>
+            <div className="inspector-heading"><div><span className="eyebrow">NO-GO ZONE</span><input aria-label="Zone name" value={zone.name} onChange={event => updateZone(zone.id, { name: event.target.value })}/></div><button className="icon-button danger" aria-label="Delete zone" onClick={removeZone}><Trash2/></button></div>
             <div className="field-row"><Field label="X (mm)" value={zone.x} min={0} onChange={value => updateZone(zone.id, { x: value })}/><Field label="Y (mm)" value={zone.y} min={0} onChange={value => updateZone(zone.id, { y: value })}/></div>
             <div className="field-row"><Field label="Width (mm)" value={zone.width} min={1} onChange={value => updateZone(zone.id, { width: value })}/><Field label="Depth (mm)" value={zone.depth} min={1} onChange={value => updateZone(zone.id, { depth: value })}/></div>
             <p className="zone-help">Use these zones for wall jogs, posts, utility chases, stairs, or permanent floor obstructions. Equipment warnings will fire when an object footprint crosses into this area.</p>

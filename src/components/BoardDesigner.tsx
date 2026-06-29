@@ -30,6 +30,8 @@ import { calculateStockRequirements } from '../domain/boardStock'
 import type { StockRequirements } from '../domain/boardStock'
 import { calculateAngleSetup } from '../domain/boardAngle'
 import type { AngleSetup } from '../domain/boardAngle'
+import { summarizeBenchSetup } from '../domain/boardBench'
+import type { BenchSetup } from '../domain/boardBench'
 import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 import { calculatePrice, classifyBoard } from '../domain/pricing'
@@ -59,6 +61,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const cutPlan = generateCuttingBoardPlan(project, woods, build, end)
     const woodUsage = calculateWoodUsage(project, woods, end)
     const stock = calculateStockRequirements(project, woods, build, end)
+    const bench = summarizeBenchSetup(project, woods, build, end)
     const angleRows = project.construction === 'end'
       ? [...new Map(project.strips
           .filter(strip => Math.abs(strip.trailingAngle) > 0.001)
@@ -84,7 +87,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
       : edgeEstimatedCost
     const tier = classifyBoard(project, end.sliceCount)
     const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: build.roughBoardFeet, construction: project.construction, tier, pricing })
-    return { end, sliceStates, build, template, cutPlan, woodUsage, stock, angleRows, width, boardFeet, finishedSize, estimatedCost, price }
+    return { end, sliceStates, build, template, cutPlan, woodUsage, stock, bench, angleRows, width, boardFeet, finishedSize, estimatedCost, price }
   }, [lengthUnit, project, woods, pricing])
   // The pattern-preview project (with stable preview-* ids) only needs recomputing
   // when the pending pattern or inputs change — not on every render while the
@@ -107,7 +110,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     update({ endGrain: { ...nextSettings, ...clampTransforms(nextSettings, count) } })
   }
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const { end, sliceStates, build, template, cutPlan, woodUsage, stock, angleRows, width, boardFeet, finishedSize, estimatedCost, price } = derived!
+  const { end, sliceStates, build, template, cutPlan, woodUsage, stock, bench, angleRows, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -170,6 +173,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
           <Stat label="Price" value={`$${price.total.toFixed(2)}`}/>
           <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${formatNumber(end.totalWasteBoardFeet)} bf · ${formatNumber(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
+        <BenchSetupCard bench={bench}/>
         <PriceBreakdownCard price={price} roughBoardFeet={boardFeet} construction={project.construction}/>
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
@@ -609,6 +613,36 @@ function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {
     </div>
     <section className="build-sequence"><h4>Build sequence</h4><ol>{plan.steps.map(step => <li key={step.id}><span>{step.order}</span><div><b>{step.title}</b><p>{convertMetricText(step.instruction, lengthUnit)}</p></div></li>)}</ol></section>
   </div>
+}
+
+// BOARD-025: the at-a-glance bench reference — rip fence widths, saw angles, and the
+// crosscut stop/counts a maker dials in at the saw. Sits high; the detailed cards follow.
+function BenchSetupCard({ bench }: { bench: BenchSetup }) {
+  const { lengthUnit } = useUnitSystem()
+  const a = bench.assumptions
+  return <section className="bench-card">
+    <h3>Bench setup</h3>
+    <div className="bench-grid">
+      <div className="bench-block">
+        <span className="eyebrow">RIP FENCE</span>
+        {bench.ripGroups.map(group => <div key={`${group.speciesId}-${group.finishedWidthMm}-${group.trailingAngle}-${group.roughRipWidthMm}`} className="bench-line">
+          <b>{formatLength(group.roughRipWidthMm, lengthUnit)}</b><small>×{group.count} {group.speciesName}</small>
+        </div>)}
+      </div>
+      {bench.angles.length > 0 && <div className="bench-block">
+        <span className="eyebrow">SAW ANGLE</span>
+        {bench.angles.map(angle => <div key={angle.trailingAngleDeg} className="bench-line">
+          <b>{formatNumber(angle.sawAngleDeg)}°</b><small>×{angle.count}</small>
+        </div>)}
+      </div>}
+      {bench.crosscut && <div className="bench-block">
+        <span className="eyebrow">CROSSCUT</span>
+        <div className="bench-line"><b>{formatLength(bench.crosscut.stopBlockMm, lengthUnit)}</b><small>stop block</small></div>
+        <div className="bench-line"><b>{bench.crosscut.slices}</b><small>slices · {bench.crosscut.passes} passes</small></div>
+      </div>}
+    </div>
+    <p className="bench-assumptions">Allowances: rip {formatLength(a.ripAllowanceMm, lengthUnit)} · width trim {formatLength(a.widthTrimMm, lengthUnit)} · length trim {formatLength(a.lengthTrimMm, lengthUnit)}{a.construction === 'end' ? ` · kerf ${formatLength(a.kerfMm, lengthUnit)}` : ''}.</p>
+  </section>
 }
 
 // BOARD-023: a bench/shopping reference — what to rip each strip to, how much stock to

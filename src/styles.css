@@ -78,6 +78,14 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .stock-buy-total b { font-variant-numeric:tabular-nums; }
 .stock-assumptions { margin:16px 0 0;color:#7b827a;font-size:12px;line-height:1.5; }
 @media (max-width:720px) { .stock-cols { grid-template-columns:1fr; } }
+.bench-card { max-width:820px;margin:24px auto;background:#f3efe6;border:1px solid #c4c0b4;border-left:4px solid var(--orange);padding:18px 20px; }
+.bench-card h3 { margin:0 0 14px;font-size:18px; }
+.bench-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px; }
+.bench-block .eyebrow { display:block;margin-bottom:9px; }
+.bench-line { display:flex;align-items:baseline;gap:8px;padding:4px 0; }
+.bench-line b { font-size:18px;font-variant-numeric:tabular-nums; }
+.bench-line small { color:#7d827b;font-size:12px; }
+.bench-assumptions { margin:16px 0 0;color:#7b827a;font-size:12px;line-height:1.5; }
 .angle-rows { display:grid;gap:2px; }
 .angle-head, .angle-row { display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;gap:8px;align-items:center;font-size:13px;padding:6px 0; }
 .angle-head { color:#737970;font:12px 'DM Mono';text-transform:uppercase;border-bottom:1px solid var(--line); }

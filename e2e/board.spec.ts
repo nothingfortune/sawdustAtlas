@@ -87,6 +87,14 @@ test.describe('cutting board designer', () => {
     await expect(card).toContainText(/bf/)
   })
 
+  test('shows a bench setup card with rip fence and crosscut numbers', async ({ page }) => {
+    const card = page.locator('.bench-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText('Bench setup')
+    await expect(card).toContainText(/RIP FENCE/i)
+    await expect(card).toContainText(/CROSSCUT/i)
+  })
+
   test('pop-out close button is reachable above the chrome', async ({ page }) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const close = page.getByRole('button', { name: 'Close preview' })
@@ -118,5 +126,9 @@ test.describe('angle & setup card', () => {
     await expect(card).toBeVisible()
     await expect(card).toContainText('Angle & setup')
     await expect(card).toContainText('30°')
+
+    // the bench setup card (BOARD-025) also surfaces the saw angle high up
+    await expect(page.locator('.bench-card')).toContainText(/SAW ANGLE/i)
+    await expect(page.locator('.bench-card')).toContainText('30°')
   })
 })

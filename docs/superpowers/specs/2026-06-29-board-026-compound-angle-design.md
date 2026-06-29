@@ -1,16 +1,20 @@
 # BOARD-026 (3D): Compound-angle leg calculator — Design
 
 Date: 2026-06-29
-Plan item: `BOARD-026` follow-up. The geometry tool's free canvas is single-plane; this adds
-the **3D** piece the user asked for — a splayed leg that tilts in two planes → the
-**compound miter + bevel** to set on the saw.
+Plan item: `BOARD-026` follow-up. The geometry tool is meant to be a **flexible angle
+toolkit**, not tied to specific use cases. This adds the **3D** piece: any object that tilts
+in two planes → the **compound angle** (and the saw miter + bevel to cut it). A splayed leg
+is one example; it applies equally to hoppers, splayed box sides, canted posts, etc.
+
+A companion canvas capability — **draw a rectangle/square and read its diagonal (bisection)
+angles** — is the next increment after this calc; both serve the same general-toolkit goal.
 
 ## Decisions (from brainstorming)
 
 - **Shape:** a **parametric calculator** (form in/results out), not a 3D canvas. Lives as a
-  mode in the Geometry tool ("Sketch" ⇄ "Compound leg").
-- **Inputs:** the **two splay components** measured off the two elevation drawings —
-  front-view tilt `f` and side-view tilt `s`.
+  mode in the Geometry tool ("Sketch" ⇄ "Compound angle").
+- **Inputs:** **two tilt components** — the tilt seen in each of two perpendicular views
+  (`tiltA`, `tiltB`); e.g. the front- and side-view tilt of a splayed leg. Kept general.
 
 ## The math (please validate the numbers below)
 
@@ -45,27 +49,27 @@ miter **6.00°**, bevel **4.02°**, resultant **7.21°**, true length **705.6 mm
 ### Domain — `src/domain/compoundAngle.ts` (pure, fully tested)
 
 ```ts
-export interface CompoundLegInput { frontTiltDeg: number; sideTiltDeg: number; riseMm?: number }
-export interface CompoundLegResult {
-  miterDeg: number          // = frontTilt (clamped)
-  bevelDeg: number          // = atan(tan(side)/cos(front))
-  resultantTiltDeg: number  // = acos(cos front · cos side)
+export interface CompoundAngleInput { tiltADeg: number; tiltBDeg: number; riseMm?: number }
+export interface CompoundAngleResult {
+  miterDeg: number          // = tiltA (clamped)
+  bevelDeg: number          // = atan(tan(tiltB)/cos(tiltA))
+  resultantTiltDeg: number  // = acos(cos tiltA · cos tiltB) — combined tilt off square
   trueLengthMm?: number     // = rise / cos(resultant); omitted when no rise
 }
-export function solveCompoundLeg(input: CompoundLegInput): CompoundLegResult
+export function solveCompoundAngle(input: CompoundAngleInput): CompoundAngleResult
 ```
-- Tilts clamped to `[0, 85]` (beyond that is non-physical for a leg). Reuses radians helpers;
-  `trueLengthMm` only present when `riseMm > 0`.
+- Tilts clamped to `[0, 85]` (beyond is non-physical). Reuses radians helpers;
+  `trueLengthMm` only present when `riseMm > 0`. General-purpose: nothing leg-specific.
 
-### UI — a "Compound leg" mode in the Geometry view
+### UI — a "Compound angle" mode in the Geometry view
 
 - A segmented control in the Geometry header: **Sketch** (the existing canvas) ⇄
-  **Compound leg** (this calculator). Local mode state; the sketch is untouched.
-- The calculator is a centered form (`CompoundLegCalculator`): **Front-view tilt °**,
-  **Side-view tilt °**, **Rise (optional)** inputs → a results list: **Miter**, **Bevel**,
-  **Resultant tilt off plumb**, **True length**. Unit-aware for the length (`formatLength`);
-  angles in degrees. A one-line note states the convention ("front tilt is the miter; lay
-  the leg on its front face").
+  **Compound angle** (this calculator). Local mode state; the sketch is untouched.
+- The calculator is a centered form (`CompoundAngleCalculator`): **Tilt A °**, **Tilt B °**,
+  **Rise (optional)** inputs → a results list: **Combined tilt off square**, **Miter**,
+  **Bevel**, **True length**. Unit-aware for the length (`formatLength`); angles in degrees.
+  A one-line note explains the two tilts are perpendicular-view tilts (e.g. front/side of a
+  leg) and that Tilt A is the miter / Tilt B drives the bevel.
 - Inputs are ephemeral local state (a scratch calculator); persisting the last values is a
   later nicety.
 
@@ -74,19 +78,26 @@ export function solveCompoundLeg(input: CompoundLegInput): CompoundLegResult
 - **Unit (`tests/compoundAngle.test.ts`):** the three degenerate guarantees; the worked
   example (6/4 → 6.00/4.02/7.21/705.6); `resultant = acos(cos f·cos s)`; `trueLength =
   rise/cos(resultant)`; clamping beyond 85°; no `trueLengthMm` when rise absent/0.
-- **e2e (`e2e/geometry.spec.ts`):** switch to Compound leg, enter front 6 / side 4, see a
-  miter and bevel result; the sketch mode still works.
+- **e2e (`e2e/geometry.spec.ts`):** switch to Compound angle, enter Tilt A 6 / Tilt B 4,
+  see a miter and bevel result; the sketch mode still works.
 - `src/domain/**` is under the coverage gate.
 
 ## Files
 
 - Create: `src/domain/compoundAngle.ts`, `tests/compoundAngle.test.ts`,
-  `src/components/CompoundLegCalculator.tsx`.
+  `src/components/CompoundAngleCalculator.tsx`.
 - Modify: `src/components/GeometryCalculator.tsx` (mode toggle), `src/styles.css`,
   `e2e/geometry.spec.ts`.
 
+## Next increment (committed, separate PR): rectangle + bisection on the canvas
+
+Add a **rectangle/square** primitive to the sketch (drag two opposite corners → 4 corner
+points + 4 sides + 2 diagonals). The diagonals bisect the corners, so the existing
+angle-between-members readout gives the bisection angle (square → 45°, rectangle →
+`atan(short/long)`). Keeps the tool general for "draw something and read its angles."
+
 ## Out of scope (deferred)
 
-- Plan-rotation output and an orientation diagram; choosing which face the leg lies on
-  (we fix one convention); persisting calculator inputs; driving it from two on-canvas
-  elevation sketches; non-leg compound joints (crown molding, hoppers).
+- Plan-rotation output and an orientation diagram; choosing which reference face (one fixed
+  convention); persisting calculator inputs; driving the calc from two on-canvas elevation
+  sketches.

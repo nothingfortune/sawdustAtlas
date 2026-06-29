@@ -153,7 +153,7 @@ jobs:
           docker rm -f sawdust-ci
 
       - name: Scan local Docker image
-        uses: docker/scout-action@481412c8b8de36d0f79e85aa382c60397466feb6 # v1
+        uses: docker/scout-action@bacf462e8d090c09660de30a6ccc718035f961e3 # v1
         continue-on-error: true
         with:
           command: cves,recommendations
@@ -242,7 +242,7 @@ jobs:
           sbom: true
 
       - name: Scan published Docker image
-        uses: docker/scout-action@481412c8b8de36d0f79e85aa382c60397466feb6 # v1
+        uses: docker/scout-action@bacf462e8d090c09660de30a6ccc718035f961e3 # v1
         continue-on-error: true
         with:
           command: cves,recommendations

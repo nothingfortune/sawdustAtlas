@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import { Link2, Minus, Plus, Trash2, X } from 'lucide-react'
 import type { Sketch, SketchMember, SketchPoint, Vec } from '../domain/geometry2d'
-import { angleBetweenDeg, bearingDeg, distance, lineIntersection, memberRectangle } from '../domain/geometry2d'
+import { angleBetweenDeg, angleToAxes, bearingDeg, distance, lineIntersection, memberRectangle } from '../domain/geometry2d'
 import { createId } from '../id'
 import { formatLength, formatNumber } from '../domain/lengthUnits'
 import { LengthInput } from './fields'
@@ -85,13 +85,26 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   }
   if (selectedMembers.length === 1) {
     const e = ends(selectedMembers[0]!)
-    if (e) { readouts.push({ label: 'Length', value: formatLength(distance(e[0], e[1]), lengthUnit) }, { label: 'Bearing', value: `${formatNumber(bearingDeg(e[0], e[1]))}°` }) }
+    if (e) {
+      const axes = angleToAxes(e[0], e[1])
+      readouts.push(
+        { label: 'Length', value: formatLength(distance(e[0], e[1]), lengthUnit) },
+        { label: 'Bearing', value: `${formatNumber(bearingDeg(e[0], e[1]))}°` },
+        { label: 'From horizontal', value: `${formatNumber(axes.fromHorizontalDeg)}°` },
+        { label: 'From vertical (cut off plumb)', value: `${formatNumber(axes.fromVerticalDeg)}°` },
+      )
+    }
   }
   let intersection: Vec | null = null
   if (selectedMembers.length === 2) {
     const e1 = ends(selectedMembers[0]!), e2 = ends(selectedMembers[1]!)
     if (e1 && e2) {
-      readouts.push({ label: 'Angle between', value: `${formatNumber(angleBetweenDeg(e1[0], e1[1], e2[0], e2[1]))}°` })
+      const inside = angleBetweenDeg(e1[0], e1[1], e2[0], e2[1]) // [0,180]
+      readouts.push(
+        { label: 'Inside angle', value: `${formatNumber(inside)}°` },
+        { label: 'Outside angle', value: `${formatNumber(180 - inside)}°` },
+        { label: 'Miter each (½)', value: `${formatNumber((180 - inside) / 2)}°` },
+      )
       const hit = lineIntersection(e1[0], e1[1], e2[0], e2[1])
       intersection = hit?.point ?? null
       readouts.push({ label: 'Intersection', value: hit ? `${formatLength(hit.point.x, lengthUnit)}, ${formatLength(hit.point.y, lengthUnit)}${hit.withinBoth ? '' : ' (on extension)'}` : 'Parallel — none' })
@@ -118,6 +131,10 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
       <div className="geo-canvas-wrap" ref={containerRef}>
         <svg ref={svgRef} className="geo-canvas" width="100%" height="100%" role="img" aria-label="Geometry sketch">
           <rect x={0} y={0} width="100%" height="100%" fill="transparent" onClick={addPoint}/>
+          {singleMemberEnds && (() => { const s = toScreen(singleMemberEnds[0]); return <g className="geo-ref">
+            <line x1={0} y1={s.y} x2={size.width} y2={s.y}/>
+            <line x1={s.x} y1={0} x2={s.x} y2={size.height}/>
+          </g> })()}
           {sketch.members.map(member => {
             const e = ends(member)
             if (!e) return null

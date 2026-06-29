@@ -37,6 +37,14 @@ export function lineIntersection(a1: Vec, a2: Vec, b1: Vec, b2: Vec): { point: V
   return { point, withinBoth: t >= 0 && t <= 1 && u >= 0 && u <= 1 }
 }
 
+// Acute angles (0..90) a segment makes with the horizontal and vertical axes — the
+// "cut off square / off plumb" numbers for a member measured against a reference.
+// Sign-independent (a leg leaning either way reads the same).
+export function angleToAxes(a: Vec, b: Vec): { fromHorizontalDeg: number; fromVerticalDeg: number } {
+  const fromHorizontalDeg = Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180 / Math.PI
+  return { fromHorizontalDeg, fromVerticalDeg: 90 - fromHorizontalDeg }
+}
+
 export function memberRectangle(a: Vec, b: Vec, widthMm: number): [Vec, Vec, Vec, Vec] {
   const len = Math.hypot(b.x - a.x, b.y - a.y)
   const dir = len < EPSILON ? { x: 1, y: 0 } : { x: (b.x - a.x) / len, y: (b.y - a.y) / len }

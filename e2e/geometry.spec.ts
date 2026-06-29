@@ -21,10 +21,11 @@ test.describe('geometry calculator', () => {
     // two selected points -> a distance readout
     await expect(page.locator('.geo-readout')).toContainText(/distance/i)
     await expect(page.locator('.geo-readout')).toContainText(/mm/)
-    // connect them into a member
+    // connect them into a member; the selected member shows cut-angle readouts
     await page.getByRole('button', { name: 'Connect' }).click()
     await expect(page.locator('.geo-member')).toHaveCount(1)
     await expect(page.locator('.geo-readout')).toContainText(/bearing/i)
+    await expect(page.locator('.geo-readout')).toContainText(/from vertical/i)
   })
 
   test('persists the sketch across reload', async ({ page }) => {

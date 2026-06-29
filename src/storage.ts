@@ -3,6 +3,7 @@ import { DEFAULT_PRICING, defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { LATEST_SCHEMA_VERSION, migrate } from './domain/migrations'
 import { normalizeShopItem } from './domain/shopObjects'
+import type { Sketch, SketchMember, SketchPoint } from './domain/geometry2d'
 import { createId } from './id'
 
 const KEY = 'sawdust-atlas:v1'
@@ -428,6 +429,40 @@ export function hasOnboarded(): boolean {
 
 export function markOnboarded(): void {
   try { localStorage.setItem(ONBOARDED_KEY, '1') } catch { /* best effort; non-fatal */ }
+}
+
+// BOARD-026: the geometry calculator's single working sketch — its own key, separate from
+// AtlasData (no schema/migration). Coerce untrusted shape and drop dangling members.
+const SKETCH_KEY = 'sawdust-atlas:geometry'
+
+export function normalizeSketch(raw: unknown): Sketch {
+  if (!isRecord(raw)) return { points: [], members: [] }
+  const points: SketchPoint[] = records(raw['points']).map(point => ({
+    id: stringValue(point['id'], createId()),
+    x: signedFinite(point['x'], 0),
+    y: signedFinite(point['y'], 0),
+  }))
+  const ids = new Set(points.map(point => point.id))
+  const members: SketchMember[] = records(raw['members'])
+    .map(member => ({
+      id: stringValue(member['id'], createId()),
+      aId: stringValue(member['aId'], ''),
+      bId: stringValue(member['bId'], ''),
+      widthMm: finiteNumber(member['widthMm'], 18),
+    }))
+    .filter(member => ids.has(member.aId) && ids.has(member.bId) && member.aId !== member.bId)
+  return { points, members }
+}
+
+export function loadSketch(): Sketch {
+  try {
+    const saved = localStorage.getItem(SKETCH_KEY)
+    return saved ? normalizeSketch(JSON.parse(saved) as unknown) : { points: [], members: [] }
+  } catch { return { points: [], members: [] } }
+}
+
+export function saveSketch(sketch: Sketch): void {
+  try { localStorage.setItem(SKETCH_KEY, JSON.stringify(sketch)) } catch { /* best effort; non-fatal */ }
 }
 
 export function downloadData(data: AtlasData) {

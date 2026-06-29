@@ -79,11 +79,61 @@ test.describe('cutting board designer', () => {
     await expect(label0).not.toHaveText('N')
   })
 
+  test('shows a rip & stock list with rip widths and per-species board feet', async ({ page }) => {
+    const card = page.locator('.stock-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText(/Rip & stock list/i)
+    await expect(card.locator('.stock-rip-row').first()).toBeVisible()
+    await expect(card).toContainText(/bf/)
+  })
+
+  test('shows a bench setup card with rip fence and crosscut numbers', async ({ page }) => {
+    const card = page.locator('.bench-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText('Bench setup')
+    await expect(card).toContainText(/RIP FENCE/i)
+    await expect(card).toContainText(/CROSSCUT/i)
+  })
+
   test('pop-out close button is reachable above the chrome', async ({ page }) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const close = page.getByRole('button', { name: 'Close preview' })
     await expect(close).toBeVisible()
     await close.click()
     await expect(page.locator('.preview-popout')).toHaveCount(0)
+  })
+
+  test('no angle & setup card when no strip is angled', async ({ page }) => {
+    await expect(page.locator('.angle-card')).toHaveCount(0)
+  })
+})
+
+test.describe('angle & setup card', () => {
+  test('shows saw setup numbers for an angled end-grain board', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('sawdust-atlas:onboarded', '1')
+      window.localStorage.setItem('sawdust-atlas:v1', JSON.stringify({
+        schemaVersion: 2, shops: [],
+        boards: [{ id: 'a', name: 'Chevron', construction: 'end', thickness: 38,
+          strips: [{ id: '1', speciesId: 'walnut', width: 40, trailingAngle: 30 }, { id: '2', speciesId: 'maple', width: 40, trailingAngle: -30 }],
+          endGrain: { sourceLength: 900, stockThickness: 38, sliceThickness: 45, kerf: 3.2, trimAllowance: 20, rowFlips: [], rowRotations: [] } }],
+      }))
+    })
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Cutting boards' }).click()
+    await page.getByRole('button', { name: /Chevron/ }).click()
+    const card = page.locator('.angle-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText('Angle & setup')
+    await expect(card).toContainText('30°')
+
+    // the bench setup card (BOARD-025) also surfaces the saw angle high up
+    await expect(page.locator('.bench-card')).toContainText(/SAW ANGLE/i)
+    await expect(page.locator('.bench-card')).toContainText('30°')
+
+    // angled strip rows show both face widths so the asymmetry is visible
+    const hint = page.locator('.strip-face-hint').first()
+    await expect(hint).toBeVisible()
+    await expect(hint).toContainText(/Faces .+→/)
   })
 })

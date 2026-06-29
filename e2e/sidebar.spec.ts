@@ -15,6 +15,6 @@ test.describe('sidebar brand icon', () => {
     const collapsed = await glyph.boundingBox()
     const expandedCy = expanded!.y + expanded!.height / 2
     const collapsedCy = collapsed!.y + collapsed!.height / 2
-    expect(Math.abs(expandedCy - collapsedCy)).toBeLessThan(1.5)
+    expect(Math.abs(expandedCy - collapsedCy)).toBeLessThan(1.0)
   })
 })

@@ -26,6 +26,12 @@ import { createId } from '../id'
 import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips, shuffleStripsAvoidingAdjacent } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
+import { calculateStockRequirements } from '../domain/boardStock'
+import type { StockRequirements } from '../domain/boardStock'
+import { calculateAngleSetup } from '../domain/boardAngle'
+import type { AngleSetup } from '../domain/boardAngle'
+import { summarizeBenchSetup } from '../domain/boardBench'
+import type { BenchSetup } from '../domain/boardBench'
 import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 import { calculatePrice, classifyBoard } from '../domain/pricing'
@@ -54,6 +60,19 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const template = buildEndGrainTemplate(project)
     const cutPlan = generateCuttingBoardPlan(project, woods, build, end)
     const woodUsage = calculateWoodUsage(project, woods, end)
+    const stock = calculateStockRequirements(project, woods, build, end)
+    const bench = summarizeBenchSetup(project, woods, build, end)
+    const angleRows = project.construction === 'end'
+      ? [...new Map(project.strips
+          .filter(strip => Math.abs(strip.trailingAngle) > 0.001)
+          .map(strip => [Math.round(strip.trailingAngle * 100) / 100, strip] as const)).entries()]
+          .map(([angle, strip]) => ({
+            angle,
+            count: project.strips.filter(other => Math.round(other.trailingAngle * 100) / 100 === angle).length,
+            setup: calculateAngleSetup({ trailingAngleDeg: strip.trailingAngle, stockThicknessMm: project.endGrain.stockThickness, stripLengthMm: project.endGrain.sourceLength }),
+          }))
+          .sort((a, b) => a.angle - b.angle)
+      : []
     const woodById = new Map(woods.map(wood => [wood.id, wood]))
     const width = project.strips.reduce((sum, strip) => sum + strip.width, 0)
     const boardFeet = build.roughBoardFeet
@@ -68,7 +87,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
       : edgeEstimatedCost
     const tier = classifyBoard(project, end.sliceCount)
     const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: build.roughBoardFeet, construction: project.construction, tier, pricing })
-    return { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost, price }
+    return { end, sliceStates, build, template, cutPlan, woodUsage, stock, bench, angleRows, width, boardFeet, finishedSize, estimatedCost, price }
   }, [lengthUnit, project, woods, pricing])
   // The pattern-preview project (with stable preview-* ids) only needs recomputing
   // when the pending pattern or inputs change — not on every render while the
@@ -91,7 +110,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     update({ endGrain: { ...nextSettings, ...clampTransforms(nextSettings, count) } })
   }
   const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
-  const { end, sliceStates, build, template, cutPlan, woodUsage, width, boardFeet, finishedSize, estimatedCost, price } = derived!
+  const { end, sliceStates, build, template, cutPlan, woodUsage, stock, bench, angleRows, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
   const governingLength = project.construction === 'end'
@@ -154,9 +173,12 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
           <Stat label="Price" value={`$${price.total.toFixed(2)}`}/>
           <Stat label={project.construction === 'end' ? 'Total waste' : 'Glue joints'} value={project.construction === 'end' ? `${formatNumber(end.totalWasteBoardFeet)} bf · ${formatNumber(end.totalWastePercent)}%` : String(Math.max(project.strips.length - 1, 0))}/>
         </div>
+        <BenchSetupCard bench={bench}/>
         <PriceBreakdownCard price={price} roughBoardFeet={boardFeet} construction={project.construction}/>
         <BuildSummary build={build}/>
         <CutPlanView plan={cutPlan}/>
+        <StockRequirementsCard stock={stock}/>
+        {angleRows.length > 0 && <AngleSetupCard rows={angleRows} thicknessMm={project.endGrain.stockThickness} lengthMm={project.endGrain.sourceLength}/>}
         <BuildAssumptions project={project}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
@@ -174,7 +196,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
         {project.construction === 'end' && <div className="panel-section row-tools"><h3>End-grain pattern</h3><p>Preview a recipe before replacing the strip layout. Recipes remain fully editable after applying.</p><div>{BOARD_PATTERNS.map(pattern => <button key={pattern.id} title={pattern.description} onClick={() => setPendingPattern(pattern.id)}><Eye/>{pattern.name}</button>)}</div></div>}
         {project.construction === 'end' && <><div className="waste-card"><Scissors/><div><span>{end.sliceCount} usable slices</span><b>{formatLength(end.kerfWaste, lengthUnit)} kerf + {formatLength(end.trimWaste + end.offcutWaste, lengthUnit)} trim/offcut</b></div></div><div className="wood-usage"><span className="eyebrow">STOCK BY SPECIES</span>{woodUsage.map(usage => <div key={usage.speciesId}><i style={{ background: usage.color }}/><span>{usage.name}<small>{formatNumber(usage.requiredBoardFeet)} bf stock</small></span><b>{formatNumber(usage.wasteBoardFeet)} bf waste</b></div>)}</div></>}
         <div className="panel-section"><div className="panel-title-row"><div><h3>First glue-up strips</h3><p>{project.strips.length} strips · {formatLength(width, lengthUnit)} panel width · drag to reorder</p></div><button className="icon-button" onClick={() => addStrip()} aria-label="Add strip"><Plus/></button></div>
-          <StripList strips={project.strips} woods={woods} construction={project.construction} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
+          <StripList strips={project.strips} woods={woods} construction={project.construction} stockThicknessMm={project.endGrain.stockThickness} onReorder={reorderStrips} onUpdateStrip={updateStrip} onDeleteStrip={deleteStrip}/>
           <button className="add-strip" onClick={() => addStrip()}><Plus/>Add strip</button>
         </div>
         <div className="panel-section pattern-actions"><h3>Strip arrangement</h3><div><button onClick={alternateArrangement} title="Alternate strips between two species"><Layers3/>Alternate</button><button onClick={gradientArrangement} title="Order strips by width, narrow → wide"><ArrowUpNarrowWide/>By width</button><button onClick={randomizeArrangement} title="Shuffle strip order without placing two of the same species side by side"><Shuffle/>Randomize</button><button onClick={mirrorPattern} title="Duplicate the strips in reverse to mirror the layout"><FlipHorizontal2/>Mirror</button><button onClick={duplicatePattern} title="Repeat the current strips again after themselves"><Copy/>Repeat</button><button onClick={reverseStrips} title="Reverse the strip order"><RotateCcw/>Reverse</button></div></div>
@@ -591,6 +613,85 @@ function CutPlanView({ plan }: { plan: CuttingBoardPlan }) {
     </div>
     <section className="build-sequence"><h4>Build sequence</h4><ol>{plan.steps.map(step => <li key={step.id}><span>{step.order}</span><div><b>{step.title}</b><p>{convertMetricText(step.instruction, lengthUnit)}</p></div></li>)}</ol></section>
   </div>
+}
+
+// BOARD-025: the at-a-glance bench reference — rip fence widths, saw angles, and the
+// crosscut stop/counts a maker dials in at the saw. Sits high; the detailed cards follow.
+function BenchSetupCard({ bench }: { bench: BenchSetup }) {
+  const { lengthUnit } = useUnitSystem()
+  const a = bench.assumptions
+  return <section className="bench-card">
+    <h3>Bench setup</h3>
+    <div className="bench-grid">
+      <div className="bench-block">
+        <span className="eyebrow">RIP FENCE</span>
+        {bench.ripGroups.map(group => <div key={`${group.speciesId}-${group.finishedWidthMm}-${group.trailingAngle}-${group.roughRipWidthMm}`} className="bench-line">
+          <b>{formatLength(group.roughRipWidthMm, lengthUnit)}</b><small>×{group.count} {group.speciesName}</small>
+        </div>)}
+      </div>
+      {bench.angles.length > 0 && <div className="bench-block">
+        <span className="eyebrow">SAW ANGLE</span>
+        {bench.angles.map(angle => <div key={angle.trailingAngleDeg} className="bench-line">
+          <b>{formatNumber(angle.sawAngleDeg)}°</b><small>×{angle.count}</small>
+        </div>)}
+      </div>}
+      {bench.crosscut && <div className="bench-block">
+        <span className="eyebrow">CROSSCUT</span>
+        <div className="bench-line"><b>{formatLength(bench.crosscut.stopBlockMm, lengthUnit)}</b><small>stop block</small></div>
+        <div className="bench-line"><b>{bench.crosscut.slices}</b><small>slices · {bench.crosscut.passes} passes</small></div>
+      </div>}
+    </div>
+    <p className="bench-assumptions">Allowances: rip {formatLength(a.ripAllowanceMm, lengthUnit)} · width trim {formatLength(a.widthTrimMm, lengthUnit)} · length trim {formatLength(a.lengthTrimMm, lengthUnit)}{a.construction === 'end' ? ` · kerf ${formatLength(a.kerfMm, lengthUnit)}` : ''}.</p>
+  </section>
+}
+
+// BOARD-023: a bench/shopping reference — what to rip each strip to, how much stock to
+// buy per species (with the running total), and the assumptions behind the numbers.
+function StockRequirementsCard({ stock }: { stock: StockRequirements }) {
+  const { lengthUnit } = useUnitSystem()
+  const a = stock.assumptions
+  return <section className="stock-card">
+    <h3>Rip &amp; stock list</h3>
+    <div className="stock-cols">
+      <div>
+        <span className="eyebrow">RIP EACH STRIP TO</span>
+        {stock.ripGroups.map(group => <div key={`${group.speciesId}-${group.finishedWidthMm}-${group.trailingAngle}-${group.roughRipWidthMm}`} className="stock-rip-row">
+          <i style={{ background: group.color }}/>
+          <b>{formatLength(group.roughRipWidthMm, lengthUnit)}</b>
+          <span>× {group.count} · {group.speciesName}{group.trailingAngle ? ` · ${formatNumber(group.trailingAngle)}°` : ''} <small>(finished {formatLength(group.finishedWidthMm, lengthUnit)})</small></span>
+        </div>)}
+      </div>
+      <div>
+        <span className="eyebrow">BUY (BOARD FEET)</span>
+        {stock.species.map(species => <div key={species.speciesId} className="stock-buy-row">
+          <i style={{ background: species.color }}/><span>{species.name}</span>
+          <b>{formatNumber(species.purchasedBoardFeet)} bf</b>
+          <small>{formatNumber(species.finishedBoardFeet)} used · {formatNumber(species.wasteBoardFeet)} waste</small>
+        </div>)}
+        <div className="stock-buy-total"><span>Total purchased</span><b>{formatNumber(stock.totalPurchasedBoardFeet)} bf</b></div>
+      </div>
+    </div>
+    <p className="stock-assumptions">Assumes rip allowance {formatLength(a.ripAllowanceMm, lengthUnit)} · width trim {formatLength(a.widthTrimMm, lengthUnit)} · length trim {formatLength(a.lengthTrimMm, lengthUnit)} · surfacing {formatLength(a.surfacingMm, lengthUnit)}{a.construction === 'end' ? ` · kerf ${formatLength(a.kerfMm, lengthUnit)} · slice ${formatLength(a.sliceThicknessMm ?? 0, lengthUnit)}` : ''}.</p>
+  </section>
+}
+
+// BOARD-024: the shop-setup numbers a trailing angle implies — what to set the saw to,
+// the extra rip width, the face offset, and the wedge of waste — one row per distinct angle.
+function AngleSetupCard({ rows, thicknessMm, lengthMm }: { rows: { angle: number, count: number, setup: AngleSetup }[], thicknessMm: number, lengthMm: number }) {
+  const { lengthUnit } = useUnitSystem()
+  return <section className="stock-card angle-card">
+    <h3>Angle &amp; setup</h3>
+    <div className="angle-rows">
+      <div className="angle-head"><span>Saw angle</span><span>+ Width</span><span>Offset</span><span>Wedge waste</span></div>
+      {rows.map(row => <div key={row.angle} className="angle-row">
+        <b>{formatNumber(row.setup.sawAngleDeg)}°</b>
+        <span>{formatLength(row.setup.effectiveWidthGainMm, lengthUnit)}</span>
+        <span>{formatLength(Math.abs(row.setup.angleOffsetMm), lengthUnit)}</span>
+        <span>{formatNumber(row.setup.wedgeBoardFeet)} bf <small>×{row.count}</small></span>
+      </div>)}
+    </div>
+    <p className="stock-assumptions">Across {formatLength(thicknessMm, lengthUnit)} stock over {formatLength(lengthMm, lengthUnit)} length. Offset = thickness × tan(angle); wedge is the triangular trim per strip.</p>
+  </section>
 }
 
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><b>{value}</b></div> }

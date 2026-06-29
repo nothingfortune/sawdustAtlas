@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateAngleSetup, angleForOffset } from '../src/domain/boardAngle'
+import { calculateAngleSetup, angleForOffset, angledFaceWidth } from '../src/domain/boardAngle'
 
 const setup = (trailingAngleDeg: number, stockThicknessMm = 38, stripLengthMm = 900) =>
   calculateAngleSetup({ trailingAngleDeg, stockThicknessMm, stripLengthMm })
@@ -42,5 +42,17 @@ describe('calculateAngleSetup', () => {
     const r = setup(22, 40)
     expect(angleForOffset(r.angleOffsetMm, 40)).toBeCloseTo(22, 4)
     expect(angleForOffset(10, 0)).toBe(0)
+  })
+})
+
+describe('angledFaceWidth', () => {
+  it('a positive angle widens the opposite face, a negative angle narrows it', () => {
+    expect(angledFaceWidth(40, 38, 30)).toBeCloseTo(40 + 38 * Math.tan(30 * Math.PI / 180), 4) // ~61.94
+    expect(angledFaceWidth(40, 38, -30)).toBeCloseTo(40 - 38 * Math.tan(30 * Math.PI / 180), 4) // ~18.06
+  })
+
+  it('a square strip keeps both faces equal, and a crossing face clamps to zero', () => {
+    expect(angledFaceWidth(40, 38, 0)).toBe(40)
+    expect(angledFaceWidth(10, 38, -80)).toBe(0) // tapers past the point -> clamped
   })
 })

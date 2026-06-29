@@ -2,7 +2,8 @@ import { GripVertical, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { BoardStrip, WoodSpecies } from '../types'
-import { lengthUnitLabel } from '../domain/lengthUnits'
+import { formatLength, lengthUnitLabel } from '../domain/lengthUnits'
+import { angledFaceWidth } from '../domain/boardAngle'
 import { LengthInput } from './fields'
 import { useUnitSystem } from './unitSystem'
 
@@ -10,6 +11,8 @@ interface Props {
   strips: BoardStrip[]
   woods: WoodSpecies[]
   construction: 'edge' | 'end'
+  /** End-grain stock thickness, used to show an angled strip's opposite-face width. */
+  stockThicknessMm?: number
   onReorder: (orderedIds: string[]) => void
   onUpdateStrip: (id: string, patch: Partial<BoardStrip>) => void
   onDeleteStrip: (id: string) => void
@@ -18,7 +21,7 @@ interface Props {
 // First glue-up strip editor with drag-to-reorder (pointer = mouse + touch) and
 // keyboard reorder (arrow keys on the grip). Reordering is previewed live and
 // committed on drop; the canonical order stays in the parent.
-export function StripList({ strips, woods, construction, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
+export function StripList({ strips, woods, construction, stockThicknessMm = 0, onReorder, onUpdateStrip, onDeleteStrip }: Props) {
   const { lengthUnit } = useUnitSystem()
   const listRef = useRef<HTMLDivElement>(null)
   const slotMidsRef = useRef<number[]>([])
@@ -98,6 +101,7 @@ export function StripList({ strips, woods, construction, onReorder, onUpdateStri
         <span>{lengthUnitLabel(lengthUnit)}</span>
         {construction === 'end' && <><input aria-label={`Strip ${index + 1} trailing angle`} title="Trailing angle" type="number" min="-89" max="89" step="1" value={strip.trailingAngle} onChange={event => onUpdateStrip(strip.id, { trailingAngle: Number(event.target.value) })}/><span>°</span></>}
         <button aria-label={`Delete strip ${index + 1}`} onClick={() => onDeleteStrip(strip.id)}><Trash2/></button>
+        {construction === 'end' && Math.abs(strip.trailingAngle) > 0.001 && <span className="strip-face-hint" title="The two faces of this angled strip: the width you set, and the opposite (angled) face.">Faces {formatLength(strip.width, lengthUnit)} → {formatLength(angledFaceWidth(strip.width, stockThicknessMm, strip.trailingAngle), lengthUnit)}</span>}
       </div>
     })}
   </div>

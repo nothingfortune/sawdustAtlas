@@ -590,6 +590,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .geo-point { cursor:grab;touch-action:none; }
 .geo-point:active { cursor:grabbing; }
 .geo-point.dragging { fill:var(--orange);stroke:#fff;stroke-width:3;filter:drop-shadow(0 3px 5px #00000055);cursor:grabbing; }
+.geo-point:focus-visible { outline:none;stroke:var(--orange);stroke-width:3;filter:drop-shadow(0 0 3px var(--orange)); }
 .geo-annot text, .geo-annot-text { fill:#2c352e;font:600 13px 'DM Sans';paint-order:stroke;stroke:#e7e9e2;stroke-width:4px;stroke-linejoin:round; }
 .geo-dim { stroke:#3b4a3f;stroke-width:1;stroke-dasharray:2 3; }
 .geo-arc { fill:none;stroke:var(--orange);stroke-width:2; }

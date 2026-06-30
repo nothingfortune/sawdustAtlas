@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { Link2, Minus, Plus, Square, Trash2, X } from 'lucide-react'
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
+import { CirclePlus, Link2, Minus, Plus, Square, Trash2, X } from 'lucide-react'
 import type { Sketch, SketchMember, SketchPoint, Vec } from '../domain/geometry2d'
 import { angleBetweenDeg, angleToAxes, bearingDeg, distance, lineIntersection, memberRectangle } from '../domain/geometry2d'
 import { createId } from '../id'
@@ -74,6 +74,25 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     dragRef.current = null
     setDraggingId(null)
     if (drag && !drag.moved) toggle(`p:${id}`)
+  }
+  // Keyboard placement: tapping the canvas needs a pointer, so this is how keyboard users
+  // add a point. It lands in the middle of the current view and is selected so arrow keys
+  // (or the inspector's X/Y fields) can position it from there.
+  const addPointAtCenter = () => {
+    const rect = svgRef.current?.getBoundingClientRect()
+    const mm = rect ? toMm(rect.left + rect.width / 2, rect.top + rect.height / 2) : { x: 100, y: 100 }
+    const point: SketchPoint = { id: createId(), x: Math.max(0, snap(mm.x)), y: Math.max(0, snap(mm.y)) }
+    onChange({ ...sketch, points: [...sketch.points, point] })
+    setSelected(prev => [...prev, `p:${point.id}`].slice(-2))
+  }
+  // Enter/Space selects a focused point; arrows nudge it by the grid step (Shift = 10× coarse).
+  const onPointKeyDown = (event: ReactKeyboardEvent, point: SketchPoint) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(`p:${point.id}`); return }
+    const step = (event.shiftKey ? GRID_MM * 10 : GRID_MM)
+    const move = { ArrowUp: [0, step], ArrowDown: [0, -step], ArrowLeft: [-step, 0], ArrowRight: [step, 0] }[event.key]
+    if (!move) return
+    event.preventDefault()
+    updatePoint(point.id, { x: Math.max(0, point.x + move[0]!), y: Math.max(0, point.y + move[1]!) })
   }
   const connect = () => {
     if (selectedPoints.length !== 2) return
@@ -190,6 +209,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           <button role="tab" aria-selected={mode === 'compound'} className={mode === 'compound' ? 'active' : ''} onClick={() => setMode('compound')}>Compound angle</button>
         </div>
         {mode === 'sketch' && <div className="geo-toolbar-actions">
+          <button className="button secondary" onClick={addPointAtCenter} title="Add a point in the middle of the view (then move it with the arrow keys)"><CirclePlus size={15}/>Add point</button>
           <button className="button secondary" disabled={selectedPoints.length !== 2} onClick={connect}><Link2 size={15}/>Connect</button>
           <button className="button secondary" disabled={selectedPoints.length !== 2} onClick={makeRectangle} title="Build a rectangle from two opposite corners (with diagonals to bisect)"><Square size={15}/>Rectangle</button>
           <button className="button secondary" disabled={selected.length === 0} onClick={deleteSelected}><Trash2 size={15}/>Delete</button>
@@ -200,7 +220,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
       </div>
       {mode === 'compound' && <CompoundAngleCalculator/>}
       {mode === 'sketch' && <div className="geo-canvas-wrap" ref={containerRef}>
-        <svg ref={svgRef} className="geo-canvas" width="100%" height="100%" role="img" aria-label="Geometry sketch">
+        <svg ref={svgRef} className="geo-canvas" width="100%" height="100%" role="group" aria-label="Geometry sketch — tap to place points; each point is focusable and moves with the arrow keys">
           <rect x={0} y={0} width="100%" height="100%" fill="transparent" onClick={addPoint}/>
           {singleMemberEnds && (() => { const s = toScreen(singleMemberEnds[0]); return <g className="geo-ref">
             <line x1={0} y1={s.y} x2={size.width} y2={s.y}/>
@@ -222,6 +242,8 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
             const s = toScreen(point)
             const on = selected.includes(`p:${point.id}`)
             return <circle key={point.id} className={`geo-point${on ? ' selected' : ''}${draggingId === point.id ? ' dragging' : ''}`} data-geo-point cx={s.x} cy={s.y} r={draggingId === point.id ? 9 : 7}
+              tabIndex={0} role="button" aria-pressed={on} aria-label={`Point at ${formatLength(point.x, lengthUnit)}, ${formatLength(point.y, lengthUnit)} — Enter to select, arrow keys to move`}
+              onKeyDown={event => onPointKeyDown(event, point)}
               onPointerDown={event => onPointDown(event, point.id)} onPointerMove={onPointMove} onPointerUp={() => onPointUp(point.id)} onPointerCancel={() => { dragRef.current = null; setDraggingId(null) }}/>
           })}
           {/* Visualized readouts */}

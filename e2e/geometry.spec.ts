@@ -37,7 +37,10 @@ test.describe('geometry calculator', () => {
     await page.mouse.move(box.x + 200, box.y + 300)
     await page.mouse.down()
     await page.mouse.move(box.x + 380, box.y + 300, { steps: 8 })
+    // the point shows a drag state while it's being moved, and drops it on release
+    await expect(page.locator('.geo-point.dragging')).toHaveCount(1)
     await page.mouse.up()
+    await expect(page.locator('.geo-point.dragging')).toHaveCount(0)
     await expect(point).not.toHaveAttribute('cx', before ?? '')
   })
 

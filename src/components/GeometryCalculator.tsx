@@ -56,10 +56,12 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     onChange({ ...sketch, points: sketch.points.map(point => point.id === id ? { ...point, ...patch } : point) })
   // Drag a point to move it; a press with no movement is treated as a select (toggle).
   const dragRef = useRef<{ id: string; moved: boolean } | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
   const onPointDown = (event: ReactPointerEvent, id: string) => {
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = { id, moved: false }
+    setDraggingId(id)
   }
   const onPointMove = (event: ReactPointerEvent) => {
     if (!dragRef.current) return
@@ -70,6 +72,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   const onPointUp = (id: string) => {
     const drag = dragRef.current
     dragRef.current = null
+    setDraggingId(null)
     if (drag && !drag.moved) toggle(`p:${id}`)
   }
   const connect = () => {
@@ -218,8 +221,8 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           {sketch.points.map(point => {
             const s = toScreen(point)
             const on = selected.includes(`p:${point.id}`)
-            return <circle key={point.id} className={`geo-point${on ? ' selected' : ''}`} data-geo-point cx={s.x} cy={s.y} r={7}
-              onPointerDown={event => onPointDown(event, point.id)} onPointerMove={onPointMove} onPointerUp={() => onPointUp(point.id)} onPointerCancel={() => { dragRef.current = null }}/>
+            return <circle key={point.id} className={`geo-point${on ? ' selected' : ''}${draggingId === point.id ? ' dragging' : ''}`} data-geo-point cx={s.x} cy={s.y} r={draggingId === point.id ? 9 : 7}
+              onPointerDown={event => onPointDown(event, point.id)} onPointerMove={onPointMove} onPointerUp={() => onPointUp(point.id)} onPointerCancel={() => { dragRef.current = null; setDraggingId(null) }}/>
           })}
           {/* Visualized readouts */}
           {selectedPoints.length === 2 && selectedMembers.length === 0 && (() => {

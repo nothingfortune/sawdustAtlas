@@ -44,6 +44,20 @@ test.describe('geometry calculator', () => {
     await expect(point).not.toHaveAttribute('cx', before ?? '')
   })
 
+  test('a point can be placed and moved entirely by keyboard (PLAT-008)', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add point' }).click()
+    const point = page.locator('.geo-point').first()
+    await expect(point).toHaveCount(1)
+    const cx0 = await point.getAttribute('cx')
+    await point.focus()
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+    await expect(point).not.toHaveAttribute('cx', cx0 ?? '')
+    // Enter toggles selection (Add point left it selected -> Enter deselects)
+    await page.keyboard.press('Enter')
+    await expect(point).toHaveAttribute('aria-pressed', 'false')
+  })
+
   test('builds a rectangle from two corners and reads a bisection angle', async ({ page }) => {
     const box = (await page.locator('.geo-canvas').boundingBox())!
     await page.mouse.click(box.x + 200, box.y + 500) // corner 1

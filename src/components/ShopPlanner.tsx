@@ -29,6 +29,7 @@ const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
 export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, onDelete }: Props) {
   const { lengthUnit } = useUnitSystem()
   const [selected, setSelected] = useState<string>('')
+  const [draggingId, setDraggingId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(true)
   const [viewMode, setViewMode] = useState<'top' | 'angled'>('top')
@@ -130,12 +131,14 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   function beginItemDrag(event: ReactPointerEvent, target: ShopItem) {
     event.currentTarget.setPointerCapture(event.pointerId)
     setSelected(`item:${target.id}`)
+    setDraggingId(target.id)
     const start = { x: event.clientX, y: event.clientY, itemX: target.x, itemY: target.y }
     const move = (next: PointerEvent) => updateItem(target.id, {
       x: clamp(start.itemX + (next.clientX - start.x) / (SCALE * zoomRef.current), 0, Math.max(0, (project?.width ?? 0) - target.width)),
       y: clamp(start.itemY + (next.clientY - start.y) / (SCALE * zoomRef.current), 0, Math.max(0, (project?.depth ?? 0) - target.depth)),
     })
     const up = () => {
+      setDraggingId(null)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
@@ -148,12 +151,14 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   function beginZoneDrag(event: ReactPointerEvent, target: ShopBlockedZone) {
     event.currentTarget.setPointerCapture(event.pointerId)
     setSelected(`zone:${target.id}`)
+    setDraggingId(target.id)
     const start = { x: event.clientX, y: event.clientY, zoneX: target.x, zoneY: target.y }
     const move = (next: PointerEvent) => updateZone(target.id, {
       x: clamp(start.zoneX + (next.clientX - start.x) / (SCALE * zoomRef.current), 0, Math.max(0, (project?.width ?? 0) - target.width)),
       y: clamp(start.zoneY + (next.clientY - start.y) / (SCALE * zoomRef.current), 0, Math.max(0, (project?.depth ?? 0) - target.depth)),
     })
     const up = () => {
+      setDraggingId(null)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
@@ -273,11 +278,11 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
           <div className="room-stage" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerEnd} onPointerCancel={onStagePointerEnd} style={{ width: project.width * SCALE * zoom + 80, height: project.depth * SCALE * zoom + 80, touchAction: 'none' }}>
             <div ref={canvasRef} className={`room-canvas ${drawMode ? 'drawing' : ''}`} onPointerDown={event => drawMode ? beginZoneDraw(event) : setSelected('')} style={canvasStyle}>
               {showGrid && <FloorGridLayer project={project}/>}
-              <BlockedZoneLayer project={project} draftZone={draftZone} selectedZoneId={zone?.id ?? ''} onPointerDown={beginZoneDrag} onKeyDown={onZoneKeyDown}/>
+              <BlockedZoneLayer project={project} draftZone={draftZone} selectedZoneId={zone?.id ?? ''} draggingId={draggingId} onPointerDown={beginZoneDrag} onKeyDown={onZoneKeyDown}/>
               <FeedClearanceLayer project={project}/>
               {project.items.map(candidate => {
                 const overlapsBlockedZone = blockedConflicts.some(conflict => conflict.item.id === candidate.id)
-                return <div key={candidate.id} role="button" tabIndex={0} aria-label={`${candidate.name}, ${formatDimensions([candidate.width, candidate.depth], lengthUnit)}`} aria-pressed={item?.id === candidate.id} className={`shop-object ${item?.id === candidate.id ? 'selected' : ''} ${overlapsBlockedZone ? 'warning' : ''}`} onPointerDown={event => { if (drawMode) return; event.stopPropagation(); beginItemDrag(event, candidate) }} onKeyDown={event => onObjectKeyDown(event, candidate)} style={{ left: candidate.x * SCALE, top: candidate.y * SCALE, width: candidate.width * SCALE, height: candidate.depth * SCALE, transform: `rotate(${candidate.rotation}deg)`, background: candidate.color }}>
+                return <div key={candidate.id} role="button" tabIndex={0} aria-label={`${candidate.name}, ${formatDimensions([candidate.width, candidate.depth], lengthUnit)}`} aria-pressed={item?.id === candidate.id} className={`shop-object ${item?.id === candidate.id ? 'selected' : ''} ${draggingId === candidate.id ? 'dragging' : ''} ${overlapsBlockedZone ? 'warning' : ''}`} onPointerDown={event => { if (drawMode) return; event.stopPropagation(); beginItemDrag(event, candidate) }} onKeyDown={event => onObjectKeyDown(event, candidate)} style={{ left: candidate.x * SCALE, top: candidate.y * SCALE, width: candidate.width * SCALE, height: candidate.depth * SCALE, transform: `rotate(${candidate.rotation}deg)`, background: candidate.color }}>
                   {candidate.clearance > 0 && <span className="clearance" style={{ inset: -candidate.clearance * SCALE }}/>}
                   <span className="object-name">{candidate.name}<small>{formatDimensions([candidate.width, candidate.depth], lengthUnit)}</small></span>
                 </div>
@@ -352,17 +357,19 @@ function BlockedZoneLayer({
   project,
   draftZone,
   selectedZoneId,
+  draggingId,
   onPointerDown,
   onKeyDown,
 }: {
   project: ShopProject
   draftZone: ShopBlockedZone | null
   selectedZoneId: string
+  draggingId: string | null
   onPointerDown: (event: ReactPointerEvent, target: ShopBlockedZone) => void
   onKeyDown: (event: ReactKeyboardEvent, target: ShopBlockedZone) => void
 }) {
   return <>
-    {project.blockedZones.map(blockedZone => <div key={blockedZone.id} role="button" tabIndex={0} aria-label={`${blockedZone.name}, blocked floor area`} aria-pressed={selectedZoneId === blockedZone.id} className={`blocked-zone ${selectedZoneId === blockedZone.id ? 'selected' : ''}`} onPointerDown={event => { event.stopPropagation(); onPointerDown(event, blockedZone) }} onKeyDown={event => onKeyDown(event, blockedZone)} style={{ left: blockedZone.x * SCALE, top: blockedZone.y * SCALE, width: blockedZone.width * SCALE, height: blockedZone.depth * SCALE }}>
+    {project.blockedZones.map(blockedZone => <div key={blockedZone.id} role="button" tabIndex={0} aria-label={`${blockedZone.name}, blocked floor area`} aria-pressed={selectedZoneId === blockedZone.id} className={`blocked-zone ${selectedZoneId === blockedZone.id ? 'selected' : ''} ${draggingId === blockedZone.id ? 'dragging' : ''}`} onPointerDown={event => { event.stopPropagation(); onPointerDown(event, blockedZone) }} onKeyDown={event => onKeyDown(event, blockedZone)} style={{ left: blockedZone.x * SCALE, top: blockedZone.y * SCALE, width: blockedZone.width * SCALE, height: blockedZone.depth * SCALE }}>
       <span>{blockedZone.name}</span>
     </div>)}
     {draftZone && <div className="blocked-zone preview" style={{ left: draftZone.x * SCALE, top: draftZone.y * SCALE, width: draftZone.width * SCALE, height: draftZone.depth * SCALE }}><span>{DRAW_ZONE_LABEL}</span></div>}

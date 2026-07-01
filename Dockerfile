@@ -2,7 +2,7 @@
 # architecture-independent JS/CSS, so we build it once natively instead of
 # re-running pnpm install + vite build under slow QEMU emulation for each target
 # platform. Only the nginx runtime stage below is built per target arch.
-FROM --platform=$BUILDPLATFORM node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.5.3 --activate

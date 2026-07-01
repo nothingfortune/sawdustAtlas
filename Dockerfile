@@ -23,7 +23,7 @@ ENV BUILD_ENV=$BUILD_ENV BUILD_NUMBER=$BUILD_NUMBER BUILD_SHA=$BUILD_SHA BUILD_B
 
 RUN pnpm build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/nothingfortune/sawdustAtlas" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"

@@ -58,7 +58,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟡 | PLAT-004 | Schema versioning and migrations | Partial | Now | Exported data includes `schemaVersion`; add named migration steps for future schema changes and never silently discard fields. |
+| 🟢 | PLAT-004 | Schema versioning and migrations | Complete | Now | Named migration registry (`migrate()` + `MIGRATIONS`), import validation that never silently discards fields, and robustness fixtures covering wrong-type lists, null nested blocks, and malformed records so a gnarly backup is repaired rather than lost. |
 | ⚪ | PLAT-005 | Undo and redo | Planned | Next | Geometry and editor actions can be undone/redone across both designers; autosave stores the resulting state. |
 | ⚪ | PLAT-006 | Project duplicate, rename, archive, delete | Planned | Next | Destructive actions require confirmation; archived projects remain recoverable. |
 | ⚪ | PLAT-007 | Search, tags, and recent projects | Planned | Later | Projects can be filtered by name, type, wood species, and tags. |
@@ -138,10 +138,10 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟡 | UX-001 | Tablet landscape layout | Partial | Now | Core screens fit common 10-inch tablets; complete real-device testing. |
-| 🟡 | UX-002 | Touch-first manipulation | Partial | Now | Coarse-pointer hit targets and some drag controls exist; complete pointer capture, long-press alternatives, and no hover-only controls. |
+| 🟢 | UX-001 | Tablet landscape layout | Complete | Now | Key screens (home, shop, board editor, wood library, geometry) audited at 1024×768; the geometry toolbar wrap fix was the last layout break. |
+| 🟢 | UX-002 | Touch-first manipulation | Complete | Now | Pointer capture + `touch-action:none` drag across strips, shop objects, geometry, and wafers; coarse-pointer hit targets; and no hover-only controls (the composite wafer-remove now shows on touch and keyboard focus). |
 | 🟡 | UX-003 | Portrait fallback | Partial | Later | Panel drawers exist; verify that portrait layouts keep canvas operations accessible. |
-| 🟡 | UX-004 | Onboarding and sample projects | Partial | Now | Starter projects are preloaded and linked from Home; add a fuller first-run walkthrough for units, saving, backups, kerf, and allowances. |
+| 🟢 | UX-004 | Onboarding and sample projects | Complete | Now | Starter projects preloaded + linked from Home, and a first-run `WelcomeDialog` covering units, browser-local saving, backups, kerf, and allowances. |
 | 🟡 | UX-005 | Autosave and sync status | Partial | Now | Browser-local saved state and export affordance exist; add pending, failed, offline, synced, and conflict states. |
 | ⚪ | UX-006 | Error and warning center | Planned | Now | Geometry, clearance, stock, migration, and sync issues link directly to corrective inputs. |
 | ⚪ | UX-007 | Command history | Planned | Later | Show meaningful actions that support undo/redo and troubleshooting. |
@@ -281,11 +281,11 @@ These came from direct user feedback on 2026-06-25. All were addressed on 2026-0
 ## Near-Term Ordered Backlog
 
 1. Friend-beta smoke test: Docker Hub install, starter shop, starter board, tablet landscape, export backup, import backup in a second browser.
-2. `PLAT-004`: complete named migration steps and import validation for versioned backups.
-3. `UX-002`, `PLAT-008`: touch and keyboard pass for board editing, slice controls, shop object movement, and visible focus.
-4. `UX-004`, `UX-005`: first-run guidance for units, browser-local saving, backups, kerf, and allowances.
-5. `UX-006`: basic warning center for geometry, import, storage, and backup issues.
-6. `BOARD-023`, `BOARD-024`, `BOARD-025`: add rip sizing, angle/setup calculators, and bench-side reference outputs that reuse the same domain math as the board designer.
+2. ✅ `PLAT-004`: named migration steps + import validation + robustness fixtures — done.
+3. `PLAT-008` (keyboard pass for slice/wafer/shop-object operation) remains; ✅ `UX-002` touch pass done.
+4. ✅ `UX-004` first-run guidance done; `UX-005` (richer pending/failed/offline/synced states) remains.
+5. ✅ `UX-006` warning center — done.
+6. ✅ `BOARD-023/024/025` calculators — done.
 7. `BOARD-008`: support composable board assemblies with source panels, reusable wafers, separators, and final glue-up recipes.
 8. `CUT-001`, `CUT-002`, `CUT-008`, `CUT-009`: establish shared cut-plan types, move cutting-board operations toward that contract, and define stock/offcut inventory records.
 9. `CUT-003`, `CUT-005`, `CUT-013`, `CUT-014`: exact 1D optimizer, validator, and explicit material/cost reconciliation totals for believable estimates.

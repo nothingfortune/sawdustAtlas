@@ -5,7 +5,8 @@
 FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@11.5.3 --activate
+# Node >= 25 no longer bundles Corepack; install it before enabling
+RUN npm install -g corepack && corepack enable && corepack prepare pnpm@11.5.3 --activate
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile

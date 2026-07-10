@@ -2,10 +2,11 @@
 # architecture-independent JS/CSS, so we build it once natively instead of
 # re-running pnpm install + vite build under slow QEMU emulation for each target
 # platform. Only the nginx runtime stage below is built per target arch.
-FROM --platform=$BUILDPLATFORM node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@11.5.3 --activate
+# Node >= 25 no longer bundles Corepack; install it before enabling
+RUN npm install -g corepack && corepack enable && corepack prepare pnpm@11.5.3 --activate
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -23,7 +24,7 @@ ENV BUILD_ENV=$BUILD_ENV BUILD_NUMBER=$BUILD_NUMBER BUILD_SHA=$BUILD_SHA BUILD_B
 
 RUN pnpm build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/nothingfortune/sawdustAtlas" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"

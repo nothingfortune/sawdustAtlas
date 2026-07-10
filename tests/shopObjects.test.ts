@@ -4,7 +4,7 @@ import type { ShopItem } from '../src/types'
 
 describe('shop objects', () => {
   it('includes storage and dust collection starting points', () => {
-    expect(SHOP_OBJECT_TEMPLATES.some(item => item.name === 'Wall shelves')).toBe(true)
+    expect(SHOP_OBJECT_TEMPLATES.some(item => item.name === 'Wall Shelves')).toBe(true)
     expect(SHOP_OBJECT_TEMPLATES.some(item => item.kind === 'dust')).toBe(true)
   })
 

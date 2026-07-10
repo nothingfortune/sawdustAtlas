@@ -4,8 +4,18 @@ import type { ShopItem } from '../src/types'
 
 describe('shop objects', () => {
   it('includes storage and dust collection starting points', () => {
-    expect(SHOP_OBJECT_TEMPLATES.some(item => item.name === 'Wall Shelves')).toBe(true)
+    expect(SHOP_OBJECT_TEMPLATES.some(item => item.kind === 'storage')).toBe(true)
     expect(SHOP_OBJECT_TEMPLATES.some(item => item.kind === 'dust')).toBe(true)
+  })
+
+  it('every template has a name and positive dimensions', () => {
+    for (const item of SHOP_OBJECT_TEMPLATES) {
+      expect(item.name.trim()).not.toBe('')
+      expect(item.width).toBeGreaterThan(0)
+      expect(item.depth).toBeGreaterThan(0)
+      expect(item.height).toBeGreaterThan(0)
+      expect(item.clearance).toBeGreaterThanOrEqual(0)
+    }
   })
 
   it('creates an independently saved item inside the room', () => {

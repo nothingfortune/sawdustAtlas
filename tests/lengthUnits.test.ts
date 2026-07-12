@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatFieldLabel, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
 
 describe('snapMmToFoot', () => {
   it('rounds any grid spacing to the nearest whole foot', () => {
@@ -60,6 +60,21 @@ describe('lengthUnits', () => {
 })
 
 const IN = 25.4
+
+describe('parseLengthInput — metric', () => {
+  it('parses a finite number', () => { expect(parseLengthInput('42.5', 'metric')).toBe(42.5) })
+  it('returns null for non-numeric metric input', () => { expect(parseLengthInput('abc', 'metric')).toBeNull() })
+})
+
+describe('formatFieldLabel', () => {
+  it('appends the active unit, replacing any existing (mm)/(in) suffix', () => {
+    expect(formatFieldLabel('Length (mm)', 'imperial')).toBe('Length (in)')
+    expect(formatFieldLabel('Length', 'metric')).toBe('Length (mm)')
+  })
+  it('leaves metric text unchanged in convertMetricText', () => {
+    expect(convertMetricText('surface to 38 mm.', 'metric')).toBe('surface to 38 mm.')
+  })
+})
 
 describe('parseLengthInput — imperial forms (table-driven)', () => {
   const cases: Array<[string, number | null]> = [

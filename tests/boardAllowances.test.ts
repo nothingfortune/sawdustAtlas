@@ -99,6 +99,15 @@ describe('edge-grain build allowances', () => {
     const build = calculateBuildDimensions(makeProject({ allowances: { ...allowances, lengthTrim: -50 } }))
     expect(build.length.rough).toBe(build.length.finished)
   })
+
+  it('adds the whole width trim to a single strip (no half-and-half split)', () => {
+    // With one strip there is no opposite edge to share the trim with, so the lone
+    // strip carries rip + the full widthTrim (6), not widthTrim/2.
+    const build = calculateBuildDimensions(makeProject({}, [{ id: 'only', speciesId: 'walnut', width: 40, trailingAngle: 0 }]))
+    expect(build.stripRoughWidths).toEqual([40 + 3 + 6])
+    expect(build.width.rough).toBe(40 + 3 + 6)
+    expect(build.width.finished).toBe(40)
+  })
 })
 
 describe('end-grain build allowances', () => {

@@ -22,8 +22,9 @@ does not yet use semantic version numbers, so entries are grouped by date instea
 - Composite board thickness and price calculations now use the correct wafer and crosscut math.
 - The offline app cache (service worker) no longer traps the app on a stale version; reloads
   while offline are more reliable.
-- Saved data or an imported backup that is corrupt or was hand-edited is now recovered instead
-  of failing to load.
+- Saved data or an imported backup that is corrupt or was hand-edited no longer fails to load;
+  the unreadable payload is preserved for recovery (under the `sawdust-atlas:corrupt` key) and
+  the app starts fresh.
 
 ### Added
 

@@ -33,7 +33,7 @@ All step-by-step guides live in **[docs/howTo](docs/howTo/)**. For the full feat
 
 GitHub Actions uses two long-lived branches:
 
-- `develop`: integration branch for day-to-day work. Pull requests and pushes run linting, tests, the production build, and a local Docker image build/scan. Nothing is pushed to Docker Hub from this branch.
+- `develop`: integration branch for day-to-day work. Pull requests and pushes run linting, tests, end-to-end (E2E) browser tests, the production build, and a local Docker image build/scan. Nothing is pushed to Docker Hub from this branch.
 - `main`: release branch. Pull requests run the same checks, and pushes to `main` publish the image to Docker Hub.
 
 Docker Hub publishes only from `main` as:
@@ -49,7 +49,7 @@ Add these repository secrets in GitHub before relying on the publish step:
 - `DOCKERHUB_USERNAME`: the Docker Hub account or organization that owns the repository.
 - `DOCKERHUB_TOKEN`: a Docker Hub access token with permission to push `sawdust-atlas`.
 
-The `main` branch is tagged `latest` and `main`, and every published build also receives a `sha-...` tag. Published images include SBOM and provenance attestations, and CI runs Docker Scout vulnerability and recommendation checks as advisory output. GitHub Actions are pinned to full commit SHAs, with Dependabot checking action, npm, and Docker updates weekly.
+The `main` branch is tagged `latest` and `main`, and every published build also receives a `sha-...` tag. Published images include SBOM and provenance attestations, and CI runs a gating Trivy vulnerability scan — a fixable CRITICAL or HIGH finding fails the build, and scan results are uploaded as SARIF to GitHub code scanning. GitHub Actions are pinned to full commit SHAs, with Dependabot checking action, npm, and Docker updates weekly.
 
 In Docker Hub, keep `latest` and `main` mutable so the release branch can continue to update them. If you later add versioned release tags such as `v0.1.0`, enable immutable tags for those version tags after creating the repository: open the repository, go to **Settings > General > Tag mutability settings**, choose **Specific tags are immutable**, and use a pattern such as `^v.*`.
 

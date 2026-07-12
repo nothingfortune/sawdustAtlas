@@ -106,6 +106,12 @@ add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` 
   stock / cut list, scaling, build-allowance math.
 - `compositeBoard.ts`, `compositeAssembly.ts`, `brickAssembly.ts` — multi-panel composite pieces,
   immutable row/wafer operations, brick-and-mortar model.
+- `pricing.ts` — material cost, complexity classification, price-breakdown math (markup applies
+  to material only; the per-construction price floor applies last).
+- `geometry2d.ts` — pure 2D primitives for the standalone geometry calculator (math coordinates,
+  y up; the UI flips y for SVG).
+- `compoundAngle.ts` — `solveCompoundAngle`: two perpendicular-view tilts → resultant tilt plus
+  miter/bevel saw settings.
 - `shopGeometry.ts`, `shopObjects.ts` — workshop layout geometry and item normalization.
 - `lengthUnits.ts` — metric/imperial conversion (the UI "Preston's Button" toggles display units;
   storage stays metric).

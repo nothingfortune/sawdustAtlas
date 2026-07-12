@@ -1,6 +1,8 @@
 /// <reference types="vitest/config" />
 import { execFileSync } from 'node:child_process'
-import { defineConfig } from 'vite'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // Stamp build provenance into the bundle so the running app can show which
@@ -33,20 +35,54 @@ function resolveBuildInfo(command: 'build' | 'serve') {
   }
 }
 
-export default defineConfig(({ command }) => ({
-  plugins: [react()],
-  define: { __BUILD_INFO__: JSON.stringify(resolveBuildInfo(command)) },
-  // e2e/ holds Playwright specs (run via `pnpm test:e2e`); keep them out of vitest.
-  test: {
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.worktrees/**', '**/e2e/**'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text-summary', 'json-summary'],
-      include: ['src/domain/**', 'src/storage.ts', 'src/data.ts', 'src/id.ts'],
-      // Floor on the pure logic layer the test suite actually exercises. UI
-      // components are not unit-tested yet (tracked separately); this gate guards
-      // the geometry/persistence code where regressions are most costly.
-      thresholds: { lines: 90, functions: 85, branches: 75, statements: 88 },
+// public/sw.js is copied verbatim (no bundling step for it), so its cache name is
+// static in source: `sawdust-atlas-__SW_BUILD__`. The service worker's activate
+// handler deletes any cache whose name isn't the current CACHE, so stamping a
+// distinct id into that placeholder on every production build makes old, stale
+// caches (previous deploys' hashed /assets/ chunks) get pruned automatically the
+// next time the SW activates. Dev (`command === 'serve'`) never touches dist/, so
+// this plugin is a no-op there.
+function swVersionStampPlugin(buildId: string): Plugin {
+  let outDir = 'dist'
+  let root = process.cwd()
+  return {
+    name: 'sw-version-stamp',
+    apply: 'build',
+    configResolved(config) {
+      root = config.root
+      outDir = config.build.outDir
     },
-  },
-}))
+    closeBundle() {
+      const swPath = resolve(root, outDir, 'sw.js')
+      if (!existsSync(swPath)) return
+      const contents = readFileSync(swPath, 'utf8')
+      if (!contents.includes('__SW_BUILD__')) return
+      writeFileSync(swPath, contents.replaceAll('__SW_BUILD__', buildId))
+    },
+  }
+}
+
+export default defineConfig(({ command }) => {
+  const buildInfo = resolveBuildInfo(command)
+  // Prefer the resolved commit sha; fall back to 'dev' when it couldn't be
+  // determined (e.g. .git stripped from the Docker build context and no
+  // BUILD_SHA env var supplied).
+  const swBuildId = buildInfo.sha !== 'unknown' ? buildInfo.sha : 'dev'
+  return {
+    plugins: [react(), swVersionStampPlugin(swBuildId)],
+    define: { __BUILD_INFO__: JSON.stringify(buildInfo) },
+    // e2e/ holds Playwright specs (run via `pnpm test:e2e`); keep them out of vitest.
+    test: {
+      exclude: ['**/node_modules/**', '**/dist/**', '**/.worktrees/**', '**/e2e/**'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text-summary', 'json-summary'],
+        include: ['src/domain/**', 'src/storage.ts', 'src/data.ts', 'src/id.ts'],
+        // Floor on the pure logic layer the test suite actually exercises. UI
+        // components are not unit-tested yet (tracked separately); this gate guards
+        // the geometry/persistence code where regressions are most costly.
+        thresholds: { lines: 90, functions: 85, branches: 75, statements: 88 },
+      },
+    },
+  }
+})

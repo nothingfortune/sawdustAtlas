@@ -19,4 +19,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
     },
   },
+  {
+    // Plain, dependency-free service worker script (copied verbatim into dist/ by
+    // Vite, not bundled) — lint it under its own runtime globals rather than the
+    // browser/TS block above.
+    files: ['public/sw.js'],
+    extends: [js.configs.recommended],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'script', globals: globals.serviceworker },
+  },
 )

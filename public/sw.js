@@ -1,4 +1,4 @@
-const CACHE = 'sawdust-atlas-v1'
+const CACHE = 'sawdust-atlas-__SW_BUILD__'
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', event => {
@@ -16,19 +16,29 @@ self.addEventListener('activate', event => {
 function networkFirst(request) {
   return fetch(request)
     .then(response => {
-      const copy = response.clone()
-      caches.open(CACHE).then(cache => cache.put(request, copy))
+      if (response.ok) {
+        const copy = response.clone()
+        caches.open(CACHE).then(cache => cache.put(request, copy))
+      }
       return response
     })
-    .catch(() => caches.match(request).then(cached => cached || caches.match('/')))
+    .catch(() =>
+      caches.match(request).then(cached => cached || (request.mode === 'navigate' ? caches.match('/') : undefined))
+    )
 }
 
 function cacheFirst(request) {
-  return caches.match(request).then(cached => cached || fetch(request).then(response => {
-    const copy = response.clone()
-    caches.open(CACHE).then(cache => cache.put(request, copy))
-    return response
-  }))
+  return caches.match(request).then(
+    cached =>
+      cached ||
+      fetch(request).then(response => {
+        if (response.ok) {
+          const copy = response.clone()
+          caches.open(CACHE).then(cache => cache.put(request, copy))
+        }
+        return response
+      })
+  )
 }
 
 self.addEventListener('fetch', event => {

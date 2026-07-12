@@ -12,7 +12,7 @@ import type { BuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
 import type { CuttingBoardPlan } from '../domain/boardCutPlan'
 import { resolveScale, fitPxPerMm } from '../domain/boardScale'
-import { SQUARE_ANGLE_TOLERANCE_DEG } from '../domain/units'
+import { isSquareAngle } from '../domain/units'
 import { useContainerWidth } from './useContainerWidth'
 import { useElementSize } from './useElementSize'
 import { usePinchPan } from './usePinchPan'
@@ -65,7 +65,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const bench = summarizeBenchSetup(project, woods, build, end)
     const angleRows = project.construction === 'end'
       ? [...new Map(project.strips
-          .filter(strip => Math.abs(strip.trailingAngle) > SQUARE_ANGLE_TOLERANCE_DEG)
+          .filter(strip => !isSquareAngle(strip.trailingAngle))
           .map(strip => [Math.round(strip.trailingAngle * 100) / 100, strip] as const)).entries()]
           .map(([angle, strip]) => ({
             angle,

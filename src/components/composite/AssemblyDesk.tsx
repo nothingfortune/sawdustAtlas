@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2, X } from 'lucide-react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
 import { deskLayout } from '../../domain/compositeBoard'
 import { addRow, cycleTransform, moveRow, moveWafer, removeRow, removeWafer, transformWafer } from '../../domain/compositeAssembly'
+import { createId } from '../../id'
 import { useElementSize } from '../useElementSize'
 import { WoodPatterns } from '../board/WoodPatterns'
 import { CompositeDefs, TrimMarks, WaferFace } from './WaferFace'
@@ -70,7 +71,7 @@ export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRo
   return (
     <div className="assembly-desk" aria-label="Assembly desk">
       <div className="desk-toolbar">
-        <button type="button" className="row-add" onClick={() => onChange(addRow(composite, 'above', composite.rows[0]?.id))}><Plus size={14} /> Add row on top</button>
+        <button type="button" className="row-add" onClick={() => onChange(addRow(composite, 'above', createId, composite.rows[0]?.id))}><Plus size={14} /> Add row on top</button>
         <span className="muted small">Tap a row to make it active, then tap wafers in the parts bag.</span>
       </div>
 
@@ -128,14 +129,14 @@ export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRo
                 </div>
 
                 <div className="row-rail">
-                  <button type="button" className="icon-button" aria-label="Add row below" onClick={() => onChange(addRow(composite, 'below', row.rowId))}><Plus size={14} /></button>
+                  <button type="button" className="icon-button" aria-label="Add row below" onClick={() => onChange(addRow(composite, 'below', createId, row.rowId))}><Plus size={14} /></button>
                   <button type="button" className="icon-button" aria-label="Delete row" onClick={() => onChange(removeRow(composite, row.rowId))}><Trash2 size={14} /></button>
                 </div>
               </div>
             )
           })}
           {layout.rows.length === 0 && (
-            <button type="button" className="row-add big" onClick={() => onChange(addRow(composite, 'below'))}><Plus size={15} /> Add the first row</button>
+            <button type="button" className="row-add big" onClick={() => onChange(addRow(composite, 'below', createId))}><Plus size={15} /> Add the first row</button>
           )}
         </div>
       </div>

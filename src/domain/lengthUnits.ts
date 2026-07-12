@@ -106,7 +106,9 @@ function parseImperialValue(raw: string): number | null {
   const cleaned = raw
     .replace(/in(?:ch(?:es)?)?\.?/g, '')
     .replace(/"/g, '')
-    .replace(/-/g, ' ')
+    // Split a hyphenated mixed number ("1-1/2" -> "1 1/2") without swallowing a
+    // leading negative sign ("-5" must stay negative).
+    .replace(/(\d)-(\d)/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim()
   if (!cleaned) return 0

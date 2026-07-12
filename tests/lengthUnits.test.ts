@@ -94,6 +94,10 @@ describe('parseLengthInput — imperial forms (table-driven)', () => {
     ['2 ft', 24 * IN],
     ["2' 3", 27 * IN],
     ['2\' 3 1/4"', 27.25 * IN],
+    // feet-inches with the common architectural hyphen separator (regression:
+    // the hyphen must separate feet from inches, not negate the inches)
+    ['2\'-3"', 27 * IN],
+    ['2\'-3 1/2"', 27.5 * IN],
     // inch marks and words
     ['3"', 3 * IN],
     ['3 in', 3 * IN],
@@ -103,6 +107,8 @@ describe('parseLengthInput — imperial forms (table-driven)', () => {
     ['-1 1/2', -1.5 * IN],
     ['-1-1/2', -1.5 * IN],
     ["-2'", -24 * IN],
+    // negative feet with hyphenated inches: whole value is negative
+    ['-2\'-3"', -27 * IN],
     // garbage
     ['abc', null],
     ['1/0', null],

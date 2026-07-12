@@ -71,10 +71,14 @@ export function parseLengthInput(raw: string, unit: LengthUnit): number | null {
   const feetMatch = normalized.match(/^(-?\d+(?:\.\d+)?)\s*(?:ft|')\s*(.*)$/)
   if (feetMatch) {
     const feet = Number(feetMatch[1] ?? 0)
-    const inchesPart = feetMatch[2]?.trim() ?? ''
+    // The architectural convention 2'-3" uses the hyphen purely as a feet/inches
+    // separator — it doesn't mean "negative 3 inches". Strip a leading separator
+    // hyphen before parsing so it isn't mistaken for a sign.
+    const inchesPart = (feetMatch[2] ?? '').trim().replace(/^-\s*/, '')
     const inches = inchesPart ? parseImperialValue(inchesPart) : 0
     if (inches === null) return null
-    return inchesToMm(feet * 12 + inches)
+    const sign = feet < 0 ? -1 : 1
+    return inchesToMm(sign * (Math.abs(feet) * 12 + Math.abs(inches)))
   }
 
   const inches = parseImperialValue(normalized)

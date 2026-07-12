@@ -1,11 +1,11 @@
 import { ArrowUpNarrowWide, Check, ChevronDown, Copy, Eye, FlipHorizontal2, Layers3, Maximize2, Minimize2, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
-import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
+import type { ReactNode, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { StripList } from './StripList'
 import { applySliceOrder, clampTransforms, readSliceStates } from '../domain/boardSlices'
 import type { SliceState } from '../domain/boardSlices'
-import { CUBIC_MM_PER_BOARD_FOOT, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
+import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage, crosscutOverlaySegments } from '../domain/boardGeometry'
 import type { EndGrainMetrics, EndGrainTemplate } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
 import type { BuildDimensions } from '../domain/boardAllowances'
@@ -35,7 +35,7 @@ import { summarizeBenchSetup } from '../domain/boardBench'
 import type { BenchSetup } from '../domain/boardBench'
 import { convertMetricText, formatDimensions, formatLength, formatNumber, MM_PER_INCH } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
-import { calculatePrice, classifyBoard } from '../domain/pricing'
+import { calculatePrice, classifyBoard, materialCost, roughPieceCost } from '../domain/pricing'
 import { PriceBreakdownCard } from './board/PriceBreakdownCard'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; pricing: PricingSettings; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onMakeComposite: (board: BoardProject) => void; onBack: () => void }
@@ -81,10 +81,10 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
     const edgeEstimatedCost = project.strips.reduce((sum, strip, index) => {
       const roughWidth = build.stripRoughWidths[index] ?? strip.width
       const pricePerBf = woodById.get(strip.speciesId)?.pricePerBoardFoot ?? 0
-      return sum + roughWidth * build.length.rough * build.thickness.rough / CUBIC_MM_PER_BOARD_FOOT * pricePerBf
+      return sum + roughPieceCost(roughWidth, build.length.rough, build.thickness.rough, pricePerBf)
     }, 0)
     const estimatedCost = project.construction === 'end'
-      ? woodUsage.reduce((sum, usage) => sum + usage.requiredBoardFeet * (woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
+      ? woodUsage.reduce((sum, usage) => sum + materialCost(usage.requiredBoardFeet, woodById.get(usage.speciesId)?.pricePerBoardFoot ?? 0), 0)
       : edgeEstimatedCost
     const tier = classifyBoard(project, end.sliceCount)
     const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: build.roughBoardFeet, construction: project.construction, tier, pricing })
@@ -379,7 +379,11 @@ function PatternPreviewPanel({ title, project, woods, metrics, template, lengthM
   </section>
 }
 
-function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; pxPerMm: number; edgeWidth: number }) {
+// Memoized: this "how it's built" step tower renders several full ScaledBoardFrame /
+// AssembledBoard SVG subtrees. Its props come from the memoized `derived` pipeline and
+// are stable across the editor's frequent unrelated re-renders (panel toggles, studio
+// state, pending-pattern preview), so shallow-prop memo skips the heavy redraw there.
+const HowItsBuilt = memo(function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: { project: BoardProject; woods: WoodSpecies[]; metrics: EndGrainMetrics; template: EndGrainTemplate; pxPerMm: number; edgeWidth: number }) {
   const { lengthUnit } = useUnitSystem()
   if (project.construction === 'edge') {
     return <section className="how-its-built">
@@ -422,7 +426,7 @@ function HowItsBuilt({ project, woods, metrics, template, pxPerMm, edgeWidth }: 
       </ScaledBoardFrame>
     </div>
   </section>
-}
+})
 
 // Drag-to-reorder assembled board for the pop-out. One pointer per column: a
 // press without movement cycles rotate/flip (as AssembledBoard does); a press
@@ -474,11 +478,23 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
     setDrag(null)
   }
 
+  // Keyboard operation of a slice column (parallels the pointer path): Enter/Space
+  // cycles rotate/flip like a tap; Left/Right arrows move the slice one slot like a
+  // drag-reorder. Focus naturally follows to the next tabbable column after a move.
+  const onColumnKeyDown = (event: ReactKeyboardEvent<SVGGElement>, slot: number) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggleRow(slot); return }
+    const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
+    if (direction === 0 || sliceCount < 2) return
+    const target = Math.min(Math.max(slot + direction, 0), sliceCount - 1)
+    if (target === slot) return
+    event.preventDefault()
+    onReorder(orderWithKeyAt(sliceCount, slot, target))
+  }
   const column = (slot: number, position: number, dragging = false) => {
     const state: SliceState = { rotated: project.endGrain.rowRotations[slot] ?? false, flipped: project.endGrain.rowFlips[slot] ?? false, offset: project.endGrain.rowOffsets?.[slot] ?? 0, sourceIndex: project.endGrain.rowOrder?.[slot] ?? slot }
     const tag = `${state.rotated ? 'R' : ''}${state.flipped ? 'F' : ''}` || 'N'
     const x = dragging ? slot * thickness + drag!.dx / drag!.effPx : position * thickness
-    return <g key={dragging ? 'dragged' : `slot-${slot}`} {...(dragging ? {} : { 'data-slot': slot })} transform={`translate(${x} 0)`} className={`slice${dragging ? ' dragging' : ''}`} aria-label={`Slice ${slot + 1}: ${tag}`}>
+    return <g key={dragging ? 'dragged' : `slot-${slot}`} {...(dragging ? {} : { 'data-slot': slot, tabIndex: 0, role: 'button', onKeyDown: (event: ReactKeyboardEvent<SVGGElement>) => onColumnKeyDown(event, slot) })} transform={`translate(${x} 0)`} className={`slice${dragging ? ' dragging' : ''}`} aria-label={`Slice ${slot + 1}: ${tag}`}>
       <SliceFace project={project} template={template} state={state} clipId={`${clipIdPrefix}-${slot}`}/>
       <rect className="slice-hit" width={thickness} height={height} fill="transparent"/>
       <g transform={`translate(${thickness / 2} ${height / 2}) scale(${k})`}><text className="slice-label" textAnchor="middle" dominantBaseline="middle">{tag}</text></g>
@@ -503,27 +519,14 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
 }
 
 // Crosscut markers drawn in mm over the glue-up: trim, slice cut lines, kerf
-// waste between slices, and the offcut — positions straight from the metrics.
+// waste between slices, and the offcut. Pure presentation — the layout math
+// (trim-at-each-end convention, positions) lives in crosscutOverlaySegments.
 function CrosscutOverlay({ project, metrics, heightMm, pxPerMm }: { project: BoardProject; metrics: EndGrainMetrics; heightMm: number; pxPerMm: number }) {
-  const settings = project.endGrain
-  const trim = Math.max(0, settings.trimAllowance) / 2
-  const slice = Math.max(0, settings.sliceThickness)
-  const kerf = Math.max(0, settings.kerf)
-  const pitch = slice + kerf
-  const used = trim + metrics.sliceCount * slice + metrics.crosscutCount * kerf
-  const source = Math.max(settings.sourceLength, 1)
-  const offcut = Math.max(0, source - used)
-  const cutCount = metrics.sliceCount > 0 ? metrics.sliceCount + 1 : 0
+  const { trimBand, kerf, used, offcut, cutLines, kerfBands } = crosscutOverlaySegments(project.endGrain, metrics)
   return <g className="crosscut-overlay">
-    {trim > 0 && <WasteBand x={0} width={trim} height={heightMm} pxPerMm={pxPerMm} label="TRIM"/>}
-    {kerf > 0 && Array.from({ length: metrics.crosscutCount }, (_, index) => {
-      const x = trim + index * pitch + slice
-      return <rect key={index} className="kerf-band" x={x} y={0} width={kerf} height={heightMm}/>
-    })}
-    {Array.from({ length: cutCount }, (_, index) => {
-      const x = trim + index * pitch
-      return <line key={`cut-${index}`} className="cut-line" x1={x} y1={0} x2={x} y2={heightMm} vectorEffect="non-scaling-stroke"/>
-    })}
+    {trimBand > 0 && <WasteBand x={0} width={trimBand} height={heightMm} pxPerMm={pxPerMm} label="TRIM"/>}
+    {kerf > 0 && kerfBands.map((x, index) => <rect key={index} className="kerf-band" x={x} y={0} width={kerf} height={heightMm}/>)}
+    {cutLines.map((x, index) => <line key={`cut-${index}`} className="cut-line" x1={x} y1={0} x2={x} y2={heightMm} vectorEffect="non-scaling-stroke"/>)}
     {offcut > 0.5 && <WasteBand x={used} width={offcut} height={heightMm} pxPerMm={pxPerMm} label="OFFCUT"/>}
   </g>
 }

@@ -11,7 +11,9 @@ localStorage. No backend.
 
 ## Commands
 
-Requires Node >= 24 (`.nvmrc`) and pnpm 11.5.3 (via Corepack: `corepack enable`).
+Requires Node >= 24 (`.nvmrc`) and pnpm 11.5.3 (via Corepack: `corepack enable`). On Node >= 25,
+Corepack is no longer bundled — run `npm install -g corepack` first. The repo standard is Node 24
+(`.nvmrc`), where `corepack enable` just works with no extra step.
 
 ```bash
 pnpm install
@@ -22,6 +24,7 @@ pnpm typecheck           # tsc -b only
 pnpm lint                # eslint .
 pnpm test                # vitest run (unit tests in tests/)
 pnpm test:coverage       # vitest run --coverage (CI gate; thresholds below)
+pnpm exec playwright install --with-deps chromium  # one-time prerequisite for test:e2e
 pnpm test:e2e            # playwright smoke tests in e2e/ (boots its own dev server)
 ```
 
@@ -38,11 +41,15 @@ Run the app in a local container (serves on http://localhost:8080):
 docker compose up -d --build
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck → lint → `test:coverage` → build on every PR/push
-to `develop` and `main`. Coverage is gated only on the pure logic layer
+CI (`.github/workflows/ci.yml`) has four jobs. `Validate` runs typecheck → lint → `test:coverage` →
+build. `E2E` runs the Playwright suite (desktop `chromium` project plus a touch-capable `tablet`
+project) against a dev server it boots itself. Coverage is gated only on the pure logic layer
 (`src/domain/**`, `storage.ts`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
-statements 88 — keep these green when touching domain code. `develop` also builds/scans a Docker
-image; `main` publishes to Docker Hub.
+statements 88 — keep these green when touching domain code. `Docker verify` (PRs and pushes to
+`develop`) needs `Validate` and `E2E`, builds the image, smoke-tests it, and runs a gating Trivy
+scan (fails the build on fixable CRITICAL/HIGH vulnerabilities, uploads SARIF to code scanning).
+`Docker publish` (pushes to `main` only) does the same build/smoke-test/Trivy gate for an amd64
+image before pushing the multi-arch image to Docker Hub.
 
 ## Architecture
 
@@ -109,7 +116,10 @@ add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` 
   hooks (`usePinchPan`, `sliceDrag`). Vitest config lives in `vite.config.ts` and **excludes
   `e2e/`**.
 - **E2E (`e2e/`, Playwright):** smoke tests for interaction bugs unit tests can't reach (pointer
-  drag vs tap, SVG layout). Drives a real Chromium against a dev server it starts itself.
+  drag vs tap, SVG layout). Drives a real Chromium against a dev server it starts itself. A second
+  `tablet` project (`playwright.config.ts`) re-runs the touch/pointer-sensitive specs in a
+  touch-capable, iPad-landscape-shaped context — both projects force `browserName: 'chromium'`
+  since CI only installs that browser.
 
 ## TypeScript setup
 

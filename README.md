@@ -42,7 +42,7 @@ Docker Hub publishes only from `main` as:
 headlock0253/sawdust-atlas
 ```
 
-The public Docker Hub page is [headlock0253/sawdust-atlas](https://hub.docker.com/r/headlock0253/sawdust-atlas). You do not need a Docker Hub account to download the public image.
+The public Docker Hub page is [headlock0253/sawdust-atlas](https://hub.docker.com/r/headlock0253/sawdust-atlas). You do not need a Docker Hub account to download the public image. This repository (GitHub account [nothingfortune](https://github.com/nothingfortune)) and the Docker Hub account that publishes the image (`headlock0253`) are run by the same person, so you can trace a published image back to this source.
 
 Add these repository secrets in GitHub before relying on the publish step:
 
@@ -56,7 +56,7 @@ In Docker Hub, keep `latest` and `main` mutable so the release branch can contin
 Recommended GitHub repository settings:
 
 - Make `develop` the default branch for day-to-day pull requests.
-- Protect `develop` and require the `Validate` and `Docker verify` checks before merge.
+- Protect `develop` and require the `Validate`, `E2E`, and `Docker verify` checks before merge.
 - Protect `main`, require pull requests, require the `Validate` check, and restrict who can push directly.
 - Create a GitHub environment named `production`; add required reviewers there if Docker Hub releases should need a manual approval.
 - Keep `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` as repository secrets, not environment variables committed to the repo.
@@ -86,12 +86,15 @@ on a `git pull`/`git merge` that lands on `develop` rebuilds the preview in the 
 
 ## Current features
 
-- Millimeter-first dimensions throughout
+- Millimeter-first dimensions throughout, with a one-click toggle to display in imperial
 - Scaled workshop floor plans with top and measured angled views, draggable catalog and custom objects, editable heights, rotation, color, general clearance, and directional infeed/outfeed zones
 - Edge-grain cutting board patterns with six wood species, editable strip widths, pattern helpers, board-foot usage, and material estimates
 - End-grain workflow showing the first glue-up, kerf-aware crosscut plan, and the board after its 90-degree turn
+- Multi-panel composite boards that assemble several edge- or end-grain panels into one larger build
 - Per-strip trailing angles, independent slice rotation and flipping, angle-aware dimensions, and species-level stock and waste totals
 - Generated rough-stock list, machine cuts, saw-pass counts, and ordered build sequence
+- A standalone geometry calculator, including a compound-angle mode, for working out cuts outside a specific board
+- Pricing settings that turn material use, labor, and consumables into a per-board cost and price estimate
 - Browser autosave plus JSON import and export
 - Installable, offline-capable PWA (web app manifest plus a service worker that caches the app shell)
 - Domain models separated from the UI so additional woodworking designers and storage adapters can be added cleanly
@@ -107,3 +110,7 @@ on a `git pull`/`git merge` that lands on `develop` rebuilds the preview in the 
 ## Data and privacy
 
 Projects currently live in each browser's local storage. The computer and tablet therefore have separate project copies. Use JSON export/import to move projects between them, and export a backup before clearing browser data.
+
+## License
+
+SawdustAtlas is licensed under [PolyForm Noncommercial 1.0.0](LICENSE) — free to use, modify, and share for any noncommercial purpose, but not for commercial use.

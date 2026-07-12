@@ -19,7 +19,7 @@ From the Home page, choose one of these:
 - **Lay out a workshop** to place machines, benches, storage, doors, and work clearances.
 - **Design a cutting board** to choose woods, dimensions, strip layouts, and end-grain patterns.
 
-Your changes save automatically in the browser. The **Saved locally** message at the top confirms this.
+Your changes save automatically in the browser. The **Saved in this browser** message at the top confirms this.
 
 ## Design a Cutting Board
 
@@ -32,6 +32,10 @@ Your changes save automatically in the browser. The **Saved locally** message at
 7. Review the finished size, rough stock, material estimate, waste, and build plan.
 
 Pattern buttons create an editable starting point. You can still change every strip afterward.
+
+### Combine Boards into a Composite
+
+Some pieces — a large table top or a cutting board built from several panels — are bigger than one board can hold. Open a finished board and choose **Make composite** to start joining panels into one larger piece. Every panel in a composite shares the same construction (edge grain or end grain).
 
 ### Add Your Own Wood
 
@@ -53,6 +57,10 @@ A wood cannot be deleted while a cutting board is using it. Remove or change tho
 4. Add machines, benches, storage, doors, or custom objects.
 5. Drag items into place and set their size, rotation, and working clearance.
 6. Check both the top and angled views before relying on the layout.
+
+## Work Out a Cut Away From a Board
+
+Select **Geometry** in the left menu for a standalone calculator you can use for any cut, not just one already in a board — including a **Compound angle** mode for angled legs and other compound cuts.
 
 ## Back Up Your Work
 

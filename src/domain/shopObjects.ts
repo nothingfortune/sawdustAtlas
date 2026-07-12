@@ -25,19 +25,17 @@ export const SHOP_ITEM_KINDS = [
 ] as const satisfies ReadonlyArray<{ value: ShopItemKind; label: string }>
 
 export const SHOP_OBJECT_TEMPLATES = [
-  { name: 'Table saw', kind: 'machine', width: 1070, depth: 970, height: 890, clearance: 600, color: '#d8863b', feedDirection: 0, infeedClearance: 2440, outfeedClearance: 2440, sideClearance: 300 },
-  { name: 'Jointer / planer', kind: 'machine', width: 1220, depth: 610, height: 900, clearance: 450, color: '#c76f37', feedDirection: 0, infeedClearance: 1830, outfeedClearance: 1830, sideClearance: 200 },
-  { name: 'Bandsaw', kind: 'machine', width: 760, depth: 760, height: 1800, clearance: 600, color: '#b9683b' },
-  { name: 'Drill press', kind: 'machine', width: 560, depth: 760, height: 1750, clearance: 450, color: '#a85f42' },
-  { name: 'Miter station', kind: 'machine', width: 2440, depth: 760, height: 1000, clearance: 450, color: '#b77b42', feedDirection: 0, infeedClearance: 1220, outfeedClearance: 1220, sideClearance: 150 },
-  { name: 'Workbench', kind: 'bench', width: 1830, depth: 760, height: 900, clearance: 450, color: '#66826d' },
-  { name: 'Assembly table', kind: 'bench', width: 1830, depth: 1220, height: 900, clearance: 600, color: '#718b73' },
-  { name: 'Wall shelves', kind: 'storage', width: 1830, depth: 410, height: 2100, clearance: 300, color: '#637d89' },
-  { name: 'Lumber rack', kind: 'storage', width: 2440, depth: 610, height: 2400, clearance: 600, color: '#6c7887' },
-  { name: 'Cabinet', kind: 'storage', width: 915, depth: 510, height: 915, clearance: 200, color: '#637d89' },
-  { name: 'Dust collector', kind: 'dust', width: 760, depth: 760, height: 2100, clearance: 600, color: '#7a697f' },
-  { name: 'Cyclone separator', kind: 'dust', width: 610, depth: 610, height: 2200, clearance: 450, color: '#8a7181' },
-  { name: 'Air compressor', kind: 'utility', width: 760, depth: 510, height: 900, clearance: 450, color: '#647f83' },
+  { name: 'Table Saw', kind: 'machine', width: 1070, depth: 970, height: 890, clearance: 600, color: '#d8863b', feedDirection: 0, infeedClearance: 2440, outfeedClearance: 2440, sideClearance: 300 },
+  { name: 'Planer', kind: 'machine', width: 700, depth: 400, height: 900, clearance: 450, color: '#c76f37', feedDirection: 0, infeedClearance: 1830, outfeedClearance: 1830, sideClearance: 200 },
+  { name: 'Bandsaw', kind: 'machine', width: 750, depth: 500, height: 1800, clearance: 600, color: '#b9683b' },
+  { name: 'Drill Press', kind: 'machine', width: 500, depth: 500, height: 1750, clearance: 450, color: '#a85f42' },
+  { name: 'Miter Station', kind: 'machine', width: 2440, depth: 760, height: 1000, clearance: 450, color: '#b77b42', feedDirection: 0, infeedClearance: 1220, outfeedClearance: 1220, sideClearance: 150 },
+  { name: 'Workbench', kind: 'bench', width: 2400, depth: 1300, height: 900, clearance: 450, color: '#66826d' },
+  { name: 'Trash', kind: 'custom', width: 500, depth: 500, height: 900, clearance: 450, color: '#66826d' },
+  { name: 'Assembly Table', kind: 'bench', width: 1830, depth: 1220, height: 900, clearance: 600, color: '#718b73' },
+  { name: 'Wall Shelves', kind: 'storage', width: 1830, depth: 410, height: 2100, clearance: 300, color: '#637d89' },
+  { name: 'Lumber Rack', kind: 'storage', width: 2440, depth: 400, height: 2400, clearance: 600, color: '#6c7887' },
+  { name: 'Dust Collector', kind: 'dust', width: 900, depth: 500, height: 2100, clearance: 600, color: '#7a697f' },
   { name: 'Door', kind: 'door', width: 915, depth: 125, height: 2040, clearance: 915, color: '#9b8365' },
 ] as const satisfies readonly ShopObjectDefinition[]
 

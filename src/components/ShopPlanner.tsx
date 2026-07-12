@@ -1,20 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { AlertTriangle, Ban, Box, ChevronDown, CircleGauge, Copy, DoorOpen, PencilRuler, Plus, SlidersHorizontal, Trash2, Warehouse, X } from 'lucide-react'
-import type { ShopBlockedZone, ShopItem, ShopItemKind, ShopProject } from '../types'
+import { useState } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { AlertTriangle, Ban, Box, ChevronDown, CircleGauge, Copy, PencilRuler, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import type { ShopBlockedZone, ShopItem, ShopProject } from '../types'
 import { createId } from '../id'
 import { NumberField as Field } from './fields'
-import { createShopItem, SHOP_ITEM_KINDS, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
+import { createShopItem, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
 import type { ShopObjectDefinition } from '../domain/shopObjects'
-import { getBlockedZoneConflicts, getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, projectIsometric, projectPolygon } from '../domain/shopGeometry'
-import type { Point2D } from '../domain/shopGeometry'
-import { formatDimensions, formatLength, formatLengthValue, MM_PER_FOOT, snapMmToFoot } from '../domain/lengthUnits'
+import { getBlockedZoneConflicts } from '../domain/shopGeometry'
+import { formatDimensions, formatLength } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
+import { useShopDrag } from './useShopDrag'
+import { SCALE } from './shop/constants'
+import { clamp, fitZoneToRoom } from './shop/shopPlannerHelpers'
+import { FloorGridLayer } from './shop/FloorGridLayer'
+import { BlockedZoneLayer } from './shop/BlockedZoneLayer'
+import { FeedClearanceLayer } from './shop/FeedClearanceLayer'
+import { AngledShopView } from './shop/AngledShopView'
+import { ObjectIcon, TextField, KindField, ColorField, Empty } from './shop/ShopFields'
 
 interface Props { projects: ShopProject[]; project: ShopProject | undefined; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: ShopProject) => void; onDelete: (id: string) => void }
-
-const SCALE = .094
-const DRAW_ZONE_LABEL = 'Out-of-bounds zone'
 
 const DEFAULT_CUSTOM_OBJECT: ShopObjectDefinition = {
   name: 'Custom object',
@@ -42,15 +46,8 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
   const [draftZone, setDraftZone] = useState<ShopBlockedZone | null>(null)
-  const zoomRef = useRef(zoom)
-  // Latest project, so a drag committed on pointer-up reads current data rather than
-  // the drag-start snapshot (removes intra-drag clobbering / stale-closure writes).
-  const projectRef = useLiveRef(project)
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const drawStartRef = useRef<Point2D | null>(null)
   const [lastProjectId, setLastProjectId] = useState(project?.id)
 
-  useEffect(() => { zoomRef.current = zoom }, [zoom])
   if (project?.id !== lastProjectId) {
     setLastProjectId(project?.id)
     setSelected('')
@@ -135,106 +132,21 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     })
   }
 
-  // Shared drag loop: preview the move with local state, and commit exactly one
-  // change on release (never on cancel/Escape), reading the latest project so the
-  // single write can't clobber a concurrent edit. commit() applies the finished
-  // position through onChange for whichever kind (item or zone) is being dragged.
-  function beginDrag(event: ReactPointerEvent, id: string, startX: number, startY: number, widthMm: number, depthMm: number, commit: (x: number, y: number) => void) {
-    event.currentTarget.setPointerCapture(event.pointerId)
-    setDraggingId(id)
-    const origin = { x: event.clientX, y: event.clientY }
-    let latest = { x: startX, y: startY }
-    let moved = false
-    const move = (next: PointerEvent) => {
-      const proj = projectRef.current
-      const x = clamp(startX + (next.clientX - origin.x) / (SCALE * zoomRef.current), 0, Math.max(0, (proj?.width ?? 0) - widthMm))
-      const y = clamp(startY + (next.clientY - origin.y) / (SCALE * zoomRef.current), 0, Math.max(0, (proj?.depth ?? 0) - depthMm))
-      latest = { x, y }
-      moved = true
-      setDragPreview({ id, x, y })
-    }
-    const cleanup = () => {
-      setDraggingId(null)
-      setDragPreview(null)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', cancel)
-      window.removeEventListener('keydown', onKey)
-    }
-    const up = () => { if (moved) commit(latest.x, latest.y); cleanup() }
-    const cancel = () => cleanup()
-    const onKey = (keyEvent: KeyboardEvent) => { if (keyEvent.key === 'Escape') cleanup() }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', cancel)
-    window.addEventListener('keydown', onKey)
-  }
-
-  function beginItemDrag(event: ReactPointerEvent, target: ShopItem) {
-    setSelected(`item:${target.id}`)
-    beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
-      const proj = projectRef.current
-      if (proj) onChange({ ...proj, items: proj.items.map(candidate => candidate.id === target.id ? { ...candidate, x, y } : candidate), updatedAt: new Date().toISOString() })
-    })
-  }
-
-  function beginZoneDrag(event: ReactPointerEvent, target: ShopBlockedZone) {
-    setSelected(`zone:${target.id}`)
-    beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
-      const proj = projectRef.current
-      if (proj) onChange({ ...proj, blockedZones: proj.blockedZones.map(candidate => candidate.id === target.id ? fitZoneToRoom({ ...candidate, x, y }, proj) : candidate), updatedAt: new Date().toISOString() })
-    })
-  }
-
-  function beginZoneDraw(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!project || event.target !== event.currentTarget) return
-    event.currentTarget.setPointerCapture(event.pointerId)
-    const start = getCanvasPoint(event.clientX, event.clientY, canvasRef.current, zoomRef.current, project)
-    if (!start) return
-    drawStartRef.current = start
-    setDraftZone(zoneFromPoints(start, start))
-    const move = (next: PointerEvent) => {
-      const current = getCanvasPoint(next.clientX, next.clientY, canvasRef.current, zoomRef.current, project)
-      if (!current || !drawStartRef.current) return
-      setDraftZone(zoneFromPoints(drawStartRef.current, current))
-    }
-    const up = () => {
-      const nextDraft = draftZoneRef.current
-      if (project && nextDraft && nextDraft.width >= 120 && nextDraft.depth >= 120) {
-        const created = fitZoneToRoom({ ...nextDraft, id: createId(), name: `${DRAW_ZONE_LABEL} ${project.blockedZones.length + 1}` }, project)
-        update({ blockedZones: [...project.blockedZones, created] })
-        setSelected(`zone:${created.id}`)
-        setRightOpen(true)
-      }
-      drawStartRef.current = null
-      setDraftZone(null)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
-  }
-
-  const draftZoneRef = useLiveRef(draftZone)
-
-  const pinchPointers = useRef(new Map<number, { x: number; y: number }>())
-  const pinchStart = useRef<{ dist: number; zoom: number } | null>(null)
-  const pinchDist = () => { const [a, b] = [...pinchPointers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0 }
-  const onStagePointerDown = (event: ReactPointerEvent) => {
-    pinchPointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (pinchPointers.current.size === 2) pinchStart.current = { dist: pinchDist() || 1, zoom }
-  }
-  const onStagePointerMove = (event: ReactPointerEvent) => {
-    if (!pinchPointers.current.has(event.pointerId)) return
-    pinchPointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (pinchPointers.current.size === 2 && pinchStart.current) setZoom(clamp(pinchStart.current.zoom * (pinchDist() / pinchStart.current.dist), .35, 1.25))
-  }
-  const onStagePointerEnd = (event: ReactPointerEvent) => {
-    pinchPointers.current.delete(event.pointerId)
-    if (pinchPointers.current.size < 2) pinchStart.current = null
-  }
+  // Pointer-drag (items/zones), pinch-zoom, and no-go-zone-draw wiring — see
+  // useShopDrag for the shared drag-commit loop this drives.
+  const { canvasRef, beginItemDrag, beginZoneDrag, beginZoneDraw, onStagePointerDown, onStagePointerMove, onStagePointerEnd } = useShopDrag({
+    project,
+    onChange,
+    update,
+    zoom,
+    setZoom,
+    setDraggingId,
+    setDragPreview,
+    draftZone,
+    setDraftZone,
+    setSelected,
+    setRightOpen,
+  })
 
   if (!project) return <Empty title="No workshop plans yet" action={onCreate}/>
 
@@ -352,159 +264,3 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     <div className="shop-fabs"><button className="panel-fab" onClick={() => { setLeftOpen(open => !open); setRightOpen(false) }} aria-label="Toggle objects panel"><Box/>Objects</button><button className="panel-fab" onClick={() => { setRightOpen(open => !open); setLeftOpen(false) }} aria-label="Toggle inspector"><SlidersHorizontal/>Inspector</button></div>
   </div>
 }
-
-function FloorGridLayer({ project }: { project: ShopProject }) {
-  const { lengthUnit } = useUnitSystem()
-  // Preston's button: snap the grid to the nearest foot with foot labels so the
-  // floor reads in round feet, whatever the underlying mm spacing.
-  const footGrid = lengthUnit === 'imperial'
-  const grid = footGrid ? snapMmToFoot(project.gridSize) : project.gridSize
-  const xs = gridSeries(project.width, grid)
-  const ys = gridSeries(project.depth, grid)
-  const labelEvery = grid >= 500 ? 1 : 2
-  const gridLabel = (value: number) => footGrid ? `${Math.round(value / MM_PER_FOOT)}'` : formatLengthValue(value, lengthUnit)
-
-  return <svg className="floor-grid-layer" viewBox={`0 0 ${project.width} ${project.depth}`} preserveAspectRatio="none" aria-hidden="true">
-    {xs.map((x, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={x} y1={0} x2={x} y2={project.depth} key={`x-${x}`}/>)}
-    {ys.map((y, index) => <line className={index % labelEvery === 0 ? 'major' : ''} x1={0} y1={y} x2={project.width} y2={y} key={`y-${y}`}/>)}
-    {xs.filter((_, index) => index % labelEvery === 0 && index > 0).map(x => <text className="grid-label" x={x - 12} y={95} key={`xlabel-${x}`}>{gridLabel(x)}</text>)}
-    {ys.filter((_, index) => index % labelEvery === 0 && index > 0).map(y => <text className="grid-label" x={28} y={y - 18} key={`ylabel-${y}`}>{gridLabel(y)}</text>)}
-  </svg>
-}
-
-function BlockedZoneLayer({
-  project,
-  draftZone,
-  selectedZoneId,
-  draggingId,
-  dragPreview,
-  onPointerDown,
-  onKeyDown,
-}: {
-  project: ShopProject
-  draftZone: ShopBlockedZone | null
-  selectedZoneId: string
-  draggingId: string | null
-  dragPreview: { id: string; x: number; y: number } | null
-  onPointerDown: (event: ReactPointerEvent, target: ShopBlockedZone) => void
-  onKeyDown: (event: ReactKeyboardEvent, target: ShopBlockedZone) => void
-}) {
-  return <>
-    {project.blockedZones.map(blockedZone => {
-      const preview = dragPreview?.id === blockedZone.id ? dragPreview : blockedZone
-      return <div key={blockedZone.id} role="button" tabIndex={0} aria-label={`${blockedZone.name}, blocked floor area`} aria-pressed={selectedZoneId === blockedZone.id} className={`blocked-zone ${selectedZoneId === blockedZone.id ? 'selected' : ''} ${draggingId === blockedZone.id ? 'dragging' : ''}`} onPointerDown={event => { event.stopPropagation(); onPointerDown(event, blockedZone) }} onKeyDown={event => onKeyDown(event, blockedZone)} style={{ left: preview.x * SCALE, top: preview.y * SCALE, width: blockedZone.width * SCALE, height: blockedZone.depth * SCALE }}>
-      <span>{blockedZone.name}</span>
-    </div>
-    })}
-    {draftZone && <div className="blocked-zone preview" style={{ left: draftZone.x * SCALE, top: draftZone.y * SCALE, width: draftZone.width * SCALE, height: draftZone.depth * SCALE }}><span>{DRAW_ZONE_LABEL}</span></div>}
-  </>
-}
-
-function FeedClearanceLayer({ project }: { project: ShopProject }) {
-  return <svg className="feed-clearance-layer" viewBox={`0 0 ${project.width} ${project.depth}`} preserveAspectRatio="none" aria-hidden="true">
-    {project.items.flatMap(item => getFeedClearanceZones(item).map(zone => {
-      const center = polygonCenter(zone.points)
-      return <g className={`feed-zone ${zone.kind}`} key={`${item.id}-${zone.kind}`}><polygon points={pointsAttribute(zone.points)}/><text x={center.x} y={center.y}>{zone.kind === 'infeed' ? 'IN' : 'OUT'}</text></g>
-    }))}
-  </svg>
-}
-
-function AngledShopView({ project, selected, onSelect }: { project: ShopProject, selected: string, onSelect: (id: string) => void }) {
-  const floor = projectPolygon([{ x: 0, y: 0 }, { x: project.width, y: 0 }, { x: project.width, y: project.depth }, { x: 0, y: project.depth }])
-  const projectedItems = [...project.items].sort((a, b) => (a.x + a.y) - (b.x + b.y)).map(item => {
-    const footprint = getShopItemFootprint(item)
-    return { item, bottom: projectPolygon(footprint), top: projectPolygon(footprint, item.height) }
-  })
-  const feedZones = project.items.flatMap(item => getFeedClearanceZones(item).map(zone => ({ ...zone, itemId: item.id, projected: projectPolygon(zone.points) })))
-  const blockedZones = project.blockedZones.map(zone => ({ zone, projected: projectPolygon(getBlockedZoneFootprint(zone)) }))
-  const allPoints = [...floor, ...feedZones.flatMap(zone => zone.projected), ...blockedZones.flatMap(zone => zone.projected), ...projectedItems.flatMap(entry => [...entry.bottom, ...entry.top])]
-  const bounds = getBounds(allPoints, 450)
-
-  return <div className="angled-shop-view"><div className="angled-view-note">Angled review view · switch to Top to move objects</div><svg viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`} role="img" aria-label="Angled workshop view">
-    <polygon className="iso-floor" points={pointsAttribute(floor)}/>
-    {blockedZones.map(({ zone, projected }) => <polygon className={`iso-blocked-zone ${selected === `zone:${zone.id}` ? 'selected' : ''}`} points={pointsAttribute(projected)} key={zone.id}/>)}
-    {feedZones.map(zone => <polygon className={`iso-feed-zone ${zone.kind}`} points={pointsAttribute(zone.projected)} key={`${zone.itemId}-${zone.kind}`}/>)}
-    {projectedItems.map(({ item, bottom, top }) => <g className={`iso-object ${selected === `item:${item.id}` ? 'selected' : ''}`} role="button" tabIndex={0} aria-label={item.name} onClick={() => onSelect(`item:${item.id}`)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onSelect(`item:${item.id}`) }} key={item.id}>
-      {getBoxSides(bottom, top).map((side, index) => <polygon className="iso-side" style={{ fill: item.color }} points={pointsAttribute(side)} key={index}/>)}
-      <polygon className="iso-top" style={{ fill: item.color }} points={pointsAttribute(top)}/>
-      <text x={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).x} y={projectIsometric({ x: item.x + item.width / 2, y: item.y + item.depth / 2, z: item.height }).y}>{item.name}</text>
-    </g>)}
-  </svg></div>
-}
-
-function zoneFromPoints(start: Point2D, end: Point2D): ShopBlockedZone {
-  return {
-    id: 'draft',
-    name: DRAW_ZONE_LABEL,
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    width: Math.max(1, Math.abs(end.x - start.x)),
-    depth: Math.max(1, Math.abs(end.y - start.y)),
-  }
-}
-
-function fitZoneToRoom(zone: ShopBlockedZone, room: Pick<ShopProject, 'width' | 'depth'>): ShopBlockedZone {
-  const width = clamp(zone.width, 1, room.width)
-  const depth = clamp(zone.depth, 1, room.depth)
-  return {
-    ...zone,
-    width,
-    depth,
-    x: clamp(zone.x, 0, Math.max(0, room.width - width)),
-    y: clamp(zone.y, 0, Math.max(0, room.depth - depth)),
-  }
-}
-
-function getCanvasPoint(clientX: number, clientY: number, canvas: HTMLDivElement | null, zoom: number, project: ShopProject): Point2D | null {
-  if (!canvas) return null
-  const bounds = canvas.getBoundingClientRect()
-  const x = clamp((clientX - bounds.left) / zoom / SCALE, 0, project.width)
-  const y = clamp((clientY - bounds.top) / zoom / SCALE, 0, project.depth)
-  return { x, y }
-}
-
-function useLiveRef<T>(value: T) {
-  const ref = useRef(value)
-  useEffect(() => { ref.current = value }, [value])
-  return ref
-}
-
-function gridSeries(size: number, step: number) {
-  const values: number[] = []
-  for (let value = 0; value <= size; value += step) values.push(value)
-  if (values.at(-1) !== size) values.push(size)
-  return values
-}
-
-function polygonCenter(points: readonly Point2D[]): Point2D {
-  return { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length }
-}
-
-function getBoxSides(
-  bottom: [Point2D, Point2D, Point2D, Point2D],
-  top: [Point2D, Point2D, Point2D, Point2D],
-): Array<[Point2D, Point2D, Point2D, Point2D]> {
-  return [
-    [bottom[0], bottom[1], top[1], top[0]],
-    [bottom[1], bottom[2], top[2], top[1]],
-    [bottom[2], bottom[3], top[3], top[2]],
-    [bottom[3], bottom[0], top[0], top[3]],
-  ]
-}
-
-function getBounds(points: readonly Point2D[], padding: number) {
-  const xs = points.map(point => point.x)
-  const ys = points.map(point => point.y)
-  const minX = Math.min(...xs) - padding
-  const maxX = Math.max(...xs) + padding
-  const minY = Math.min(...ys) - padding
-  const maxY = Math.max(...ys) + padding
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-}
-
-function ObjectIcon({ kind }: { kind: ShopItemKind }) { return kind === 'door' ? <DoorOpen/> : kind === 'storage' ? <Warehouse/> : <Box/> }
-function TextField({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) { return <label className="field"><span>{label}</span><input value={value} onChange={event => onChange(event.target.value)}/></label> }
-function KindField({ value, onChange }: { value: ShopItemKind, onChange: (value: ShopItemKind) => void }) { return <label className="field"><span>Category</span><select value={value} onChange={event => onChange(event.target.value as ShopItemKind)}>{SHOP_ITEM_KINDS.map(kind => <option value={kind.value} key={kind.value}>{kind.label}</option>)}</select></label> }
-function ColorField({ value, onChange }: { value: string, onChange: (value: string) => void }) { return <label className="field color-field"><span>Color</span><input type="color" value={value} onChange={event => onChange(event.target.value)}/></label> }
-function Empty({ title, action }: { title: string, action: () => void }) { return <div className="empty-page"><h2>{title}</h2><button className="button" onClick={action}><Plus/>Create one</button></div> }
-function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max) }

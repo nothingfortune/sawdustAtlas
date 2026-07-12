@@ -1,4 +1,4 @@
-import { nonNegative, toBoardFeet } from './units'
+import { EPSILON, nonNegative, sum, toBoardFeet } from './units'
 
 // BOARD-008 (domain foundation): a true brick-and-mortar cutting board is not a
 // single-panel row transform — it is a *composite assembly* of pieces cut from
@@ -115,13 +115,14 @@ interface BrickGeometry {
   brickStripCount: number
   separatorCount: number
   courseCount: number
+  /** The actual course stack (respects halfCourseEdge) — the single source of truth. */
+  courses: PanelCourse[]
   assembledLength: number
   assembledWidth: number
 }
 
 const PANEL_A_ID = 'brick-course'
 const PANEL_B_ID = 'mortar-blank'
-const EPSILON = 1e-9
 
 function deriveGeometry(params: BrickParameters): BrickGeometry {
   const brickHeight = nonNegative(params.brickCourseHeightMm)
@@ -139,9 +140,12 @@ function deriveGeometry(params: BrickParameters): BrickGeometry {
   // Length = c*brickHeight + (c-1)*mortarCourse  ->  c = (length + mortarCourse) / coursePitch
   const courseCount = Math.max(1, coursePitch > EPSILON ? Math.round((nonNegative(params.finishedLengthMm) + mortarCourse) / coursePitch) : 1)
 
-  const assembledLength = courseCount * brickHeight + Math.max(0, courseCount - 1) * mortarCourse
+  // Assembled length is the SUM of the actual course stack, so it tracks halfCourseEdge
+  // (which halves the two edge brick courses) instead of always assuming full courses.
+  const courses = buildBrickCourses(courseCount, brickHeight, mortarCourse, params.halfCourseEdge)
+  const assembledLength = sum(courses.map(course => course.heightMm))
   const assembledWidth = brickStripCount * crosscut + separatorCount * separator
-  return { coursePitch, offset, brickStripCount, separatorCount, courseCount, assembledLength, assembledWidth }
+  return { coursePitch, offset, brickStripCount, separatorCount, courseCount, courses, assembledLength, assembledWidth }
 }
 
 function buildBrickCourses(courseCount: number, brickHeight: number, mortarCourse: number, halfEdge: boolean): PanelCourse[] {
@@ -162,7 +166,7 @@ export function generateBrickAssembly(params: BrickParameters): CompositeBoardRe
     id: PANEL_A_ID,
     name: 'Brick-course panel',
     role: 'brick-course',
-    courses: buildBrickCourses(geom.courseCount, nonNegative(params.brickCourseHeightMm), nonNegative(params.mortarCourseThicknessMm), params.halfCourseEdge),
+    courses: geom.courses,
     lengthMm: geom.brickStripCount * nonNegative(params.crosscutStripWidthMm) + geom.brickStripCount * nonNegative(params.kerfMm) + nonNegative(params.endTrimMm),
     thicknessMm: sourceThickness,
   }
@@ -208,16 +212,29 @@ export function summarizeBrickAssembly(params: BrickParameters): BrickSummary {
   const finishedThickness = nonNegative(params.finishedThicknessMm)
   const surfacing = nonNegative(params.surfacingAllowanceMm)
 
-  const brickVolume = geom.brickStripCount * crosscut * (geom.courseCount * brickHeight) * finishedThickness
-  const courseMortarVolume = geom.brickStripCount * crosscut * Math.max(0, geom.courseCount - 1) * mortarCourse * finishedThickness
+  // Brick / interior-mortar heights read straight off the actual course stack, so
+  // halved edge courses reduce the brick material rather than being counted full.
+  const brickHeightTotal = sum(geom.courses.filter(course => course.role === 'brick').map(course => course.heightMm))
+  const mortarHeightTotal = sum(geom.courses.filter(course => course.role === 'mortar').map(course => course.heightMm))
+
+  const brickVolume = geom.brickStripCount * crosscut * brickHeightTotal * finishedThickness
+  const courseMortarVolume = geom.brickStripCount * crosscut * mortarHeightTotal * finishedThickness
   const separatorMortarVolume = geom.separatorCount * separator * geom.assembledLength * finishedThickness
   const mortarVolume = courseMortarVolume + separatorMortarVolume
-  const finishedVolume = geom.assembledLength * geom.assembledWidth * finishedThickness
 
   const surfacingWaste = geom.assembledLength * geom.assembledWidth * surfacing
   const kerfWaste = geom.brickStripCount * nonNegative(params.kerfMm) * geom.assembledLength * (finishedThickness + surfacing)
   const trimWaste = nonNegative(params.endTrimMm) * geom.assembledWidth * (finishedThickness + surfacing)
   const wasteVolume = surfacingWaste + kerfWaste + trimWaste
+
+  // Conservation cross-check between two independently derived quantities: the finished
+  // volume built up from the actual course list (constructive) vs. the closed-form
+  // geometric volume. They agree only when buildBrickCourses and the geometry formula
+  // describe the same board — so this can actually fail if either drifts.
+  const constructiveVolume = (brickHeightTotal + mortarHeightTotal) * geom.assembledWidth * finishedThickness
+  const geometricBrickHeight = geom.courseCount * brickHeight - halfCourseSaving(params.halfCourseEdge, geom.courseCount, brickHeight)
+  const geometricLength = geometricBrickHeight + Math.max(0, geom.courseCount - 1) * mortarCourse
+  const geometricVolume = geometricLength * geom.assembledWidth * finishedThickness
 
   return {
     brickStripCount: geom.brickStripCount,
@@ -231,9 +248,16 @@ export function summarizeBrickAssembly(params: BrickParameters): BrickSummary {
     mortarBoardFeet: toBoardFeet(mortarVolume),
     totalBoardFeet: toBoardFeet(brickVolume + mortarVolume),
     wasteBoardFeet: toBoardFeet(wasteVolume),
-    conservationOk: Math.abs((brickVolume + mortarVolume) - finishedVolume) <= Math.max(1, finishedVolume) * 1e-8,
+    conservationOk: Math.abs(constructiveVolume - geometricVolume) <= Math.max(1, geometricVolume) * 1e-8,
     warnings: ['End grain — do not run this board through a planer. Flatten with a router sled, drum sander, CNC surfacing pass, or careful sanding.'],
   }
+}
+
+// Length the two half-height edge courses save vs. full courses. With a single
+// course the sole edge is halved once; with two or more, both edges are halved.
+function halfCourseSaving(halfCourseEdge: boolean, courseCount: number, brickHeight: number): number {
+  if (!halfCourseEdge || courseCount < 1) return 0
+  return courseCount === 1 ? brickHeight / 2 : brickHeight
 }
 
 // The old single-panel approximation is the `brick` preset id. Boards built from

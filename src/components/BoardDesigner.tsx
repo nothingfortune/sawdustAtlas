@@ -480,7 +480,8 @@ function DraggableAssembledBoard({ project, template, sliceCount, pxPerMm, onTog
 
   // Keyboard operation of a slice column (parallels the pointer path): Enter/Space
   // cycles rotate/flip like a tap; Left/Right arrows move the slice one slot like a
-  // drag-reorder. Focus naturally follows to the next tabbable column after a move.
+  // drag-reorder. Columns are keyed by slot position, so focus stays on the slot the
+  // pointer is at across a reorder rather than being lost.
   const onColumnKeyDown = (event: ReactKeyboardEvent<SVGGElement>, slot: number) => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggleRow(slot); return }
     const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0

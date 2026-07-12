@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2, X } from 'lucide-react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
@@ -22,7 +22,11 @@ const DRAG_SLOP = 8
 
 export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRow, onChange }: AssemblyDeskProps) {
   const [ref, size] = useElementSize()
-  const layout = deskLayout(composite, boards)
+  // Key the layout on the geometry inputs only, so unrelated composite edits (e.g.
+  // renaming, which changes the composite object ref every keystroke) don't rebuild
+  // the whole wafer layout. deskLayout reads exactly these fields off `composite`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const layout = useMemo(() => deskLayout(composite, boards), [composite.rows, composite.panels, composite.construction, boards])
   // Fit to width (rails + padding reserved); tall stacks scroll vertically.
   const avail = Math.max(120, size.width - 180)
   const pxPerMm = Math.min(5, Math.max(0.05, avail / layout.maxRowWidthMm))

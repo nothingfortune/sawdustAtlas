@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, loadSketch, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData, saveSketch } from '../src/storage'
+import { DEFAULT_ALLOWANCES } from '../src/domain/boardAllowances'
+import { boardThickness } from '../src/domain/compositeBoard'
 import type { AtlasData } from '../src/types'
 
 describe('importData (PLAT-004)', () => {
@@ -267,6 +269,26 @@ describe('workspace storage migration', () => {
     expect(data.composites[0]!.rows).toEqual([{ id: expect.any(String), wafers: [] }])
   })
 
+  it('seeds end-grain slice thickness from a legacy end-construction rip panel, preserving donor thickness (2.3)', () => {
+    const data = normalizeData({
+      shops: [], boards: [],
+      composites: [{
+        id: 'c', name: 'Old End', rows: 1, cols: 1, updatedAt: '',
+        panels: [{
+          id: 'p', name: 'Base', kind: 'rip', construction: 'end', thicknessMm: 30,
+          strips: [{ id: 's', speciesId: 'walnut', width: 38, trailingAngle: 0 }],
+          crosscut: { stripWidthMm: 25, kerfMm: 3, count: 4 },
+        }],
+        cells: [{ panelId: 'p', pieceIndex: 0, rotate: 0, flip: false }],
+      }],
+    } as unknown as Partial<AtlasData>)
+    const ref = data.composites[0]!.panels[0]!
+    const migratedBoard = data.boards.find(b => b.id === ref.boardId)!
+    expect(migratedBoard.construction).toBe('end')
+    expect(migratedBoard.thickness).toBe(30)
+    expect(boardThickness(migratedBoard)).toBe(30)
+  })
+
   it('preserves a new-shape composite round-trip', () => {
     const data = normalizeData({
       shops: [], boards: [],
@@ -280,6 +302,48 @@ describe('workspace storage migration', () => {
     expect(comp.construction).toBe('end')
     expect(comp.panels[0]!.cut).toEqual({ axis: 'y', stripWidthMm: 30, kerfMm: 3, count: 3 })
     expect(comp.rows[0]!.wafers[0]).toEqual({ panelId: 'p', pieceIndex: 0, rotate: 270, flip: true })
+  })
+})
+
+describe('allowances normalization (2.1)', () => {
+  it('coerces a string, Infinity, negative, missing, and null allowance field each to a finite non-negative number', () => {
+    const data = {
+      shops: [], boards: [],
+      allowances: {
+        jointing: '3',                       // string -> falls back to default
+        planing: Number.POSITIVE_INFINITY,   // Infinity -> falls back to default
+        routerTable: -5,                     // negative -> clamps to 0 (still finite/non-negative)
+        // ripAllowance intentionally missing -> falls back to default
+        lengthTrim: null,                    // null -> falls back to default
+        widthTrim: Number.NaN,               // NaN -> falls back to default
+      },
+    } as unknown as AtlasData
+    const allowances = normalizeData(data).allowances
+    for (const value of Object.values(allowances)) {
+      expect(Number.isFinite(value)).toBe(true)
+      expect(value).toBeGreaterThanOrEqual(0)
+    }
+    expect(allowances.jointing).toBe(DEFAULT_ALLOWANCES.jointing)
+    expect(allowances.planing).toBe(DEFAULT_ALLOWANCES.planing)
+    expect(allowances.routerTable).toBe(0)
+    expect(allowances.ripAllowance).toBe(DEFAULT_ALLOWANCES.ripAllowance)
+    expect(allowances.lengthTrim).toBe(DEFAULT_ALLOWANCES.lengthTrim)
+    expect(allowances.widthTrim).toBe(DEFAULT_ALLOWANCES.widthTrim)
+  })
+
+  it('does not let a corrupt-allowances backup round-trip bad numbers through import -> export', () => {
+    const corrupt = {
+      schemaVersion: 2, shops: [], boards: [],
+      allowances: { jointing: '3', planing: Number.POSITIVE_INFINITY, routerTable: 'x', ripAllowance: undefined, lengthTrim: NaN, widthTrim: -1 },
+    }
+    const imported = importData(corrupt)
+    expect(imported.ok).toBe(true)
+    // Export re-runs normalizeData; a second pass over already-clean data must stay clean.
+    const exported = normalizeData(imported.data!)
+    for (const value of Object.values(exported.allowances)) {
+      expect(Number.isFinite(value)).toBe(true)
+      expect(value).toBeGreaterThanOrEqual(0)
+    }
   })
 })
 
@@ -312,6 +376,35 @@ describe('saveData / loadData persistence', () => {
     })
     expect(() => saveData(data)).not.toThrow()
     expect(saveData(data)).toBe(false)
+  })
+})
+
+describe('corrupt payload recovery (2.4)', () => {
+  beforeEach(() => { vi.stubGlobal('localStorage', new MemoryStorage()) })
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  it('copies an unparseable payload to a recovery key before falling back to starter data', () => {
+    localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
+    const data = loadData()
+    expect(data.woods.length).toBeGreaterThan(0) // starter data
+    expect(localStorage.getItem('sawdust-atlas:corrupt')).toBe('{ not valid json')
+  })
+
+  it('keeps only one recovery copy, overwriting the previous one', () => {
+    localStorage.setItem('sawdust-atlas:v1', '{ first corrupt')
+    loadData()
+    localStorage.setItem('sawdust-atlas:v1', '{ second corrupt')
+    loadData()
+    expect(localStorage.getItem('sawdust-atlas:corrupt')).toBe('{ second corrupt')
+  })
+
+  it('does not crash loadData when the recovery write itself throws (e.g. quota)', () => {
+    localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError')
+    })
+    expect(() => loadData()).not.toThrow()
+    expect(loadData().schemaVersion).toBe(2)
   })
 })
 

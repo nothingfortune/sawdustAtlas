@@ -1,7 +1,5 @@
 # SawdustAtlas Product Plan
 
-Last updated: 2026-06-25
-
 ## Purpose
 
 SawdustAtlas is a millimeter-first, local-first workspace for planning a woodworking shop and designing woodworking projects. It should replace generic commercial tools where they fail to represent real machines, working clearances, stock, grain, kerf, process waste, and the sequence used to build an object.

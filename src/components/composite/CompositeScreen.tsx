@@ -42,7 +42,7 @@ export function CompositeScreen({ composite, boards, woods, pricing, onChange, o
     const cell = { panelId, pieceIndex, rotate: 0 as const, flip: false }
     if (effectiveRowId) { onChange(addWaferToRow(composite, effectiveRowId, cell)); return }
     // No rows yet — create one, place into it, and make it active.
-    const withRow = addRow(composite, 'below')
+    const withRow = addRow(composite, 'below', createId)
     const newRow = withRow.rows[withRow.rows.length - 1]
     if (!newRow) return
     onChange(addWaferToRow(withRow, newRow.id, cell))

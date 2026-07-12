@@ -5,7 +5,9 @@
 ## Validation
 
 - [ ] `pnpm lint`
+- [ ] `pnpm typecheck`
 - [ ] `pnpm test`
+- [ ] `pnpm test:e2e`
 - [ ] `pnpm build`
 - [ ] Docker image builds locally or in CI
 

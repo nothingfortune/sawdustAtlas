@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../types'
 import { WoodPatterns } from './board/WoodPatterns'
 import { LongGrainFace } from './board/LongGrainFace'
@@ -5,15 +6,17 @@ import { CroppedBoard } from './composite/FinalPreview'
 import { formatLength } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 
-// True-to-scale mini of a composite's finished (cropped) board.
-function CompositeThumb({ composite, boards, woods }: { composite: CompositeBoard; boards: BoardProject[]; woods: WoodSpecies[] }) {
+// True-to-scale mini of a composite's finished (cropped) board. Memoized so an edit
+// to one card (or any app-wide commit) doesn't re-run every thumbnail's geometry.
+const CompositeThumb = memo(function CompositeThumb({ composite, boards, woods }: { composite: CompositeBoard; boards: BoardProject[]; woods: WoodSpecies[] }) {
   const placed = composite.rows.some(r => r.wafers.length > 0)
   if (!placed) return <div className="thumb-empty">{composite.construction === 'end' ? 'End grain' : 'Edge grain'}</div>
   return <CroppedBoard composite={composite} boards={boards} woods={woods} idPrefix={`thumb-${composite.id}`} />
-}
+})
 
-// True-to-scale mini of a board's long-grain face.
-function BoardThumb({ board, woods }: { board: BoardProject; woods: WoodSpecies[] }) {
+// True-to-scale mini of a board's long-grain face. Memoized on its (per-board stable)
+// props so unchanged boards skip re-rendering when a sibling board is edited.
+const BoardThumb = memo(function BoardThumb({ board, woods }: { board: BoardProject; woods: WoodSpecies[] }) {
   const widthMm = board.strips.reduce((acc, s) => acc + Math.max(0, s.width), 0)
   if (widthMm <= 0 || board.length <= 0) return <div className="thumb-empty">No strips yet</div>
   return (
@@ -22,7 +25,7 @@ function BoardThumb({ board, woods }: { board: BoardProject; woods: WoodSpecies[
       <LongGrainFace strips={board.strips} lengthMm={board.length} />
     </svg>
   )
-}
+})
 
 export function BoardGallery({ boards, composites, woods, onOpenBoard, onOpenComposite, onCreateBoard }: {
   boards: BoardProject[]

@@ -13,3 +13,26 @@ vite.config.d.ts
 *.env.development
 *.env.test
 *.env.production
+
+# Test suites and fixtures — not needed to build dist/.
+tests/
+e2e/
+coverage/
+test-results/
+playwright/
+playwright-report/
+.playwright-cli/
+
+# Docs, CI/tooling, and agent/editor state — irrelevant to the image, and
+# stable exclusion keeps the build context (and layer cache) from churning
+# on every doc/workflow edit.
+docs/
+.github/
+.githooks/
+.claude/
+.worktrees/
+.superpowers/
+TODO.md
+*.md
+
+# LICENSE is intentionally NOT ignored: the Dockerfile COPYs it into the image.

@@ -92,11 +92,12 @@ jobs:
   docker-verify:
     name: Docker verify
     runs-on: ubuntu-latest
-    needs: validate
+    needs: [validate, e2e]
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/develop'
     timeout-minutes: 20
     permissions:
       contents: read
+      security-events: write # upload Trivy SARIF to code scanning
 
     steps:
       - name: Check out repository
@@ -136,8 +137,9 @@ jobs:
       - name: Smoke-test the served image
         env:
           IMAGE_REF: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+          CONTAINER: sawdust-ci
         run: |
-          docker run -d --name sawdust-ci -p 8080:80 "$IMAGE_REF"
+          docker run -d --name "$CONTAINER" -p 8080:8080 "$IMAGE_REF"
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/ >/dev/null; then break; fi
             sleep 1
@@ -147,33 +149,48 @@ jobs:
           echo "Deep link (SPA fallback to index.html):"
           curl -fsS -o /dev/null -w '  HTTP %{http_code}\n' http://127.0.0.1:8080/boards/unknown-id
           echo "Security headers present:"
-          curl -fsS -D - -o /dev/null http://127.0.0.1:8080/ \
-            | grep -iE 'content-security-policy|x-content-type-options|x-frame-options' \
-            || { echo "expected security headers missing"; docker logs sawdust-ci; docker rm -f sawdust-ci; exit 1; }
-          docker rm -f sawdust-ci
+          for h in content-security-policy x-content-type-options x-frame-options; do
+            curl -fsS -D - -o /dev/null http://127.0.0.1:8080/ | grep -qi "^$h:" \
+              || { echo "missing $h"; docker logs "$CONTAINER"; docker rm -f "$CONTAINER"; exit 1; }
+            echo "  $h: present"
+          done
+          docker rm -f "$CONTAINER"
 
-      - name: Scan local Docker image
-        uses: docker/scout-action@bacf462e8d090c09660de30a6ccc718035f961e3 # v1
-        continue-on-error: true
+      - name: Scan image for vulnerabilities (SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          command: cves,recommendations
-          image: local://${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
-          only-severities: critical,high
-          write-comment: false
+          image-ref: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF to code scanning
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3.37.0
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-docker-verify
+
+      - name: Fail on fixable CRITICAL/HIGH vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
 
   docker-publish:
     name: Docker publish
     runs-on: ubuntu-latest
-    needs: validate
+    needs: [validate, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 25
     environment: production
     permissions:
       contents: read
-      id-token: write
-    env:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      security-events: write # upload Trivy SARIF to code scanning
 
     steps:
       - name: Check out repository
@@ -195,23 +212,87 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Check Docker Hub credentials
-        if: env.DOCKERHUB_USERNAME == '' || env.DOCKERHUB_TOKEN == ''
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          echo "Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets to publish Docker images."
-          exit 1
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets to publish Docker images."
+            exit 1
+          fi
+
+      - name: Build amd64 image for verification
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:publish-ci-${{ github.run_id }}
+          build-args: |
+            BUILD_ENV=production
+            BUILD_NUMBER=${{ steps.prov.outputs.number }}
+            BUILD_SHA=${{ steps.prov.outputs.sha }}
+            BUILD_BRANCH=${{ steps.prov.outputs.branch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke-test the built image
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}:publish-ci-${{ github.run_id }}
+          CONTAINER: sawdust-publish-ci
+        run: |
+          docker run -d --name "$CONTAINER" -p 8080:8080 "$IMAGE_REF"
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then break; fi
+            sleep 1
+          done
+          echo "Root document:"
+          curl -fsS -o /dev/null -w '  HTTP %{http_code}\n' http://127.0.0.1:8080/
+          echo "Deep link (SPA fallback to index.html):"
+          curl -fsS -o /dev/null -w '  HTTP %{http_code}\n' http://127.0.0.1:8080/boards/unknown-id
+          echo "Security headers present:"
+          for h in content-security-policy x-content-type-options x-frame-options; do
+            curl -fsS -D - -o /dev/null http://127.0.0.1:8080/ | grep -qi "^$h:" \
+              || { echo "missing $h"; docker logs "$CONTAINER"; docker rm -f "$CONTAINER"; exit 1; }
+            echo "  $h: present"
+          done
+          docker rm -f "$CONTAINER"
+
+      - name: Scan image for vulnerabilities (SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:publish-ci-${{ github.run_id }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF to code scanning
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3.37.0
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-docker-publish
+
+      - name: Fail on fixable CRITICAL/HIGH vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:publish-ci-${{ github.run_id }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
 
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=raw,value=main
@@ -220,8 +301,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and publish Docker image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
@@ -240,12 +321,3 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
-
-      - name: Scan published Docker image
-        uses: docker/scout-action@bacf462e8d090c09660de30a6ccc718035f961e3 # v1
-        continue-on-error: true
-        with:
-          command: cves,recommendations
-          image: registry://${{ fromJSON(steps.meta.outputs.json).tags[0] }}
-          only-severities: critical,high
-          write-comment: false

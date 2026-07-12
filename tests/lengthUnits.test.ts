@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatFieldLabel, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
 
 describe('snapMmToFoot', () => {
   it('rounds any grid spacing to the nearest whole foot', () => {
@@ -56,5 +56,95 @@ describe('lengthUnits', () => {
 
   it('converts metric text snippets to imperial display text', () => {
     expect(convertMetricText('Trim to 450 mm finished length and surface to 38 mm.', 'imperial')).toBe('Trim to 17 23/32 in finished length and surface to 1 1/2 in.')
+  })
+})
+
+const IN = 25.4
+
+describe('parseLengthInput — metric', () => {
+  it('parses a finite number', () => { expect(parseLengthInput('42.5', 'metric')).toBe(42.5) })
+  it('returns null for non-numeric metric input', () => { expect(parseLengthInput('abc', 'metric')).toBeNull() })
+})
+
+describe('formatFieldLabel', () => {
+  it('appends the active unit, replacing any existing (mm)/(in) suffix', () => {
+    expect(formatFieldLabel('Length (mm)', 'imperial')).toBe('Length (in)')
+    expect(formatFieldLabel('Length', 'metric')).toBe('Length (mm)')
+  })
+  it('leaves metric text unchanged in convertMetricText', () => {
+    expect(convertMetricText('surface to 38 mm.', 'metric')).toBe('surface to 38 mm.')
+  })
+})
+
+describe('parseLengthInput — imperial forms (table-driven)', () => {
+  const cases: Array<[string, number | null]> = [
+    // bare integers / decimals
+    ['5', 5 * IN],
+    ['17.625', 17.625 * IN],
+    ['0', 0],
+    ['', 0],
+    // bare fractions
+    ['3/4', 0.75 * IN],
+    ['-3/4', -0.75 * IN],
+    // mixed, both hyphenated and spaced
+    ['1 1/2', 1.5 * IN],
+    ['1-1/2', 1.5 * IN],
+    // feet
+    ["2'", 24 * IN],
+    ['2 ft', 24 * IN],
+    ["2' 3", 27 * IN],
+    ['2\' 3 1/4"', 27.25 * IN],
+    // feet-inches with the common architectural hyphen separator (regression:
+    // the hyphen must separate feet from inches, not negate the inches)
+    ['2\'-3"', 27 * IN],
+    ['2\'-3 1/2"', 27.5 * IN],
+    // inch marks and words
+    ['3"', 3 * IN],
+    ['3 in', 3 * IN],
+    ['3 inches', 3 * IN],
+    // negatives in every form
+    ['-5', -5 * IN],
+    ['-1 1/2', -1.5 * IN],
+    ['-1-1/2', -1.5 * IN],
+    ["-2'", -24 * IN],
+    // negative feet with hyphenated inches: whole value is negative
+    ['-2\'-3"', -27 * IN],
+    // garbage
+    ['abc', null],
+    ['1/0', null],
+    ['1/', null],
+    ['//', null],
+  ]
+  it.each(cases)('parses %j', (raw, expected) => {
+    const got = parseLengthInput(raw, 'imperial')
+    if (expected === null) expect(got).toBeNull()
+    else expect(got).toBeCloseTo(expected, 6)
+  })
+
+  it('does not drop a leading negative sign (regression for the hyphen-normalizer bug)', () => {
+    expect(parseLengthInput('-5', 'imperial')).toBeCloseTo(-127, 6)
+    expect(parseLengthInput('-1 1/2', 'imperial')).toBeCloseTo(-38.1, 6)
+  })
+})
+
+describe('formatLengthValue — imperial rounding + sign', () => {
+  it('rolls 0.999 in up to a whole inch (no "0 32/32")', () => {
+    expect(formatLengthValue(0.999 * IN, 'imperial')).toBe('1')
+  })
+  it('formats negatives with a leading minus', () => {
+    expect(formatLengthValue(-1.5 * IN, 'imperial')).toBe('-1 1/2')
+    expect(formatLengthValue(-0.75 * IN, 'imperial')).toBe('-3/4')
+  })
+  it('reduces the 32nd fraction to lowest terms', () => {
+    expect(formatLengthValue(0.5 * IN, 'imperial')).toBe('1/2')
+    expect(formatLengthValue(0.25 * IN, 'imperial')).toBe('1/4')
+  })
+})
+
+describe('imperial round-trips (mm -> text -> mm) at exact 32nds', () => {
+  it.each([0, 0.5, 1, 1.5, 3.25, 17.625, -1.5, -0.75])('round-trips %d in', inches => {
+    const mm = inches * IN
+    const back = parseLengthInput(formatLengthValue(mm, 'imperial'), 'imperial')
+    expect(back).toBeCloseTo(mm, 6)
   })
 })

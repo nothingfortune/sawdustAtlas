@@ -71,10 +71,14 @@ export function parseLengthInput(raw: string, unit: LengthUnit): number | null {
   const feetMatch = normalized.match(/^(-?\d+(?:\.\d+)?)\s*(?:ft|')\s*(.*)$/)
   if (feetMatch) {
     const feet = Number(feetMatch[1] ?? 0)
-    const inchesPart = feetMatch[2]?.trim() ?? ''
+    // The architectural convention 2'-3" uses the hyphen purely as a feet/inches
+    // separator — it doesn't mean "negative 3 inches". Strip a leading separator
+    // hyphen before parsing so it isn't mistaken for a sign.
+    const inchesPart = (feetMatch[2] ?? '').trim().replace(/^-\s*/, '')
     const inches = inchesPart ? parseImperialValue(inchesPart) : 0
     if (inches === null) return null
-    return inchesToMm(feet * 12 + inches)
+    const sign = feet < 0 ? -1 : 1
+    return inchesToMm(sign * (Math.abs(feet) * 12 + Math.abs(inches)))
   }
 
   const inches = parseImperialValue(normalized)
@@ -106,7 +110,9 @@ function parseImperialValue(raw: string): number | null {
   const cleaned = raw
     .replace(/in(?:ch(?:es)?)?\.?/g, '')
     .replace(/"/g, '')
-    .replace(/-/g, ' ')
+    // Split a hyphenated mixed number ("1-1/2" -> "1 1/2") without swallowing a
+    // leading negative sign ("-5" must stay negative).
+    .replace(/(\d)-(\d)/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim()
   if (!cleaned) return 0

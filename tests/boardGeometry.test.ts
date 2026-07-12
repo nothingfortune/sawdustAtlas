@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { averageStripWidth, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage, resolveOffsetMm } from '../src/domain/boardGeometry'
+import { averageStripWidth, buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage, crosscutOverlaySegments, resolveOffsetMm } from '../src/domain/boardGeometry'
 import type { BoardProject, BoardStrip, WoodSpecies } from '../src/types'
 
 const woods: readonly WoodSpecies[] = [
@@ -64,6 +64,43 @@ describe('end-grain crosscut geometry', () => {
     const metrics = calculateEndGrainMetrics(project)
     expect(metrics.sliceCount).toBe(3)
     expect(metrics.totalWasteBoardFeet).toBeCloseTo(0, 12)
+  })
+})
+
+describe('crosscutOverlaySegments', () => {
+  it('lays out cut lines, kerf bands, and no trim/offcut when the stock is fully consumed', () => {
+    const project = makeProject()
+    const metrics = calculateEndGrainMetrics(project)
+    const segments = crosscutOverlaySegments(project.endGrain, metrics)
+    expect(segments.trimBand).toBe(0)
+    expect(segments.used).toBeCloseTo(96, 10)
+    expect(segments.offcut).toBeCloseTo(0, 10)
+    expect(segments.cutLines).toEqual([0, 33, 66, 99])
+    expect(segments.kerfBands).toEqual([30, 63])
+  })
+
+  it('places the leading trim band and shifts every marker by trim/2, folding the trailing trim into the offcut', () => {
+    const project = makeProject()
+    project.endGrain.trimAllowance = 20
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.sliceCount).toBe(2)
+    expect(metrics.crosscutCount).toBe(2)
+    const segments = crosscutOverlaySegments(project.endGrain, metrics)
+    expect(segments.trimBand).toBe(10)
+    expect(segments.used).toBeCloseTo(76, 10)
+    expect(segments.offcut).toBeCloseTo(20, 10)
+    expect(segments.cutLines).toEqual([10, 43, 76])
+    expect(segments.kerfBands).toEqual([40, 73])
+  })
+
+  it('emits no cut lines when there are no slices', () => {
+    const project = makeProject()
+    project.endGrain.sourceLength = 10
+    const metrics = calculateEndGrainMetrics(project)
+    expect(metrics.sliceCount).toBe(0)
+    const segments = crosscutOverlaySegments(project.endGrain, metrics)
+    expect(segments.cutLines).toEqual([])
+    expect(segments.kerfBands).toEqual([])
   })
 })
 

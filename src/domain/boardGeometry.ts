@@ -1,8 +1,7 @@
-import type { BoardProject, BoardStrip, WoodSpecies } from '../types'
-import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
+import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
+import { clampAngle, degToRad, EPSILON, nonNegative, sum, toBoardFeet } from './units'
 
 export { CUBIC_MM_PER_BOARD_FOOT } from './units'
-const EPSILON = 1e-9
 // Below this ratio between a strip's two faces, the angled face is a near-pointed
 // sliver — geometrically valid but a poor glue joint, so we warn (see buildEndGrainTemplate).
 const THIN_FACE_RATIO = 0.3
@@ -90,7 +89,7 @@ export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
   const raw = project.strips.map((strip, index) => {
     const width = nonNegative(strip.width)
     const angle = clampAngle(strip.trailingAngle)
-    const rightWidth = width + thickness * Math.tan(angle * Math.PI / 180)
+    const rightWidth = width + thickness * Math.tan(degToRad(angle))
     if (rightWidth <= EPSILON) errors.push(`Strip ${index + 1} closes or crosses on its angled face.`)
     else if (Math.min(width, rightWidth) < THIN_FACE_RATIO * Math.max(width, rightWidth)) {
       // A face this much narrower than its opposite is a near-pointed sliver: makeable
@@ -197,6 +196,41 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
   }
 }
 
+// The crosscut plan drawn over the first glue-up: a leading trim band, the saw cut
+// lines, the kerf-waste bands between slices, and the trailing offcut. The trim-at-
+// each-end convention lives here (not in the overlay component): half the total trim
+// is shown as a band at the start; the other half folds into the trailing offcut, so
+// `used` and `offcut` describe the remaining span after the last slice. All positions
+// are in mm along the source length. Owns the arithmetic CrosscutOverlay used to duplicate.
+export interface CrosscutOverlaySegments {
+  trimBand: number
+  sliceThickness: number
+  kerf: number
+  used: number
+  offcut: number
+  cutLines: number[]
+  kerfBands: number[]
+}
+
+export function crosscutOverlaySegments(settings: EndGrainSettings, metrics: Pick<EndGrainMetrics, 'sliceCount' | 'crosscutCount'>): CrosscutOverlaySegments {
+  const trimBand = nonNegative(settings.trimAllowance) / 2
+  const sliceThickness = nonNegative(settings.sliceThickness)
+  const kerf = nonNegative(settings.kerf)
+  const pitch = sliceThickness + kerf
+  const used = trimBand + metrics.sliceCount * sliceThickness + metrics.crosscutCount * kerf
+  const offcut = Math.max(0, nonNegative(settings.sourceLength) - used)
+  const cutLineCount = metrics.sliceCount > 0 ? metrics.sliceCount + 1 : 0
+  return {
+    trimBand,
+    sliceThickness,
+    kerf,
+    used,
+    offcut,
+    cutLines: Array.from({ length: cutLineCount }, (_, index) => trimBand + index * pitch),
+    kerfBands: Array.from({ length: metrics.crosscutCount }, (_, index) => trimBand + index * pitch + sliceThickness),
+  }
+}
+
 export function calculateWoodUsage(project: BoardProject, woods: readonly WoodSpecies[], metrics: EndGrainMetrics): WoodUsage[] {
   const bySpecies = new Map<string, WoodUsage>()
   const volumes = calculateStripVolumes(project, metrics.wasteLength)
@@ -226,7 +260,7 @@ function calculateStripVolumes(project: BoardProject, wasteLength: number): Stri
   return project.strips.map(strip => {
     const leftWidth = nonNegative(strip.width)
     const angle = clampAngle(strip.trailingAngle)
-    const rightWidth = Math.max(0, leftWidth + stockThickness * Math.tan(angle * Math.PI / 180))
+    const rightWidth = Math.max(0, leftWidth + stockThickness * Math.tan(degToRad(angle)))
     const stockWidth = Math.max(leftWidth, rightWidth)
     const averageWidth = (leftWidth + rightWidth) / 2
     return {

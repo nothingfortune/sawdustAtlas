@@ -41,7 +41,20 @@ export default function App() {
   const [lengthUnit, setLengthUnit] = useState<LengthUnit>('metric')
   // Geometry calculator scratchpad (BOARD-026): its own state, autosaved to its own key.
   const [sketch, setSketch] = useState<Sketch>(loadSketch)
-  useEffect(() => { saveSketch(sketch) }, [sketch])
+  const sketchRef = useRef(sketch)
+  // Debounce the sketch autosave: dragging a point fires many updates per second and a
+  // synchronous localStorage write on each is janky. Coalesce to a trailing 300ms write,
+  // and flush on pagehide so a reload immediately after an edit still persists it.
+  useEffect(() => {
+    sketchRef.current = sketch
+    const timer = window.setTimeout(() => saveSketch(sketch), 300)
+    return () => window.clearTimeout(timer)
+  }, [sketch])
+  useEffect(() => {
+    const flush = () => saveSketch(sketchRef.current)
+    window.addEventListener('pagehide', flush)
+    return () => window.removeEventListener('pagehide', flush)
+  }, [])
   // Workspace captured before the last import, recoverable across reloads.
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.

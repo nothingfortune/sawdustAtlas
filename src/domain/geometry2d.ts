@@ -1,19 +1,19 @@
 // Pure 2D geometry for the calculator. Math coordinates (x right, y up); the UI flips y
 // for SVG. Vec is an object so a z field can be added for true 3D later.
 
+import { EPSILON, radToDeg } from './units'
+
 export interface Vec { x: number; y: number }
 export interface SketchPoint { id: string; x: number; y: number }
 export interface SketchMember { id: string; aId: string; bId: string; widthMm: number }
 export interface Sketch { points: SketchPoint[]; members: SketchMember[] }
-
-const EPSILON = 1e-9
 
 export function distance(a: Vec, b: Vec): number {
   return Math.hypot(b.x - a.x, b.y - a.y)
 }
 
 export function bearingDeg(a: Vec, b: Vec): number {
-  return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI
+  return radToDeg(Math.atan2(b.y - a.y, b.x - a.x))
 }
 
 export function angleBetweenDeg(a1: Vec, a2: Vec, b1: Vec, b2: Vec): number {
@@ -22,7 +22,7 @@ export function angleBetweenDeg(a1: Vec, a2: Vec, b1: Vec, b2: Vec): number {
   const lu = Math.hypot(u.x, u.y), lw = Math.hypot(w.x, w.y)
   if (lu < EPSILON || lw < EPSILON) return 0
   const cos = Math.min(1, Math.max(-1, (u.x * w.x + u.y * w.y) / (lu * lw)))
-  return Math.acos(cos) * 180 / Math.PI
+  return radToDeg(Math.acos(cos))
 }
 
 export function lineIntersection(a1: Vec, a2: Vec, b1: Vec, b2: Vec): { point: Vec; withinBoth: boolean } | null {
@@ -41,7 +41,7 @@ export function lineIntersection(a1: Vec, a2: Vec, b1: Vec, b2: Vec): { point: V
 // "cut off square / off plumb" numbers for a member measured against a reference.
 // Sign-independent (a leg leaning either way reads the same).
 export function angleToAxes(a: Vec, b: Vec): { fromHorizontalDeg: number; fromVerticalDeg: number } {
-  const fromHorizontalDeg = Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180 / Math.PI
+  const fromHorizontalDeg = radToDeg(Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)))
   return { fromHorizontalDeg, fromVerticalDeg: 90 - fromHorizontalDeg }
 }
 

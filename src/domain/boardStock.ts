@@ -3,6 +3,7 @@ import type { BuildDimensions } from './boardAllowances'
 import { resolveAllowances, roughStripStockWidth } from './boardAllowances'
 import type { EndGrainMetrics } from './boardGeometry'
 import { calculateWoodUsage } from './boardGeometry'
+import { nonNegative } from './units'
 
 // BOARD-023: aggregate the existing build/usage math into one bench-usable reference —
 // what to rip each strip to and how much stock to buy. No new geometry here.
@@ -86,12 +87,12 @@ export function calculateStockRequirements(
   const isEnd = project.construction === 'end'
   const assumptions: StockAssumptions = {
     construction: project.construction,
-    kerfMm: isEnd ? Math.max(0, project.endGrain.kerf) : 0,
-    ripAllowanceMm: Math.max(0, allowance.ripAllowance),
-    widthTrimMm: Math.max(0, allowance.widthTrim),
-    lengthTrimMm: Math.max(0, allowance.lengthTrim),
-    surfacingMm: Math.max(0, allowance.jointing) + Math.max(0, allowance.planing) + Math.max(0, allowance.routerTable),
-    ...(isEnd ? { sliceThicknessMm: Math.max(0, project.endGrain.sliceThickness) } : {}),
+    kerfMm: isEnd ? nonNegative(project.endGrain.kerf) : 0,
+    ripAllowanceMm: nonNegative(allowance.ripAllowance),
+    widthTrimMm: nonNegative(allowance.widthTrim),
+    lengthTrimMm: nonNegative(allowance.lengthTrim),
+    surfacingMm: nonNegative(allowance.jointing) + nonNegative(allowance.planing) + nonNegative(allowance.routerTable),
+    ...(isEnd ? { sliceThicknessMm: nonNegative(project.endGrain.sliceThickness) } : {}),
   }
 
   return { ripGroups, species, assumptions, totalPurchasedBoardFeet }

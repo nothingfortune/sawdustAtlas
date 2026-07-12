@@ -1,8 +1,7 @@
 import type { BoardProject, BoardStrip, WoodSpecies } from '../types'
-import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
+import { clampAngle, degToRad, EPSILON, nonNegative, sum, toBoardFeet } from './units'
 
 export { CUBIC_MM_PER_BOARD_FOOT } from './units'
-const EPSILON = 1e-9
 // Below this ratio between a strip's two faces, the angled face is a near-pointed
 // sliver — geometrically valid but a poor glue joint, so we warn (see buildEndGrainTemplate).
 const THIN_FACE_RATIO = 0.3
@@ -90,7 +89,7 @@ export function buildEndGrainTemplate(project: BoardProject): EndGrainTemplate {
   const raw = project.strips.map((strip, index) => {
     const width = nonNegative(strip.width)
     const angle = clampAngle(strip.trailingAngle)
-    const rightWidth = width + thickness * Math.tan(angle * Math.PI / 180)
+    const rightWidth = width + thickness * Math.tan(degToRad(angle))
     if (rightWidth <= EPSILON) errors.push(`Strip ${index + 1} closes or crosses on its angled face.`)
     else if (Math.min(width, rightWidth) < THIN_FACE_RATIO * Math.max(width, rightWidth)) {
       // A face this much narrower than its opposite is a near-pointed sliver: makeable
@@ -226,7 +225,7 @@ function calculateStripVolumes(project: BoardProject, wasteLength: number): Stri
   return project.strips.map(strip => {
     const leftWidth = nonNegative(strip.width)
     const angle = clampAngle(strip.trailingAngle)
-    const rightWidth = Math.max(0, leftWidth + stockThickness * Math.tan(angle * Math.PI / 180))
+    const rightWidth = Math.max(0, leftWidth + stockThickness * Math.tan(degToRad(angle)))
     const stockWidth = Math.max(leftWidth, rightWidth)
     const averageWidth = (leftWidth + rightWidth) / 2
     return {

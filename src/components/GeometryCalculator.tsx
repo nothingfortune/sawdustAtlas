@@ -26,6 +26,9 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
   // Selection holds up to 2 tokens, FIFO: 'p:<id>' points, 'm:<id>' members.
   const [selected, setSelected] = useState<string[]>([])
   const [mode, setMode] = useState<'sketch' | 'compound'>('sketch')
+  // Last sketch wiped by Clear, kept so the destructive action stays recoverable
+  // (offered as a one-shot "Undo clear" while the canvas is empty).
+  const [clearedSketch, setClearedSketch] = useState<Sketch | null>(null)
 
   const pxPerMm = 1.1 * zoom
   const toScreen = (p: Vec) => ({ x: PADDING + p.x * pxPerMm, y: size.height - PADDING - p.y * pxPerMm })
@@ -51,6 +54,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     const point: SketchPoint = { id: createId(), x: Math.max(0, snap(mm.x)), y: Math.max(0, snap(mm.y)) }
     onChange({ ...sketch, points: [...sketch.points, point] })
     setSelected(prev => [...prev, `p:${point.id}`].slice(-2))
+    setClearedSketch(null)
   }
   const updatePoint = (id: string, patch: Partial<SketchPoint>) =>
     onChange({ ...sketch, points: sketch.points.map(point => point.id === id ? { ...point, ...patch } : point) })
@@ -84,6 +88,7 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     const point: SketchPoint = { id: createId(), x: Math.max(0, snap(mm.x)), y: Math.max(0, snap(mm.y)) }
     onChange({ ...sketch, points: [...sketch.points, point] })
     setSelected(prev => [...prev, `p:${point.id}`].slice(-2))
+    setClearedSketch(null)
   }
   // Enter/Space selects a focused point; arrows nudge it by the grid step (Shift = 10× coarse).
   const onPointKeyDown = (event: ReactKeyboardEvent, point: SketchPoint) => {
@@ -135,7 +140,19 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
     })
     setSelected([])
   }
-  const clear = () => { onChange({ points: [], members: [] }); setSelected([]) }
+  // Clear is destructive, so snapshot the sketch first and expose a one-shot undo
+  // instead of losing it outright.
+  const clear = () => {
+    if (sketch.points.length === 0 && sketch.members.length === 0) return
+    setClearedSketch(sketch)
+    onChange({ points: [], members: [] })
+    setSelected([])
+  }
+  const undoClear = () => {
+    if (!clearedSketch) return
+    onChange(clearedSketch)
+    setClearedSketch(null)
+  }
 
   // Readouts driven by the current selection.
   const readouts: { label: string; value: string }[] = []
@@ -260,7 +277,11 @@ export function GeometryCalculator({ sketch, onChange }: { sketch: Sketch; onCha
           })()}
           {angleArc && <g className="geo-annot"><path className="geo-arc" d={angleArc.d}/><text x={angleArc.lx} y={angleArc.ly} textAnchor="middle">{angleArc.label}</text></g>}
         </svg>
-        {sketch.points.length === 0 && <div className="geo-empty">Tap anywhere to place your first point.</div>}
+        {sketch.points.length === 0 && <div className="geo-empty">
+          {clearedSketch
+            ? <>Sketch cleared. <button className="geo-undo-clear" onClick={undoClear}>Undo clear</button></>
+            : 'Tap anywhere to place your first point.'}
+        </div>}
       </div>}
     </div>
     {mode === 'sketch' && <aside className="geo-inspector">

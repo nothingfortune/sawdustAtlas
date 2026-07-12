@@ -1,4 +1,4 @@
-import type { BoardProject, BoardStrip, WoodSpecies } from '../types'
+import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
 import { clampAngle, degToRad, EPSILON, nonNegative, sum, toBoardFeet } from './units'
 
 export { CUBIC_MM_PER_BOARD_FOOT } from './units'
@@ -193,6 +193,41 @@ export function calculateEndGrainMetrics(project: BoardProject): EndGrainMetrics
     finishedBoardFeet: toBoardFeet(finishedVolume),
     errors,
     warnings,
+  }
+}
+
+// The crosscut plan drawn over the first glue-up: a leading trim band, the saw cut
+// lines, the kerf-waste bands between slices, and the trailing offcut. The trim-at-
+// each-end convention lives here (not in the overlay component): half the total trim
+// is shown as a band at the start; the other half folds into the trailing offcut, so
+// `used` and `offcut` describe the remaining span after the last slice. All positions
+// are in mm along the source length. Owns the arithmetic CrosscutOverlay used to duplicate.
+export interface CrosscutOverlaySegments {
+  trimBand: number
+  sliceThickness: number
+  kerf: number
+  used: number
+  offcut: number
+  cutLines: number[]
+  kerfBands: number[]
+}
+
+export function crosscutOverlaySegments(settings: EndGrainSettings, metrics: Pick<EndGrainMetrics, 'sliceCount' | 'crosscutCount'>): CrosscutOverlaySegments {
+  const trimBand = nonNegative(settings.trimAllowance) / 2
+  const sliceThickness = nonNegative(settings.sliceThickness)
+  const kerf = nonNegative(settings.kerf)
+  const pitch = sliceThickness + kerf
+  const used = trimBand + metrics.sliceCount * sliceThickness + metrics.crosscutCount * kerf
+  const offcut = Math.max(0, nonNegative(settings.sourceLength) - used)
+  const cutLineCount = metrics.sliceCount > 0 ? metrics.sliceCount + 1 : 0
+  return {
+    trimBand,
+    sliceThickness,
+    kerf,
+    used,
+    offcut,
+    cutLines: Array.from({ length: cutLineCount }, (_, index) => trimBand + index * pitch),
+    kerfBands: Array.from({ length: metrics.crosscutCount }, (_, index) => trimBand + index * pitch + sliceThickness),
   }
 }
 

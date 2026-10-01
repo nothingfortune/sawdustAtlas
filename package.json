@@ -23,26 +23,26 @@
     "container": "sh scripts/container.sh"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^6.0.3",
-    "lucide-react": "^1.23.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "typescript": "^6.0.3",
-    "vite": "^8.1.3"
+    "@vitejs/plugin-react": "^6.1.0",
+    "lucide-react": "^1.33.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.61.1",
-    "@types/node": "^26.1.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitest/coverage-v8": "^4.1.10",
-    "eslint": "^10.6.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^10.8.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.6.0",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.10"
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.11.0",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.11"
   }
 }

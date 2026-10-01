@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2, X } from 'lucide-react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../../types'
 import { deskLayout } from '../../domain/compositeBoard'
 import { addRow, cycleTransform, moveRow, moveWafer, removeRow, removeWafer, transformWafer } from '../../domain/compositeAssembly'
+import { createId } from '../../id'
 import { useElementSize } from '../useElementSize'
 import { WoodPatterns } from '../board/WoodPatterns'
 import { CompositeDefs, TrimMarks, WaferFace } from './WaferFace'
@@ -21,7 +22,11 @@ const DRAG_SLOP = 8
 
 export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRow, onChange }: AssemblyDeskProps) {
   const [ref, size] = useElementSize()
-  const layout = deskLayout(composite, boards)
+  // Key the layout on the geometry inputs only, so unrelated composite edits (e.g.
+  // renaming, which changes the composite object ref every keystroke) don't rebuild
+  // the whole wafer layout. deskLayout reads exactly these fields off `composite`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const layout = useMemo(() => deskLayout(composite, boards), [composite.rows, composite.panels, composite.construction, boards])
   // Fit to width (rails + padding reserved); tall stacks scroll vertically.
   const avail = Math.max(120, size.width - 180)
   const pxPerMm = Math.min(5, Math.max(0.05, avail / layout.maxRowWidthMm))
@@ -70,7 +75,7 @@ export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRo
   return (
     <div className="assembly-desk" aria-label="Assembly desk">
       <div className="desk-toolbar">
-        <button type="button" className="row-add" onClick={() => onChange(addRow(composite, 'above', composite.rows[0]?.id))}><Plus size={14} /> Add row on top</button>
+        <button type="button" className="row-add" onClick={() => onChange(addRow(composite, 'above', createId, composite.rows[0]?.id))}><Plus size={14} /> Add row on top</button>
         <span className="muted small">Tap a row to make it active, then tap wafers in the parts bag.</span>
       </div>
 
@@ -128,14 +133,14 @@ export function AssemblyDesk({ composite, boards, woods, activeRowId, onSelectRo
                 </div>
 
                 <div className="row-rail">
-                  <button type="button" className="icon-button" aria-label="Add row below" onClick={() => onChange(addRow(composite, 'below', row.rowId))}><Plus size={14} /></button>
+                  <button type="button" className="icon-button" aria-label="Add row below" onClick={() => onChange(addRow(composite, 'below', createId, row.rowId))}><Plus size={14} /></button>
                   <button type="button" className="icon-button" aria-label="Delete row" onClick={() => onChange(removeRow(composite, row.rowId))}><Trash2 size={14} /></button>
                 </div>
               </div>
             )
           })}
           {layout.rows.length === 0 && (
-            <button type="button" className="row-add big" onClick={() => onChange(addRow(composite, 'below'))}><Plus size={15} /> Add the first row</button>
+            <button type="button" className="row-add big" onClick={() => onChange(addRow(composite, 'below', createId))}><Plus size={15} /> Add the first row</button>
           )}
         </div>
       </div>

@@ -31,7 +31,7 @@ test.describe('cutting board designer', () => {
     await expect(strips).toHaveCount(afterRepeat)
   })
 
-  test('a slightly-jittery tap still rotates only that one wafer', async ({ page }) => {
+  test('a slightly-jittery tap still rotates only that one wafer', async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const popout = page.locator('.preview-popout')
     await expect(popout).toBeVisible()
@@ -42,25 +42,33 @@ test.describe('cutting board designer', () => {
     await expect(label0).toHaveText('N')
     await expect(label1).toHaveText('N')
 
-    // Simulate a real touch-tap that jitters a few px: press, nudge under the
-    // drag threshold, release. This must rotate the wafer (cycle its label),
-    // not be read as a drag that lifts the whole column and does nothing — the
-    // regression that broke wafer rotation.
     const box = await slot0.boundingBox()
     if (!box) throw new Error('slice 0 not visible')
     const cx = box.x + box.width / 2
     const cy = box.y + box.height / 2
-    await page.mouse.move(cx, cy)
-    await page.mouse.down()
-    await page.mouse.move(cx + 6, cy)
-    await page.mouse.up()
+    if (testInfo.project.name === 'tablet') {
+      // A real single-finger touchscreen tap — exercises the genuine touch
+      // pointer-event path (pointerType 'touch'), which is what this project exists
+      // to cover. The jittery-mouse-drag regression this test guards is a distinct,
+      // mouse-only code path and stays below on the desktop project.
+      await page.touchscreen.tap(cx, cy)
+    } else {
+      // Simulate a real touch-tap that jitters a few px: press, nudge under the
+      // drag threshold, release. This must rotate the wafer (cycle its label),
+      // not be read as a drag that lifts the whole column and does nothing — the
+      // regression that broke wafer rotation.
+      await page.mouse.move(cx, cy)
+      await page.mouse.down()
+      await page.mouse.move(cx + 6, cy)
+      await page.mouse.up()
+    }
 
     await expect(label0).not.toHaveText('N')
     // Its neighbour is untouched — rotation is per wafer, independent of others.
     await expect(label1).toHaveText('N')
   })
 
-  test('the 90° turn preview rotates wafers too, not only the finished board', async ({ page }) => {
+  test('the 90° turn preview rotates wafers too, not only the finished board', async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Pop out preview at full size' }).click()
     const popout = page.locator('.preview-popout')
     await expect(popout).toBeVisible()
@@ -70,11 +78,15 @@ test.describe('cutting board designer', () => {
     const label0 = slot0.locator('text.slice-label')
     await expect(label0).toHaveText('N')
 
-    const box = await slot0.boundingBox()
-    if (!box) throw new Error('slice 0 not visible on the 90° turn tab')
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-    await page.mouse.down()
-    await page.mouse.up()
+    if (testInfo.project.name === 'tablet') {
+      await slot0.tap()
+    } else {
+      const box = await slot0.boundingBox()
+      if (!box) throw new Error('slice 0 not visible on the 90° turn tab')
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.mouse.up()
+    }
 
     await expect(label0).not.toHaveText('N')
   })

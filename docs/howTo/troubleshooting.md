@@ -10,11 +10,11 @@ Nine times out of ten, this means SawdustAtlas was started **without the part of
 
 ### Why this happens, in plain words
 
-SawdustAtlas runs inside a small sealed package called a *container* — picture a **locked room** that Docker builds inside your computer. The app works fine on a door *inside that room*, numbered `80`. But a locked room with no opening to the hallway is useless: nothing outside can reach it.
+SawdustAtlas runs inside a small sealed package called a *container* — picture a **locked room** that Docker builds inside your computer. The app works fine on a door *inside that room*, numbered `8080`. But a locked room with no opening to the hallway is useless: nothing outside can reach it.
 
-The `-p 8080:80` piece of the start command is what **cuts an opening in the door** — it connects the number `8080` on your computer to door `80` inside the room. Typing **http://localhost:8080** in your browser is you walking up to that opening.
+The `-p 8080:8080` piece of the start command is what **cuts an opening in the door** — it connects the number `8080` on your computer to door `8080` inside the room. Typing **http://localhost:8080** in your browser is you walking up to that opening.
 
-If SawdustAtlas was started **without** `-p 8080:80` — which is exactly what the **Run (play) button in Docker Desktop** does — the room gets built and the app inside runs happily, but there is no opening. Your browser knocks and nobody answers.
+If SawdustAtlas was started **without** `-p 8080:8080` — which is exactly what the **Run (play) button in Docker Desktop** does — the room gets built and the app inside runs happily, but there is no opening. Your browser knocks and nobody answers.
 
 > [!WARNING]
 > Docker Desktop may say SawdustAtlas is **"running"** or **"healthy."** That only means the app is alive **inside** the room. It does **not** mean you can reach it. The one thing that tells you whether you can reach it is the **PORTS** column, below.
@@ -31,8 +31,8 @@ Look at the **PORTS** column in the result:
 
 | What you see under PORTS | What it means | What to do |
 | --- | --- | --- |
-| `0.0.0.0:8080->80/tcp` | The opening exists. | Refresh **http://localhost:8080** — it should work. |
-| `80/tcp` with no `->` arrow | No opening. **This is the problem.** | Do Step 2. |
+| `0.0.0.0:8080->8080/tcp` | The opening exists. | Refresh **http://localhost:8080** — it should work. |
+| `8080/tcp` with no `->` arrow | No opening. **This is the problem.** | Do Step 2. |
 | Nothing listed at all | The container is not running. | Do Step 2. |
 
 ### Step 2 — Start it again, the right way
@@ -45,10 +45,10 @@ Run these two commands **one at a time** — paste the first, press **Enter**, w
 docker rm -f sawdust-atlas
 ```
 
-**2. Start a fresh one with the `-p 8080:80` opening:**
+**2. Start a fresh one with the `-p 8080:8080` opening:**
 
 ```text
-docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:8080 headlock0253/sawdust-atlas:latest
 ```
 
 Now open **http://localhost:8080** again.
@@ -57,7 +57,7 @@ Now open **http://localhost:8080** again.
 
 - Confirm **Docker Desktop is open and says it is running.**
 - Confirm you typed **`8080`**, not `80`, in the browser address.
-- Make sure nothing else on your computer is already using `8080`. If you suspect it is, you can use a different number on your side — for example `-p 9090:80`, and then open **http://localhost:9090**. Only the number to the **left** of the colon changes; the `80` on the right must stay.
+- Make sure nothing else on your computer is already using `8080`. If you suspect it is, you can use a different number on your side — for example `-p 9090:8080`, and then open **http://localhost:9090**. Only the number to the **left** of the colon changes; the `8080` on the right must stay.
 
 ---
 
@@ -74,7 +74,7 @@ docker rm -f sawdust-atlas
 **2. Start it again:**
 
 ```text
-docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:8080 headlock0253/sawdust-atlas:latest
 ```
 
 ---
@@ -98,7 +98,7 @@ docker pull headlock0253/sawdust-atlas:latest
 **3. Start it:**
 
 ```text
-docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:8080 headlock0253/sawdust-atlas:latest
 ```
 
 If you ever need to force a specific build, add `--platform linux/amd64` to the `docker run` line.

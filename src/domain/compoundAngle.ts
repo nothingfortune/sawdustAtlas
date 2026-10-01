@@ -4,8 +4,8 @@
 // object is tilted tiltA then tiltB (rigid rotation); see the design doc for the derivation.
 // General-purpose: nothing leg-specific.
 
-const RAD = Math.PI / 180
-const deg = (radians: number) => radians * 180 / Math.PI
+import { degToRad, radToDeg } from './units'
+
 const clampTilt = (value: number) => Math.min(85, Math.max(0, Number.isFinite(value) ? value : 0))
 
 export interface CompoundAngleInput { tiltADeg: number; tiltBDeg: number; riseMm?: number }
@@ -20,10 +20,10 @@ export function solveCompoundAngle(input: CompoundAngleInput): CompoundAngleResu
   const a = clampTilt(input.tiltADeg)
   const b = clampTilt(input.tiltBDeg)
   const miterDeg = a
-  const bevelDeg = deg(Math.atan(Math.tan(b * RAD) / Math.cos(a * RAD)))
-  const resultantTiltDeg = deg(Math.acos(Math.cos(a * RAD) * Math.cos(b * RAD)))
+  const bevelDeg = radToDeg(Math.atan(Math.tan(degToRad(b)) / Math.cos(degToRad(a))))
+  const resultantTiltDeg = radToDeg(Math.acos(Math.cos(degToRad(a)) * Math.cos(degToRad(b))))
   const base: CompoundAngleResult = { miterDeg, bevelDeg, resultantTiltDeg }
   return input.riseMm !== undefined && input.riseMm > 0
-    ? { ...base, trueLengthMm: input.riseMm / Math.cos(resultantTiltDeg * RAD) }
+    ? { ...base, trueLengthMm: input.riseMm / Math.cos(degToRad(resultantTiltDeg)) }
     : base
 }

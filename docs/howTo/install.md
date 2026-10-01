@@ -46,7 +46,7 @@ A window with a blinking cursor will appear. This is where the following command
 Copy the line below exactly, paste it into the window from Step 2, and press **Enter**.
 
 ```text
-docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:8080 headlock0253/sawdust-atlas:latest
 ```
 
 > [!NOTE]
@@ -56,7 +56,7 @@ The first time, Docker downloads SawdustAtlas. This can take a few minutes depen
 
 > [!IMPORTANT]
 > **Use the command above. Do not start SawdustAtlas by clicking the Run (play) button inside Docker Desktop. Please just follow the instructions **
-> The `-p 8080:80` piece of this command is what lets your browser reach SawdustAtlas. The Run button leaves that piece out, so the app will look like it is running but the page will never open. If that has already happened, see [Troubleshooting](troubleshooting.md).
+> The `-p 8080:8080` piece of this command is what lets your browser reach SawdustAtlas. The Run button leaves that piece out, so the app will look like it is running but the page will never open. If that has already happened, see [Troubleshooting](troubleshooting.md).
 
 ---
 
@@ -98,6 +98,8 @@ docker start sawdust-atlas
 
 ## Update to the newest version
 
+To see what changed in each version before you update, check the [changelog](../../CHANGELOG.md) in the repository.
+
 When a new version is published, run these three commands **one at a time**. Paste one, press **Enter**, wait until your cursor comes back, then do the next. Doing them one at a time makes it obvious if a step needs a moment — do not paste all three at once.
 
 **1. Download the newest version:**
@@ -115,7 +117,7 @@ docker rm -f sawdust-atlas
 **3. Start the newest version:**
 
 ```text
-docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:80 headlock0253/sawdust-atlas:latest
+docker run --name sawdust-atlas -d --restart unless-stopped -p 8080:8080 headlock0253/sawdust-atlas:latest
 ```
 
 Your saved projects live in your browser, not in the package, so updating does not erase them. Even so, it is wise to use **Export backup** inside SawdustAtlas now and then. See [Start Here](../../START_HERE.md) for how backups work.

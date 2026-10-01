@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, panelSourceLengthMm, compositeCutPlan, boardFaceSize, maxWafers } from '../src/domain/compositeBoard'
+import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, compositeCutPlan, boardFaceSize, maxWafers } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
@@ -81,7 +81,6 @@ describe('material — placed wafers only', () => {
 
 describe('cut plan', () => {
   it('names slice axis + kerf-inclusive source length', () => {
-    expect(panelSourceLengthMm(panelX())).toBe(4 * (25 + 3))
     const plan = compositeCutPlan(composite(), [board()])
     expect(plan.stages[0]?.steps.some(s => /crosscut into 4 wafers/.test(s) && /112mm/.test(s))).toBe(true)
   })
@@ -129,6 +128,48 @@ describe('end-grain donor thickness', () => {
     const stale = panelPieces(panelX({ cut: { axis: 'x', stripWidthMm: 25, kerfMm: 3, count: 1 } }), [endBoard({ endGrain: { sourceLength: 900, stockThickness: 20, sliceThickness: 38, kerf: 3, trimAllowance: 20, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] } })])
     const vol = (x: Record<string, number>) => Object.values(x).reduce((a, b) => a + b, 0)
     expect(vol(p[0]!.bySpecies)).toBeCloseTo(vol(stale[0]!.bySpecies) * (45 / 38), 4)
+  })
+})
+
+describe('mixed-thickness composite — assembled thickness is the MIN wafer', () => {
+  // Donor A is 20 mm, donor B is 45 mm. Flattening the glue-up can only reach the
+  // thinnest wafer, so the assembled board is 20 mm and the extra 25 mm of the B
+  // wafers is planed/sanded away (Z overhang = waste), mirroring the X/Y crop.
+  const thinDonor = board({ id: 'ba', thickness: 20, strips: [{ id: 's', speciesId: 'maple', width: 40, trailingAngle: 0 }] })
+  const thickDonor = board({ id: 'bb', thickness: 45, strips: [{ id: 's', speciesId: 'walnut', width: 40, trailingAngle: 0 }] })
+  const panelA: CompositePanel = { id: 'A', boardId: 'ba', cut: { axis: 'x', stripWidthMm: 25, kerfMm: 0, count: 1 } }
+  const panelB: CompositePanel = { id: 'B', boardId: 'bb', cut: { axis: 'x', stripWidthMm: 25, kerfMm: 0, count: 1 } }
+  const mixed = composite({
+    panels: [panelA, panelB],
+    rows: [{ id: 'r', wafers: [{ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false }, { panelId: 'B', pieceIndex: 0, rotate: 0, flip: false }] }],
+  })
+  const donors = [thinDonor, thickDonor]
+
+  it('assembled thickness = min wafer thickness (20), not max (45)', () => {
+    expect(assembledSize(mixed, donors).thicknessMm).toBe(20)
+    expect(croppedLayout(mixed, donors).thicknessMm).toBe(20)
+  })
+
+  it('finished material excludes the Z overhang: both wafers finish at 25×40×20', () => {
+    // Each wafer footprint 25×40, kept whole in X/Y; finished thickness = min = 20.
+    const finished = materialBySpecies(mixed, donors)
+    expect(finished).toEqual([
+      { speciesId: 'maple', boardFeet: (25 * 40 * 20) / CUBIC_MM_PER_BOARD_FOOT },
+      { speciesId: 'walnut', boardFeet: (25 * 40 * 20) / CUBIC_MM_PER_BOARD_FOOT },
+    ])
+  })
+
+  it('conserves volume per species: finished + waste = input wafer volume', () => {
+    const bf = new Map(materialBySpecies(mixed, donors).map(u => [u.speciesId, u.boardFeet * CUBIC_MM_PER_BOARD_FOOT]))
+    const maple = bf.get('maple') ?? 0, walnut = bf.get('walnut') ?? 0
+    // Input = full wafer volume (footprint × donor thickness); waste = the rest.
+    const inputMaple = 25 * 40 * 20, inputWalnut = 25 * 40 * 45
+    const wasteMaple = inputMaple - maple, wasteWalnut = inputWalnut - walnut
+    expect(maple + wasteMaple).toBeCloseTo(inputMaple, 6)
+    expect(walnut + wasteWalnut).toBeCloseTo(inputWalnut, 6)
+    // The thick donor loses its Z overhang (45 -> 20) as waste; the thin donor loses none.
+    expect(wasteMaple).toBeCloseTo(0, 6)
+    expect(wasteWalnut).toBeCloseTo(25 * 40 * 25, 6)
   })
 })
 

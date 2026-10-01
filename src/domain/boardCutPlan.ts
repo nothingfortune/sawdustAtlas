@@ -1,7 +1,8 @@
 import type { BoardProject, WoodSpecies } from '../types'
 import { calculateBuildDimensions, resolveAllowances, roughStripStockWidth } from './boardAllowances'
 import type { BuildDimensions } from './boardAllowances'
-import { clampAngle, toBoardFeet } from './units'
+import { clampAngle, isSquareAngle, toBoardFeet } from './units'
+import { formatNumber as format } from './lengthUnits'
 import { calculateEndGrainMetrics } from './boardGeometry'
 import type { EndGrainMetrics } from './boardGeometry'
 
@@ -144,7 +145,7 @@ function endGrainCuts(project: BoardProject, roughWidths: readonly number[], cro
   const cuts: CutListItem[] = project.strips.map((strip, index) => ({
     id: `rip-${index + 1}`,
     stage: 'rip',
-    label: `${strip.trailingAngle === 0 ? 'Rip' : 'Rip/bevel'} strip ${index + 1}`,
+    label: `${isSquareAngle(strip.trailingAngle) ? 'Rip' : 'Rip/bevel'} strip ${index + 1}`,
     quantity: 1,
     passes: 1,
     speciesId: strip.speciesId,
@@ -153,7 +154,7 @@ function endGrainCuts(project: BoardProject, roughWidths: readonly number[], cro
     sourceThickness: project.endGrain.stockThickness,
     targetWidth: strip.width,
     trailingAngle: clampAngle(strip.trailingAngle),
-    note: strip.trailingAngle === 0 ? 'Prepare a square strip for the first glue-up.' : `Trailing face angle: ${format(strip.trailingAngle)}°; verify the complementary glue joint before cutting.`,
+    note: isSquareAngle(strip.trailingAngle) ? 'Prepare a square strip for the first glue-up.' : `Trailing face angle: ${format(strip.trailingAngle)}°; verify the complementary glue joint before cutting.`,
   }))
   cuts.push({
     id: 'crosscut-slices',
@@ -192,5 +193,3 @@ function endGrainSteps(project: BoardProject, sliceCount: number, crosscutCount:
     { id: 'finish', order: 7, title: 'Square and surface', instruction: 'Apply the configured final trim and surfacing allowances before finishing.' },
   ]
 }
-
-function format(value: number) { return Number(value.toFixed(2)).toString() }

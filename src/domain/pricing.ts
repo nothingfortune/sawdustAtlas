@@ -1,4 +1,17 @@
 import type { BoardProject, ComplexityTier, PriceBreakdown, PricingSettings } from '../types'
+import { isSquareAngle, toBoardFeet } from './units'
+
+// Material cost of a quantity of rough stock (in board feet) at a species' price.
+// The single place the board-foot × price pattern lives so components don't re-derive it.
+export function materialCost(roughBoardFeet: number, pricePerBoardFoot: number): number {
+  return roughBoardFeet * pricePerBoardFoot
+}
+
+// Material cost of one rough rectangular piece given its rough dimensions in mm.
+// Converts the volume to board feet, then prices it (used for per-strip edge-grain cost).
+export function roughPieceCost(roughWidthMm: number, roughLengthMm: number, roughThicknessMm: number, pricePerBoardFoot: number): number {
+  return materialCost(toBoardFeet(roughWidthMm * roughLengthMm * roughThicknessMm), pricePerBoardFoot)
+}
 
 // End-grain boards with this many slices or more are treated as Complex labor.
 export const COMPLEX_SLICE_THRESHOLD = 10
@@ -7,7 +20,7 @@ export const COMPLEX_SLICE_THRESHOLD = 10
 // Simple unless any strip is beveled; end grain is Standard unless it has bevels,
 // per-slice variation (rotation/flip/offset), or a high slice count.
 export function classifyBoard(project: BoardProject, sliceCount: number): ComplexityTier {
-  const hasBevel = project.strips.some(s => s.trailingAngle !== 0)
+  const hasBevel = project.strips.some(s => !isSquareAngle(s.trailingAngle))
   if (project.construction === 'edge') return hasBevel ? 'standard' : 'simple'
   const eg = project.endGrain
   const sliceVariation =

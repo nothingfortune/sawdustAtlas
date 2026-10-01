@@ -152,7 +152,10 @@ export function croppedLayout(board: CompositeBoard, boards: readonly BoardProje
     return { rowId: r.rowId, placed, heightMm: r.rowHeight }
   })
   const lengthMm = rows.reduce((a, r) => a + r.heightMm, 0)
-  const thicknessMm = resolved.length ? Math.max(...resolved.flatMap(r => r.fps.map(f => f.piece.thicknessMm))) : 0
+  // Flattening the glue-up can only reach the THINNEST wafer; taller wafers are
+  // surfaced down to it, so the assembled thickness is the min (the Z overhang is
+  // waste, mirroring the X/Y crop). Using max would over-report both size and material.
+  const thicknessMm = resolved.length ? Math.min(...resolved.flatMap(r => r.fps.map(f => f.piece.thicknessMm))) : 0
   return { rows, lengthMm, widthMm: targetWidth, thicknessMm }
 }
 
@@ -218,14 +221,19 @@ function toUsage(totals: Record<string, number>): SpeciesUsage[] {
     .sort((a, b) => a.speciesId.localeCompare(b.speciesId))
 }
 
-// Finished material = the kept (cropped) volume of placed wafers, by species.
+// Finished material = the kept (cropped) volume of placed wafers, by species. The
+// crop happens on all three axes: X/Y from the footprint trim, Z from surfacing a
+// taller wafer down to the assembled (min) thickness — the overhang on every axis
+// is waste, not finished material.
 export function materialBySpecies(board: CompositeBoard, boards: readonly BoardProject[]): SpeciesUsage[] {
   const layout = croppedLayout(board, boards)
   const totals: Record<string, number> = {}
   for (const row of layout.rows) for (const pr of row.placed) {
     const fullArea = pr.footWidthMm * pr.footHeightMm
     const keptFrac = fullArea > 0 ? (pr.keptWidthMm * pr.keptHeightMm) / fullArea : 0
-    for (const [sp, vol] of Object.entries(pr.piece.bySpecies)) totals[sp] = (totals[sp] ?? 0) + vol * keptFrac
+    // Z crop: only the assembled thickness survives; taller wafers lose their overhang.
+    const thicknessFrac = pr.piece.thicknessMm > 0 ? Math.min(1, layout.thicknessMm / pr.piece.thicknessMm) : 0
+    for (const [sp, vol] of Object.entries(pr.piece.bySpecies)) totals[sp] = (totals[sp] ?? 0) + vol * keptFrac * thicknessFrac
   }
   return toUsage(totals)
 }
@@ -250,11 +258,6 @@ export function stockBySpecies(board: CompositeBoard, boards: readonly BoardProj
 
 export interface CutPlanStage { boardId: string; boardName: string; steps: string[] }
 export interface CompositeCutPlan { stages: CutPlanStage[] }
-
-export function panelSourceLengthMm(panel: CompositePanel): number {
-  const count = Math.max(0, Math.floor(panel.cut.count))
-  return count * (nonNegative(panel.cut.stripWidthMm) + nonNegative(panel.cut.kerfMm))
-}
 
 export function compositeCutPlan(board: CompositeBoard, boards: readonly BoardProject[]): CompositeCutPlan {
   const steps: string[] = []

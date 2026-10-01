@@ -62,4 +62,59 @@ describe('shop objects', () => {
       sideClearance: 0,
     })
   })
+
+  it('normalizes a fully empty imported item to a valid, fully-coerced item (2.2)', () => {
+    const item = normalizeShopItem({} as unknown as ShopItem)
+    expect(typeof item.id).toBe('string')
+    expect(item.id.trim()).not.toBe('')
+    expect(item.name.trim()).not.toBe('')
+    expect(item.kind).toBe('custom')
+    expect(Number.isFinite(item.x)).toBe(true)
+    expect(item.x).toBeGreaterThanOrEqual(0)
+    expect(Number.isFinite(item.y)).toBe(true)
+    expect(item.y).toBeGreaterThanOrEqual(0)
+    expect(item.width).toBeGreaterThan(0)
+    expect(item.depth).toBeGreaterThan(0)
+    expect(item.height).toBeGreaterThan(0)
+    expect(Number.isFinite(item.rotation)).toBe(true)
+    expect(item.clearance).toBeGreaterThanOrEqual(0)
+    expect(item.infeedClearance).toBeGreaterThanOrEqual(0)
+    expect(item.outfeedClearance).toBeGreaterThanOrEqual(0)
+    expect(item.sideClearance).toBeGreaterThanOrEqual(0)
+    expect(item.feedDirection).toBeNull()
+    expect(/^#[0-9a-f]{6}$/i.test(item.color)).toBe(true)
+  })
+
+  it('generates distinct ids for successive items missing an id', () => {
+    const a = normalizeShopItem({} as unknown as ShopItem)
+    const b = normalizeShopItem({} as unknown as ShopItem)
+    expect(a.id).not.toBe(b.id)
+  })
+
+  it('coerces string dimensions instead of producing NaN geometry', () => {
+    const item = normalizeShopItem({ width: '800', depth: '400', x: '10', y: '20' } as unknown as ShopItem)
+    expect(Number.isFinite(item.width)).toBe(true)
+    expect(item.width).toBeGreaterThan(0)
+    expect(Number.isFinite(item.depth)).toBe(true)
+    expect(item.depth).toBeGreaterThan(0)
+    expect(Number.isFinite(item.x)).toBe(true)
+    expect(Number.isFinite(item.y)).toBe(true)
+  })
+
+  it('falls back to a known kind when given an unrecognized kind', () => {
+    const item = normalizeShopItem({ kind: 'spaceship' } as unknown as ShopItem)
+    expect(item.kind).toBe('custom')
+  })
+
+  it('keeps a valid kind as-is', () => {
+    const item = normalizeShopItem({ kind: 'storage' } as unknown as ShopItem)
+    expect(item.kind).toBe('storage')
+  })
+
+  it('normalizes an out-of-range rotation to the 0-360 range', () => {
+    const item = normalizeShopItem({ rotation: 450 } as unknown as ShopItem)
+    expect(item.rotation).toBe(90)
+    const negative = normalizeShopItem({ rotation: -90 } as unknown as ShopItem)
+    expect(negative.rotation).toBe(270)
+  })
 })

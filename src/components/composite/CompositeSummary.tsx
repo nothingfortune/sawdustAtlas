@@ -1,7 +1,7 @@
 import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { assembledSize, compositeCutPlan, materialBySpecies, stockBySpecies } from '../../domain/compositeBoard'
 import { formatDimensions, formatNumber } from '../../domain/lengthUnits'
-import { calculatePrice, classifyComposite } from '../../domain/pricing'
+import { calculatePrice, classifyComposite, materialCost } from '../../domain/pricing'
 import { PriceBreakdownCard } from '../board/PriceBreakdownCard'
 import { useUnitSystem } from '../unitSystem'
 
@@ -20,7 +20,7 @@ export function CompositeSummary({ composite, boards, woods, pricing }: Composit
   const cutPlan = compositeCutPlan(composite, boards)
   const woodById = new Map(woods.map(w => [w.id, w]))
   const stockMap = new Map(stock.map(s => [s.speciesId, s.boardFeet]))
-  const estimatedCost = stock.reduce((sum, s) => sum + s.boardFeet * (woodById.get(s.speciesId)?.pricePerBoardFoot ?? 0), 0)
+  const estimatedCost = stock.reduce((sum, s) => sum + materialCost(s.boardFeet, woodById.get(s.speciesId)?.pricePerBoardFoot ?? 0), 0)
   const totalBoardFeet = stock.reduce((sum, s) => sum + s.boardFeet, 0)
   const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: totalBoardFeet, construction: composite.construction, tier: classifyComposite(), pricing })
 

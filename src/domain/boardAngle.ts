@@ -1,4 +1,4 @@
-import { clampAngle, toBoardFeet } from './units'
+import { clampAngle, degToRad, nonNegative, radToDeg, toBoardFeet } from './units'
 
 // BOARD-024: shop-setup numbers implied by an end-grain trailing angle, using the same
 // thickness * tan(angle) relation as board generation (boardGeometry rightWidth/faceShift,
@@ -13,13 +13,11 @@ export interface AngleSetup {
   wedgeBoardFeet: number
 }
 
-const radians = (deg: number) => deg * Math.PI / 180
-
 export function calculateAngleSetup(input: { trailingAngleDeg: number, stockThicknessMm: number, stripLengthMm: number }): AngleSetup {
   const angle = clampAngle(input.trailingAngleDeg)
-  const thickness = Math.max(0, input.stockThicknessMm)
-  const length = Math.max(0, input.stripLengthMm)
-  const angleOffsetMm = thickness * Math.tan(radians(angle))
+  const thickness = nonNegative(input.stockThicknessMm)
+  const length = nonNegative(input.stripLengthMm)
+  const angleOffsetMm = thickness * Math.tan(degToRad(angle))
   const effectiveWidthGainMm = Math.abs(angleOffsetMm)
   const wedgeCrossSectionMm2 = 0.5 * effectiveWidthGainMm * thickness
   return {
@@ -34,14 +32,14 @@ export function calculateAngleSetup(input: { trailingAngleDeg: number, stockThic
 
 export function angleForOffset(offsetMm: number, stockThicknessMm: number): number {
   if (!(stockThicknessMm > 0)) return 0
-  return clampAngle(Math.atan(offsetMm / stockThicknessMm) * 180 / Math.PI)
+  return clampAngle(radToDeg(Math.atan(offsetMm / stockThicknessMm)))
 }
 
 // The width of a strip's *opposite* (angled) face. `widthMm` is the reference face; a
 // positive trailing angle widens the far face, a negative one narrows it. Same
 // width + thickness*tan(angle) relation as board generation; clamped to >= 0 for display.
 export function angledFaceWidth(widthMm: number, stockThicknessMm: number, trailingAngleDeg: number): number {
-  const reference = Math.max(0, widthMm)
-  const opposite = reference + Math.max(0, stockThicknessMm) * Math.tan(clampAngle(trailingAngleDeg) * Math.PI / 180)
+  const reference = nonNegative(widthMm)
+  const opposite = reference + nonNegative(stockThicknessMm) * Math.tan(degToRad(clampAngle(trailingAngleDeg)))
   return Math.max(0, opposite)
 }

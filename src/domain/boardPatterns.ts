@@ -1,5 +1,5 @@
 import type { BoardProject, BoardStrip, EndGrainSettings, WoodSpecies } from '../types'
-import { nonNegative } from './units'
+import { nonNegative, radToDeg } from './units'
 
 export interface BoardPatternDefinition<Id extends string = string> {
   id: Id
@@ -168,7 +168,7 @@ function chevronMagnitude(strips: readonly BoardStrip[], thickness: number): num
   if (!(thickness > 0)) return 0
   const minWidth = Math.min(...strips.map(strip => nonNegative(strip.width)))
   if (!(minWidth > 0)) return 0
-  return Math.min(45, Math.atan(minWidth / (3 * thickness)) * 180 / Math.PI)
+  return Math.min(45, radToDeg(Math.atan(minWidth / (3 * thickness))))
 }
 
 

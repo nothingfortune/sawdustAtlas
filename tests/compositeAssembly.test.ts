@@ -6,6 +6,8 @@ import {
 import type { AssemblyCell, CompositeBoard } from '../src/types'
 
 const w = (over: Partial<AssemblyCell> = {}): AssemblyCell => ({ panelId: 'A', pieceIndex: 0, rotate: 0, flip: false, ...over })
+// Deterministic id factory so tests can assert exact ids from addRow.
+const seqId = () => { let n = 0; return () => `new-${n += 1}` }
 const board = (over: Partial<CompositeBoard> = {}): CompositeBoard => ({
   id: 'c', name: 'C', construction: 'edge', panels: [],
   rows: [{ id: 'r1', wafers: [w({ pieceIndex: 0 })] }, { id: 'r2', wafers: [w({ pieceIndex: 1 })] }],
@@ -36,10 +38,14 @@ describe('transforms', () => {
 
 describe('row operations', () => {
   it('addRow above/below a ref row', () => {
-    expect(addRow(board(), 'above', 'r2').rows.map(r => r.id).indexOf('r2')).toBe(2)
-    const below = addRow(board(), 'below', 'r1')
+    expect(addRow(board(), 'above', seqId(), 'r2').rows.map(r => r.id).indexOf('r2')).toBe(2)
+    const below = addRow(board(), 'below', seqId(), 'r1')
     expect(below.rows.map(r => r.id)[1]).not.toBe('r2') // a new row sits between r1 and r2
     expect(below.rows).toHaveLength(3)
+  })
+  it('uses the injected id factory for the new row (deterministic under test)', () => {
+    const withRow = addRow(board(), 'below', seqId())
+    expect(withRow.rows.at(-1)?.id).toBe('new-1')
   })
   it('removeRow drops by id', () => { expect(removeRow(board(), 'r1').rows.map(r => r.id)).toEqual(['r2']) })
   it('moveRow reorders', () => { expect(moveRow(board(), 'r2', 0).rows.map(r => r.id)).toEqual(['r2', 'r1']) })

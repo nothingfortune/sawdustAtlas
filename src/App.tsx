@@ -41,7 +41,23 @@ export default function App() {
   const [lengthUnit, setLengthUnit] = useState<LengthUnit>('metric')
   // Geometry calculator scratchpad (BOARD-026): its own state, autosaved to its own key.
   const [sketch, setSketch] = useState<Sketch>(loadSketch)
-  useEffect(() => { saveSketch(sketch) }, [sketch])
+  const sketchRef = useRef(sketch)
+  // Update the ref with the edit itself (as commitData does for dataRef), not in an
+  // effect: the pagehide flush below must never see a sketch older than the last edit,
+  // even if the page is hidden before that edit's effect has run.
+  const updateSketch = (next: Sketch) => { sketchRef.current = next; setSketch(next) }
+  // Debounce the sketch autosave: dragging a point fires many updates per second and a
+  // synchronous localStorage write on each is janky. Coalesce to a trailing 300ms write,
+  // and flush on pagehide so a reload immediately after an edit still persists it.
+  useEffect(() => {
+    const timer = window.setTimeout(() => saveSketch(sketch), 300)
+    return () => window.clearTimeout(timer)
+  }, [sketch])
+  useEffect(() => {
+    const flush = () => saveSketch(sketchRef.current)
+    window.addEventListener('pagehide', flush)
+    return () => window.removeEventListener('pagehide', flush)
+  }, [])
   // Workspace captured before the last import, recoverable across reloads.
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
@@ -321,7 +337,7 @@ export default function App() {
               : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
           })()}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
-          {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={setSketch} />}
+          {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={updateSketch} />}
           {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}
           {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
         </section>

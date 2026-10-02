@@ -79,6 +79,36 @@ describe('summarizeBrickAssembly', () => {
   })
 })
 
+const brickCourseHeightSum = (recipe: ReturnType<typeof generateBrickAssembly>): number =>
+  recipe.sourcePanels.find(p => p.role === 'brick-course')!.courses.reduce((total, c) => total + c.heightMm, 0)
+
+describe('halfCourseEdge — geometry and summary track the recipe', () => {
+  it('halves the two edge courses, shortening the board by one full course height', () => {
+    const full = summarizeBrickAssembly(params({ halfCourseEdge: false }))
+    const half = summarizeBrickAssembly(params({ halfCourseEdge: true }))
+    // Two half-height edge courses save exactly one full brick course of length.
+    expect(half.assembledLengthMm).toBeCloseTo(full.assembledLengthMm - DEFAULT_BRICK_PARAMETERS.brickCourseHeightMm, 6)
+  })
+
+  it('summary assembled length matches the generated recipe course stack (both modes)', () => {
+    for (const halfCourseEdge of [false, true]) {
+      const p = params({ halfCourseEdge })
+      expect(summarizeBrickAssembly(p).assembledLengthMm).toBeCloseTo(brickCourseHeightSum(generateBrickAssembly(p)), 6)
+    }
+  })
+
+  it('reduces brick material when the edge courses are halved', () => {
+    const full = summarizeBrickAssembly(params({ halfCourseEdge: false }))
+    const half = summarizeBrickAssembly(params({ halfCourseEdge: true }))
+    expect(half.brickBoardFeet).toBeLessThan(full.brickBoardFeet)
+  })
+
+  it('reports a conservationOk that is true when geometry matches the recipe', () => {
+    expect(summarizeBrickAssembly(params({ halfCourseEdge: true })).conservationOk).toBe(true)
+    expect(summarizeBrickAssembly(params({ halfCourseEdge: false })).conservationOk).toBe(true)
+  })
+})
+
 describe('parameters and migration', () => {
   it('seeds editable parameters from a finished board size', () => {
     const seeded = defaultBrickParameters(450, 300, 38)

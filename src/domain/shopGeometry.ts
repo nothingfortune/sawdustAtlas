@@ -1,4 +1,5 @@
 import type { ShopBlockedZone, ShopItem, ShopProject } from '../types'
+import { degToRad } from './units'
 
 export interface Point2D {
   x: number
@@ -112,7 +113,7 @@ function transformRectangle(
 }
 
 function rotatePoint(point: Point2D, center: Point2D, degrees: number): Point2D {
-  const radians = degrees * Math.PI / 180
+  const radians = degToRad(degrees)
   const cosine = Math.cos(radians)
   const sine = Math.sin(radians)
   const x = point.x - center.x

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { classifyBoard, classifyComposite, calculatePrice, COMPLEX_SLICE_THRESHOLD } from '../src/domain/pricing'
+import { classifyBoard, classifyComposite, calculatePrice, materialCost, roughPieceCost, COMPLEX_SLICE_THRESHOLD } from '../src/domain/pricing'
+import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
 import type { BoardProject, BoardStrip, EndGrainSettings, PricingSettings } from '../src/types'
 
 const pricing: PricingSettings = {
@@ -51,6 +52,29 @@ describe('classifyBoard', () => {
 describe('classifyComposite', () => {
   it('is always complex', () => {
     expect(classifyComposite()).toBe('complex')
+  })
+})
+
+describe('materialCost', () => {
+  it('multiplies rough board feet by the per-board-foot price', () => {
+    expect(materialCost(2.5, 12)).toBeCloseTo(30, 6)
+    expect(materialCost(0, 12)).toBe(0)
+    expect(materialCost(3, 0)).toBe(0)
+  })
+})
+
+describe('roughPieceCost', () => {
+  it('converts a rough w×l×t piece (mm) to board feet then cost', () => {
+    // one board foot of stock at $9 => $9
+    expect(roughPieceCost(CUBIC_MM_PER_BOARD_FOOT, 1, 1, 9)).toBeCloseTo(9, 6)
+  })
+  it('matches an explicit volume / CUBIC_MM_PER_BOARD_FOOT × price calc', () => {
+    const w = 40, l = 600, t = 20, price = 12
+    const expected = w * l * t / CUBIC_MM_PER_BOARD_FOOT * price
+    expect(roughPieceCost(w, l, t, price)).toBeCloseTo(expected, 9)
+  })
+  it('is zero for a zero dimension', () => {
+    expect(roughPieceCost(0, 600, 20, 12)).toBe(0)
   })
 })
 

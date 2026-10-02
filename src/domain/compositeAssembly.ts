@@ -1,5 +1,4 @@
 import type { AssemblyCell, CompositeBoard, CompositeRow } from '../types'
-import { createId } from '../id'
 
 // ---- Per-wafer transforms (about the wafer center) ----
 const ROT: Array<0 | 90 | 180 | 270> = [0, 90, 180, 270]
@@ -20,10 +19,12 @@ export function flipY(cell: AssemblyCell): AssemblyCell { return { ...cell, flip
 export function pieceKey(panelId: string, pieceIndex: number): string { return `${panelId}:${pieceIndex}` }
 
 // ---- Row + wafer operations (immutable; return a new board) ----
-export function emptyRow(): CompositeRow { return { id: createId(), wafers: [] } }
+// The id factory is injected (UI callers pass createId) so the domain stays pure
+// and deterministic under test — matching the house style in boardPatterns.
+export function emptyRow(createId: () => string): CompositeRow { return { id: createId(), wafers: [] } }
 
-export function addRow(board: CompositeBoard, where: 'above' | 'below', refRowId?: string): CompositeBoard {
-  const row = emptyRow()
+export function addRow(board: CompositeBoard, where: 'above' | 'below', createId: () => string, refRowId?: string): CompositeBoard {
+  const row = emptyRow(createId)
   const idx = refRowId ? board.rows.findIndex(r => r.id === refRowId) : -1
   if (idx < 0) return { ...board, rows: where === 'above' ? [row, ...board.rows] : [...board.rows, row] }
   const at = where === 'above' ? idx : idx + 1

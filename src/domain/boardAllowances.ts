@@ -1,7 +1,7 @@
 import type { BoardProject, BuildAllowances } from '../types'
 import { calculateEndGrainMetrics } from './boardGeometry'
 import type { EndGrainMetrics } from './boardGeometry'
-import { clampAngle, nonNegative, sum, toBoardFeet } from './units'
+import { clampAngle, degToRad, nonNegative, sum, toBoardFeet } from './units'
 
 // Build allowances describe how much oversized rough stock must be relative to the
 // finished board. They are surfacing/trim stock removed to reach finished faces and
@@ -58,7 +58,7 @@ export function resolveAllowances(project: BoardProject): BuildAllowances {
 // both. `stripRoughWidth` already includes the rip/width-trim allowance.
 export function roughStripStockWidth(project: BoardProject, stripRoughWidth: number, trailingAngle: number): number {
   if (project.construction !== 'end') return stripRoughWidth
-  const angleShift = project.endGrain.stockThickness * Math.tan(clampAngle(trailingAngle) * Math.PI / 180)
+  const angleShift = project.endGrain.stockThickness * Math.tan(degToRad(clampAngle(trailingAngle)))
   return stripRoughWidth + Math.max(0, angleShift)
 }
 

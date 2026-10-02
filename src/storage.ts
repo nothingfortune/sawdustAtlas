@@ -11,15 +11,32 @@ const KEY = 'sawdust-atlas:v1'
 // running-bond offsets as cell fractions (resolved to mm at render).
 export const CURRENT_SCHEMA_VERSION = LATEST_SCHEMA_VERSION
 
+// If the main payload fails to parse (e.g. a truncated write), the raw string is
+// otherwise lost the moment loadData falls back to starterData and the app's next
+// autosave overwrites it. Stash one recovery copy here so it isn't destroyed silently.
+const CORRUPT_RECOVERY_KEY = 'sawdust-atlas:corrupt'
+
 export function loadData(): AtlasData {
+  let saved: string | null
   try {
-    const saved = localStorage.getItem(KEY)
-    if (!saved) return starterData
-    const parsed: unknown = JSON.parse(saved)
-    return isRecord(parsed) ? normalizeData(parsed) : starterData
+    saved = localStorage.getItem(KEY)
   } catch {
     return starterData
   }
+  if (!saved) return starterData
+  try {
+    const parsed: unknown = JSON.parse(saved)
+    return isRecord(parsed) ? normalizeData(parsed) : starterData
+  } catch {
+    saveCorruptRecovery(saved)
+    return starterData
+  }
+}
+
+// Best-effort; storage may be full or blocked (possibly the reason the main payload
+// is corrupt in the first place). Only one copy is kept — overwrite is fine.
+function saveCorruptRecovery(raw: string): void {
+  try { localStorage.setItem(CORRUPT_RECOVERY_KEY, raw) } catch { /* best effort; non-fatal */ }
 }
 
 export function normalizeData(input: Partial<AtlasData>): AtlasData {
@@ -203,7 +220,11 @@ function normalizeComposite(raw: Record<string, unknown>, boardSink: BoardProjec
         length: 300,
         thickness,
         construction,
-        endGrain: normalizeEndGrain(undefined, thickness),
+        // Composites read endGrain.sliceThickness (not project.thickness) for end-grain
+        // donors (boardThickness() in compositeBoard.ts). Seed it from the legacy panel's
+        // thicknessMm so a migrated end-construction wafer keeps its true donor thickness
+        // instead of silently picking up normalizeEndGrain's 45mm default.
+        endGrain: normalizeEndGrain(construction === 'end' ? { sliceThickness: thickness } : undefined, thickness),
         allowances,
         strips: records(rawPanel['strips']).map(s => ({
           id: stringValue(s['id'], createId()),
@@ -305,18 +326,20 @@ function normalizeEndGrain(value: unknown, stockThickness: number): EndGrainSett
 
 // Migrate the legacy `drumSanding` allowance to `routerTable` (same role: a
 // final thickness-surfacing pass) so saved boards keep their value after the
-// rename. Unknown/missing fields fall back to defaults.
+// rename. Every field is an untrusted value from raw JSON (hand-edited backups
+// can carry strings, Infinity, or be missing entirely) so each is coerced with
+// finiteNumber — they are all non-negative dimensions — falling back to the
+// matching DEFAULT_ALLOWANCES value when invalid.
 function normalizeAllowances(saved: (BuildAllowances & { drumSanding?: number }) | undefined): BuildAllowances {
-  const legacy = saved?.drumSanding
-  const merged = { ...DEFAULT_ALLOWANCES, ...saved }
-  if (saved?.routerTable === undefined && typeof legacy === 'number') merged.routerTable = legacy
+  const record: Record<string, unknown> = isRecord(saved) ? saved : {}
+  const routerTableSource = record['routerTable'] !== undefined ? record['routerTable'] : record['drumSanding']
   return {
-    jointing: merged.jointing,
-    planing: merged.planing,
-    routerTable: merged.routerTable,
-    ripAllowance: merged.ripAllowance,
-    lengthTrim: merged.lengthTrim,
-    widthTrim: merged.widthTrim,
+    jointing: finiteNumber(record['jointing'], DEFAULT_ALLOWANCES.jointing),
+    planing: finiteNumber(record['planing'], DEFAULT_ALLOWANCES.planing),
+    routerTable: finiteNumber(routerTableSource, DEFAULT_ALLOWANCES.routerTable),
+    ripAllowance: finiteNumber(record['ripAllowance'], DEFAULT_ALLOWANCES.ripAllowance),
+    lengthTrim: finiteNumber(record['lengthTrim'], DEFAULT_ALLOWANCES.lengthTrim),
+    widthTrim: finiteNumber(record['widthTrim'], DEFAULT_ALLOWANCES.widthTrim),
   }
 }
 

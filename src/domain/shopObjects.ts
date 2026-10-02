@@ -1,4 +1,5 @@
 import type { FeedDirection, ShopItem, ShopItemKind } from '../types'
+import { createId } from '../id'
 
 export interface ShopObjectDefinition {
   name: string
@@ -66,14 +67,36 @@ export function createShopItem(
   }
 }
 
+const KNOWN_SHOP_KINDS = new Set<ShopItemKind>(SHOP_ITEM_KINDS.map(entry => entry.value))
+const KNOWN_FEED_DIRECTIONS = new Set<FeedDirection>([0, 90, 180, 270])
+
+// Import/legacy-load path: `item` is an unvalidated cast from raw JSON, so every
+// field is coerced defensively rather than trusted. An imported `{}` (or a field with
+// the wrong type, e.g. a stringified dimension) must still come out as a fully valid
+// ShopItem — otherwise it produces NaN geometry and `key={undefined}` duplicate React
+// keys downstream in the planner.
 export function normalizeShopItem(item: ShopItem): ShopItem {
+  const raw = item as unknown as Record<string, unknown>
+  const kind = KNOWN_SHOP_KINDS.has(raw['kind'] as ShopItemKind) ? (raw['kind'] as ShopItemKind) : 'custom'
+  const feedDirection = KNOWN_FEED_DIRECTIONS.has(raw['feedDirection'] as FeedDirection) ? (raw['feedDirection'] as FeedDirection) : null
   return {
-    ...item,
-    height: positiveDimension(item.height ?? defaultHeight(item.kind)),
-    feedDirection: item.feedDirection ?? null,
-    infeedClearance: nonNegative(item.infeedClearance),
-    outfeedClearance: nonNegative(item.outfeedClearance),
-    sideClearance: nonNegative(item.sideClearance),
+    id: stringOr(raw['id'], createId()),
+    name: stringOr(raw['name'], 'Imported item'),
+    kind,
+    // The planner clamps items to [0, room dimension) — items can't be at negative
+    // coordinates — so x/y use the non-negative coercer, same as true dimensions.
+    x: nonNegative(raw['x']),
+    y: nonNegative(raw['y']),
+    width: positiveDimension(raw['width']),
+    depth: positiveDimension(raw['depth']),
+    height: positiveDimension(raw['height'] ?? defaultHeight(kind)),
+    rotation: normalizeRotation(raw['rotation']),
+    clearance: nonNegative(raw['clearance']),
+    feedDirection,
+    infeedClearance: nonNegative(raw['infeedClearance']),
+    outfeedClearance: nonNegative(raw['outfeedClearance']),
+    sideClearance: nonNegative(raw['sideClearance']),
+    color: validColor(raw['color'], '#66826d'),
   }
 }
 
@@ -83,14 +106,30 @@ function defaultHeight(kind: ShopItemKind): number {
   return 1000
 }
 
-function positiveDimension(value: number): number {
+function positiveDimension(value: unknown): number {
   return Math.max(1, finiteNumber(value))
 }
 
-function finiteNumber(value: number): number {
-  return Number.isFinite(value) ? value : 0
+function finiteNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
-function nonNegative(value: number | undefined): number {
-  return Math.max(0, finiteNumber(value ?? 0))
+function nonNegative(value: unknown): number {
+  return Math.max(0, finiteNumber(value))
+}
+
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() ? value : fallback
+}
+
+// Rotation is a free-form degree value (unlike feedDirection, which is a fixed
+// enum) — wrap it into [0, 360) rather than rejecting it outright.
+function normalizeRotation(value: unknown): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  const wrapped = n % 360
+  return wrapped < 0 ? wrapped + 360 : wrapped
+}
+
+function validColor(value: unknown, fallback: string): string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback
 }

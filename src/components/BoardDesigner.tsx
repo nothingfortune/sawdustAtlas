@@ -23,6 +23,7 @@ import { PriceBreakdownCard } from './board/PriceBreakdownCard'
 import { HowItsBuilt } from './board/HowItsBuilt'
 import { PreviewStudio } from './board/PreviewStudio'
 import { PatternPreviewDialog } from './board/PatternPreviewDialog'
+import { PlanStepList } from './instructions/PlanStepList'
 import { BuildAssumptions, BuildSheetHeader, BuildSummary, CutPlanView, BenchSetupCard, StockRequirementsCard, AngleSetupCard } from './board/BuildSheet'
 
 interface Props { projects: BoardProject[]; project: BoardProject | undefined; woods: WoodSpecies[]; pricing: PricingSettings; onSelect: (id: string) => void; onCreate: () => void; onChange: (project: BoardProject) => void; onDelete: (id: string) => void; onMakeComposite: (board: BoardProject) => void; onBack: () => void }
@@ -168,6 +169,7 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
         <StockRequirementsCard stock={stock}/>
         {angleRows.length > 0 && <AngleSetupCard rows={angleRows} thicknessMm={project.endGrain.stockThickness} lengthMm={project.endGrain.sourceLength}/>}
         <BuildAssumptions project={project}/>
+        <PlanStepList project={project} woods={woods} boards={projects}/>
       </div>
       <aside className={`board-panel${panelOpen ? ' open' : ''}`}>
         <button className="drawer-close" onClick={() => setPanelOpen(false)} aria-label="Close editor panel"><X/></button>

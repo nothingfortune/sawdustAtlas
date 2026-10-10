@@ -157,7 +157,9 @@ export function startWait(run: BuildRun, stepKey: string, at: string): BuildRunR
   if (typeof check === 'string') return refuse(run, check)
   const { step } = check
   if (step.kind !== 'wait' || !step.wait) return refuse(run, `not a wait step: ${step.title}`)
-  const readyAt = new Date(Date.parse(at) + step.wait.minimumMinutes * 60_000).toISOString()
+  const startedMs = Date.parse(at)
+  if (Number.isNaN(startedMs)) return refuse(run, `invalid timestamp: ${at}`)
+  const readyAt = new Date(startedMs + step.wait.minimumMinutes * 60_000).toISOString()
   return { run: withStep(run, stepKey, { waitStartedAt: at, readyAt }, { type: 'start-wait', at, stepKey, readyAt }) }
 }
 

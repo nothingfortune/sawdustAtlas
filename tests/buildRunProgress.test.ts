@@ -177,6 +177,13 @@ describe('waits', () => {
     expect(completeStep(waiting, 'cure', at(300)).error).toBeUndefined()
   })
 
+  it('refuses to start a timer from an unparseable timestamp', () => {
+    const run = advanceTiny(start(), 'cure')
+    const result = startWait(run, 'cure', 'not-a-date')
+    expect(result.error).toBe('invalid timestamp: not-a-date')
+    expect(result.run).toBe(run)
+  })
+
   it('refuses startWait on non-wait or blocked steps', () => {
     expect(startWait(start(), 'select-stock', at(1)).error).toMatch(/not a wait step/)
     expect(startWait(start(), 'cure', at(1)).error).toMatch(/blocked by/)

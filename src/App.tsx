@@ -257,6 +257,7 @@ export default function App() {
   const goToWarning = (location?: WarningLocation) => {
     if (!location) return
     if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); setView('boards') }
+    else if (location.view === 'composite' && location.targetId) { openComposite(location.targetId); setView('boards') }
     else if (location.view === 'shop' && location.targetId) { setActiveShop(location.targetId); setView('shop') }
     else if (location.view === 'woods') setView('woods')
   }

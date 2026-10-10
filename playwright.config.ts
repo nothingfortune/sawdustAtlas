@@ -14,6 +14,10 @@ import { defineConfig, devices } from '@playwright/test'
 // touch semantics and would just double the run for no signal.
 const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts']
 
+// E2E_PORT lets several checkouts (git worktrees) run the suite side by side without
+// one run silently reusing another checkout's dev server. Defaults to Vite's 5173.
+const port = Number(process.env.E2E_PORT ?? 5173)
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -22,7 +26,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'line' : 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: `http://localhost:${port}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -35,8 +39,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev --port 5173 --strictPort',
-    url: 'http://localhost:5173',
+    command: `pnpm dev --port ${port} --strictPort`,
+    url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "playwright test -c playwright.prod.config.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "serve:lan": "pnpm build && vite preview --host 0.0.0.0 --port 4173",

@@ -26,6 +26,7 @@ pnpm test                # vitest run (unit tests in tests/)
 pnpm test:coverage       # vitest run --coverage (CI gate; thresholds below)
 pnpm exec playwright install --with-deps chromium  # one-time prerequisite for test:e2e
 pnpm test:e2e            # playwright smoke tests in e2e/ (boots its own dev server)
+pnpm test:e2e:prod       # offline/service-worker smoke in e2e/prod/ (builds, then serves via vite preview)
 ```
 
 Run a single unit test file or filter by name:

@@ -2,7 +2,17 @@ const CACHE = 'sawdust-atlas-__SW_BUILD__'
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)))
+  event.waitUntil(
+    caches.open(CACHE).then(async cache => {
+      await cache.addAll(SHELL)
+      // The first visit's JS/CSS were fetched before this worker controlled the page, so
+      // fetch events never saw them. Precache the hashed assets the shell HTML references,
+      // otherwise going offline right after the first load leaves a blank page.
+      const html = await (await cache.match('/'))?.text()
+      const assets = [...new Set(html?.match(/\/assets\/[^"'\s)]+/g) ?? [])]
+      await cache.addAll(assets)
+    })
+  )
   self.skipWaiting()
 })
 
@@ -12,6 +22,11 @@ self.addEventListener('activate', event => {
   )
   self.clients.claim()
 })
+
+// The preview/static hosts send `Vary: Origin`, and the page's crossorigin module/CSS
+// requests carry an Origin header the precache fetch did not, so a strict match misses
+// and the app is blank offline. Nothing here varies by representation: ignore Vary.
+const MATCH = { ignoreVary: true }
 
 function networkFirst(request) {
   return fetch(request)
@@ -23,12 +38,12 @@ function networkFirst(request) {
       return response
     })
     .catch(() =>
-      caches.match(request).then(cached => cached || (request.mode === 'navigate' ? caches.match('/') : undefined))
+      caches.match(request, MATCH).then(cached => cached || (request.mode === 'navigate' ? caches.match('/', MATCH) : undefined))
     )
 }
 
 function cacheFirst(request) {
-  return caches.match(request).then(
+  return caches.match(request, MATCH).then(
     cached =>
       cached ||
       fetch(request).then(response => {

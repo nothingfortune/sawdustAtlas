@@ -16,6 +16,7 @@ const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.s
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/prod/**', // production-build specs run via playwright.prod.config.ts
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

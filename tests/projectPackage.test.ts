@@ -163,17 +163,19 @@ describe('mergeProjectPackage', () => {
     expect(summary).toMatchObject({ boards: 2, composites: 1, importedAsCopy: true })
   })
 
-  it('never reuses an existing board id for a panel board of a new composite', () => {
+  it('imports a composite as a copy when only a panel board id clashes', () => {
     const target = workspace()
     const pkg = buildProjectPackage(target, { type: 'composite', id: 'c1' }, NOW)!
     if (pkg.project.type !== 'composite') throw new Error('expected composite')
     pkg.project.composite = { ...pkg.project.composite, id: 'c-new' }
     const { data, summary } = mergeProjectPackage(target, pkg, counter())
     const added = data.composites.at(-1)!
-    expect(added.id).toBe('c-new')
+    expect(added.id).not.toBe('c-new')
+    expect(added.name).toBe('Composite c1 (imported)')
     expect(added.panels.every(p => !['b1', 'b2'].includes(p.boardId))).toBe(true)
-    expect(data.boards.length).toBe(target.boards.length + 2)
-    expect(summary.importedAsCopy).toBe(true)
+    expect(data.boards.slice(target.boards.length).map(b => b.id)).toEqual(added.panels.map(p => p.boardId))
+    expect(data.boards.slice(0, target.boards.length)).toEqual(target.boards)
+    expect(summary).toMatchObject({ boards: 2, composites: 1, importedAsCopy: true })
   })
 
   it('adds absent woods and keeps present ones', () => {

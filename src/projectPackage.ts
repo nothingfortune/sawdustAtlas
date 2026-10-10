@@ -95,15 +95,16 @@ export function mergeProjectPackage(data: AtlasData, pkg: ProjectPackage, create
   const boardIds = new Set(data.boards.map(b => b.id))
   const incomingBoards = pkg.project.type === 'board' ? [pkg.project.board] : pkg.project.panelBoards
   const project = pkg.project
+  // A clash on the project's own id, or on any board it carries, turns the whole import
+  // into a copy so the pieces stay together under fresh ids and one clear name.
   const wholeCopy = project.type === 'board'
     ? boardIds.has(project.board.id)
-    : data.composites.some(c => c.id === project.composite.id)
+    : data.composites.some(c => c.id === project.composite.id) || incomingBoards.some(board => boardIds.has(board.id))
 
-  // Existing projects are never replaced: any incoming id that is already taken gets
-  // a fresh one, and every reference to it is remapped.
+  // Existing projects are never replaced; every reference to a re-issued id is remapped.
   const idMap = new Map<string, string>()
   const boards = incomingBoards.map(board => {
-    if (!wholeCopy && !boardIds.has(board.id)) return board
+    if (!wholeCopy) return board
     const id = createId()
     idMap.set(board.id, id)
     return { ...board, id, name: board.name + IMPORTED_SUFFIX }
@@ -137,7 +138,7 @@ export function mergeProjectPackage(data: AtlasData, pkg: ProjectPackage, create
       composites: pkg.project.type === 'composite' ? 1 : 0,
       woodsAdded: newWoods.length,
       woodsKept: pkg.woods.length - newWoods.length,
-      importedAsCopy: wholeCopy || idMap.size > 0,
+      importedAsCopy: wholeCopy,
     },
   }
 }

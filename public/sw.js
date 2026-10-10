@@ -11,6 +11,11 @@ self.addEventListener('install', event => {
       const html = await (await cache.match('/'))?.text()
       const assets = [...new Set(html?.match(/\/assets\/[^"'\s)]+/g) ?? [])]
       await cache.addAll(assets)
+      // Fonts are referenced from the stylesheet, not the HTML, so precache those too.
+      // woff2 only: every supported browser picks it, so the .woff fallbacks never load.
+      const css = await Promise.all(assets.filter(url => url.endsWith('.css')).map(async url => (await cache.match(url))?.text() ?? ''))
+      const nested = [...new Set(css.join('\n').match(/\/assets\/[^"'\s)]+/g) ?? [])].filter(url => !url.endsWith('.woff') && !assets.includes(url))
+      await cache.addAll(nested)
     })
   )
   self.skipWaiting()

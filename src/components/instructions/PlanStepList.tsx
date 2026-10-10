@@ -1,13 +1,19 @@
 import { AlertTriangle, ChevronRight, OctagonAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { generateBoardInstructionPlan } from '../../domain/instructions/boardInstructions'
-import type { InstructionPlan, InstructionStep, SetupValue } from '../../domain/instructions/types'
+import type { InstructionPlan, InstructionStep, PlanWarning, SetupValue } from '../../domain/instructions/types'
 import type { LengthUnit } from '../../domain/lengthUnits'
 import type { BoardProject, WoodSpecies } from '../../types'
 import { useUnitSystem } from '../unitSystem'
 import { formatQuantity, formatTolerance } from './planFormat'
 
 interface Props { project: BoardProject; woods: readonly WoodSpecies[]; boards: readonly BoardProject[] }
+
+function WarningNote({ warning }: { warning: PlanWarning }) {
+  return <div className={`steps-warning ${warning.severity}`} role="note">
+    <AlertTriangle aria-hidden="true"/><span><b>{warning.severity === 'error' ? 'Error' : 'Warning'}:</b> {warning.message}</span>
+  </div>
+}
 
 function SetupLine({ setting, lengthUnit }: { setting: SetupValue; lengthUnit: LengthUnit }) {
   return <li>
@@ -40,17 +46,17 @@ function StepItem({ step, labels, lengthUnit }: { step: InstructionStep; labels:
       </li>)}
     </ul>}
     {outputs.length > 0 && <div className="steps-outputs"><span>Makes</span>{outputs.map(label => <code key={label}>{label}</code>)}</div>}
-    {step.warnings.map(warning => <div key={warning.id} className={`steps-warning ${warning.severity}`} role="note">
-      <AlertTriangle aria-hidden="true"/><span>{warning.message}</span>
-    </div>)}
+    {step.warnings.map(warning => <WarningNote key={warning.id} warning={warning}/>)}
   </li>
 }
 
 export function PlanStepsBody({ plan, lengthUnit }: { plan: InstructionPlan; lengthUnit: LengthUnit }) {
   const labels = useMemo(() => new Map(plan.parts.map(part => [part.key, part.label])), [plan])
   const phases = [...plan.phases].sort((a, b) => a.order - b.order)
+  const phaseKeys = new Set(plan.phases.map(phase => phase.key))
+  const orphans = plan.steps.filter(step => !phaseKeys.has(step.phaseKey)).sort((a, b) => a.order - b.order)
   return <>
-    {plan.warnings.length > 0 && <div className="steps-plan-warnings">{plan.warnings.map(warning => <div key={warning.id} className={`steps-warning ${warning.severity}`} role="note"><AlertTriangle aria-hidden="true"/><span>{warning.message}</span></div>)}</div>}
+    {plan.warnings.length > 0 && <div className="steps-plan-warnings">{plan.warnings.map(warning => <WarningNote key={warning.id} warning={warning}/>)}</div>}
     {phases.map(phase => {
       const steps = plan.steps.filter(step => step.phaseKey === phase.key).sort((a, b) => a.order - b.order)
       if (steps.length === 0) return null
@@ -59,6 +65,10 @@ export function PlanStepsBody({ plan, lengthUnit }: { plan: InstructionPlan; len
         <ol>{steps.map(step => <StepItem key={step.key} step={step} labels={labels} lengthUnit={lengthUnit}/>)}</ol>
       </section>
     })}
+    {orphans.length > 0 && <section className="steps-phase">
+      <h4>Other steps</h4>
+      <ol>{orphans.map(step => <StepItem key={step.key} step={step} labels={labels} lengthUnit={lengthUnit}/>)}</ol>
+    </section>}
   </>
 }
 

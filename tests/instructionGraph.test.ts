@@ -53,6 +53,26 @@ describe('topologicalOrder', () => {
   })
 })
 
+describe('empty and degenerate inputs', () => {
+  it('handles a plan with no steps', () => {
+    const empty = { ...tinyEdgePlan(), steps: [] }
+    expect(topologicalOrder([])).toEqual({ order: [], cycle: null })
+    expect(findCycle([])).toBeNull()
+    expect(stepAvailability(empty, progress([]), NOW)).toEqual({})
+    expect(nextStep(empty, progress([]), NOW)).toBeNull()
+    expect(prerequisitesOf(empty, 'ghost')).toEqual(new Set())
+    expect(dependentsOf(empty, 'ghost')).toEqual(new Set())
+  })
+
+  it('does not mutate the steps array it is given', () => {
+    const steps = [step('c', 3), step('a', 1), step('b', 2, ['c'])]
+    const before = steps.map(s => s.key)
+    topologicalOrder(steps)
+    findCycle(steps)
+    expect(steps.map(s => s.key)).toEqual(before)
+  })
+})
+
 describe('findCycle', () => {
   it('returns null for acyclic plans', () => {
     expect(findCycle(tinyEdgePlan().steps)).toBeNull()
@@ -201,6 +221,11 @@ describe('nextStep', () => {
     expect(nextStep(branchingPlan(), progress(['a-prep']), NOW)).toBe('a-glue')
     // b-prep (order 4) and a-glue (order 2) both available: lowest order wins.
     expect(nextStep(branchingPlan(), progress(['a-prep']), NOW)).not.toBe('b-prep')
+  })
+
+  it('prefers the lower order over the alphabetically earlier key', () => {
+    const plan = { ...tinyEdgePlan(), steps: [step('a-late', 9), step('z-early', 1)] }
+    expect(nextStep(plan, progress([]), NOW)).toBe('z-early')
   })
 
   it('moves to the other branch while a timer runs', () => {

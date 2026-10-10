@@ -89,12 +89,14 @@ interface RequirementLine {
 
 function attestedChip(dimension: 'material' | 'tools', lines: readonly RequirementLine[], attestations: Record<string, 'have' | 'need'>): ReadinessChip {
   if (lines.length === 0) return chip(dimension, 'ready', 'Ready', [])
-  const needed = lines.filter((line) => attestations[line.key] === 'need')
+  // Own-property lookup so a line key such as "constructor" can never read an inherited value.
+  const attested = (key: string) => (Object.hasOwn(attestations, key) ? attestations[key] : undefined)
+  const needed = lines.filter((line) => attested(line.key) === 'need')
   if (needed.length > 0) {
     const reasons = needed.map((line): ReadinessReason => ({ message: `Need: ${line.label}`, severity: 'warning', stepKeys: line.stepKeys }))
     return chip(dimension, 'attention', `${needed.length} of ${plural(lines.length, 'line')} needed`, reasons)
   }
-  if (lines.some((line) => attestations[line.key] === undefined)) {
+  if (lines.some((line) => attested(line.key) === undefined)) {
     const noun = dimension === 'material' ? 'Material' : 'Tools'
     return chip(dimension, 'not-tracked', 'Not tracked', [{ message: `${noun} not tracked: confirm what you have before you start`, severity: 'warning' }])
   }

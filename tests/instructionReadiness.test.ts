@@ -40,6 +40,13 @@ describe('computeReadiness', () => {
       plan.warnings.push({ id: 'p', severity: 'error', message: 'Self-crossing strip' })
       expect(chipOf(computeReadiness(input({}, plan)), 'design').status).toBe('blocked')
     })
+    it('blocks on an error-severity step warning and pins its step key', () => {
+      const plan = tinyEdgePlan()
+      plan.steps[0]!.warnings.push({ id: 's', severity: 'error', message: 'Step error', stepKey: plan.steps[0]!.key })
+      const chip = chipOf(computeReadiness(input({}, plan)), 'design')
+      expect(chip.status).toBe('blocked')
+      expect(chip.reasons[0]?.stepKeys).toEqual([plan.steps[0]!.key])
+    })
     it('needs attention on design warnings only', () => {
       const chip = chipOf(computeReadiness(input({ designWarnings: [designWarn] })), 'design')
       expect(chip.status).toBe('attention')
@@ -62,6 +69,10 @@ describe('computeReadiness', () => {
       const chip = chipOf(computeReadiness(input({ validation })), 'instructions')
       expect(chip.status).toBe('attention')
       expect(chip.reasons[0]?.stepKeys).toBeUndefined()
+      expect(chip.summary).toBe('1 warning')
+    })
+    it('is ready with no issues', () => {
+      expect(chipOf(computeReadiness(input()), 'instructions')).toEqual({ dimension: 'instructions', status: 'ready', summary: 'Ready', reasons: [] })
     })
   })
 
@@ -98,6 +109,24 @@ describe('computeReadiness', () => {
       expect(tools.status).toBe('attention')
       expect(tools.summary).toBe('1 of 5 lines needed')
       expect(tools.reasons[0]?.stepKeys).toEqual(plan.steps.filter((s) => s.tools.some((t) => t.key === 'table-saw')).map((s) => s.key))
+    })
+    it('a mix of have and need is attention, naming only the needed lines', () => {
+      const result = computeReadiness(input({ attestations: { stock: ALL_HAVE.stock, tools: { ...ALL_HAVE.tools, glue: 'need', clamps: 'need' } } }))
+      const tools = chipOf(result, 'tools')
+      expect(tools.status).toBe('attention')
+      expect(tools.summary).toBe('2 of 5 lines needed')
+      expect(tools.reasons).toHaveLength(2)
+    })
+    it('ignores inherited object properties when reading attestations', () => {
+      const plan = tinyEdgePlan()
+      plan.requirements.tools = [{ ...plan.requirements.tools[0]!, key: 'constructor' }]
+      expect(chipOf(computeReadiness(input({ attestations: { stock: ALL_HAVE.stock, tools: {} } }, plan)), 'tools').status).toBe('not-tracked')
+    })
+    it('does not mutate its input', () => {
+      const plan = tinyEdgePlan()
+      const snapshot = structuredClone(plan)
+      computeReadiness(input({ attestations: { stock: {}, tools: {} }, designWarnings: [designError] }, plan))
+      expect(plan).toEqual(snapshot)
     })
     it('is ready when the plan requires nothing', () => {
       const plan = tinyEdgePlan()

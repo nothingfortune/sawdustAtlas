@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
 // interaction (tap-vs-drag disambiguation, drag state, the composite assembly desk);
 // the rest (keyboard shortcuts, dialogs, layout text order, imports…) don't exercise
 // touch semantics and would just double the run for no signal.
-const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts', '**/boardWorkflow.spec.ts']
+const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts', '**/boardWorkflow.spec.ts', '**/shopWorkflow.spec.ts']
 
 export default defineConfig({
   testDir: './e2e',

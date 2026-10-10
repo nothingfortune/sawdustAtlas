@@ -13,6 +13,7 @@ import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnin
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
+import { ConnectionNotice } from './components/ConnectionNotice'
 import { BuildBadge } from './components/BuildBadge'
 import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
@@ -299,6 +300,7 @@ export default function App() {
             <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
           </div>
         </header>
+        <ConnectionNotice />
         <section className="workspace">
           {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
           {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}

@@ -39,4 +39,13 @@ describe('applyLifecycleEvent', () => {
     }
     expect(checked).toBe(STATES.length * EVENTS.length - VALID.length)
   })
+
+  it('treats an unknown event or state as invalid instead of throwing', () => {
+    expect(applyLifecycleEvent('draft', 'constructor' as LifecycleEvent)).toEqual({ lifecycle: 'draft', error: 'Cannot apply "constructor" while the project is draft.' })
+    expect(applyLifecycleEvent('toString' as ProjectLifecycle, 'build-started').error).toBeDefined()
+  })
+
+  it('formats the error with the event and state', () => {
+    expect(applyLifecycleEvent('complete', 'build-paused')).toEqual({ lifecycle: 'complete', error: 'Cannot apply "build-paused" while the project is complete.' })
+  })
 })

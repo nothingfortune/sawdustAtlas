@@ -1,4 +1,4 @@
-import { dependentsOf } from '../instructions/graph'
+import { consumersOf, dependentsOf } from '../instructions/graph'
 import type { Measurement } from '../instructions/types'
 import type { BuildRun, BuildRunResult, ProblemKind, ProblemOutcome, StepProgress, VerifyFirstFlag } from './types'
 
@@ -76,9 +76,7 @@ export function recordMeasurement(
   let flaggedStepKeys: string[] = []
   if (measurement.critical && !withinTolerance) {
     const deviatedParts = new Set(measurement.partKey !== undefined ? [measurement.partKey] : step.outputs.map(output => output.partKey))
-    const consumers = run.plan.steps
-      .filter(candidate => candidate.key !== stepKey && candidate.inputs.some(input => deviatedParts.has(input.partKey)))
-      .map(candidate => candidate.key)
+    const consumers = [...deviatedParts].flatMap(partKey => consumersOf(run.plan, partKey)).filter(key => key !== stepKey)
     flaggedStepKeys = incompleteKeys(run, consumers)
     steps = flagSteps(steps, flaggedStepKeys, {
       reason: `${measurement.label} on "${step.title}" was out of tolerance`,
@@ -141,7 +139,8 @@ export function reportProblem(
       reviewStepKeys = completedKeys(run, dependents)
       flaggedStepKeys = reviewStepKeys
       steps = flagSteps(steps, reviewStepKeys, { ...flagBase, reason: `"${step.title}" is being reworked; check this step's result` })
-      events.push({ type: 'reopen-step', at, stepKey })
+      // Only a completed step is reopened; a pending one is merely reset.
+      if (progress.status === 'complete') events.push({ type: 'reopen-step', at, stepKey })
       break
     }
     case 'flag-downstream':

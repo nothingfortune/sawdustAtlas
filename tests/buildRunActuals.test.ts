@@ -174,6 +174,8 @@ describe('reportProblem', () => {
     const result = ok(reportProblem(run, 'rip', report('rework-step'), at(10)))
     expect(result.run.steps['rip']!.batchDone).toBe(0)
     expect(result.reviewStepKeys).toEqual([])
+    // Nothing was complete, so no reopen-step event is logged.
+    expect(result.run.events.slice(-1).map(e => e.type)).toEqual(['problem'])
   })
 
   it('flag-downstream flags every incomplete transitive dependent', () => {

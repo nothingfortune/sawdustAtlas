@@ -20,6 +20,14 @@ function allKeys(plan: InstructionPlan): string[] {
   ]
 }
 
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    Object.freeze(value)
+    for (const child of Object.values(value)) deepFreeze(child)
+  }
+  return value
+}
+
 describe('generateEdgeGrainPlan', () => {
   const project = edgeGrainGolden()
   const plan = generateEdgeGrainPlan(project, context)
@@ -60,7 +68,15 @@ describe('generateEdgeGrainPlan', () => {
     for (const step of plan.steps) {
       expect(step.title).not.toMatch(UNIT_IN_PROSE)
       expect(step.instruction).not.toMatch(UNIT_IN_PROSE)
+      for (const item of step.checklist) expect(item.text).not.toMatch(UNIT_IN_PROSE)
     }
+  })
+
+  it('does not mutate the project it is given', () => {
+    const frozen = deepFreeze(edgeGrainGolden())
+    const before = JSON.stringify(frozen)
+    expect(() => generateEdgeGrainPlan(frozen, context)).not.toThrow()
+    expect(JSON.stringify(frozen)).toBe(before)
   })
 
   it('produces identical keys on two generations', () => {
@@ -182,6 +198,21 @@ describe('generateEdgeGrainPlan', () => {
     expect(next.steps).toEqual([])
     expect(next.requirements.cuts).toEqual([])
     expect(next.warnings).toEqual([{ id: 'board-warning-1', severity: 'warning', message: 'Add at least one strip before generating a build plan.', location: { view: 'boards', targetId: empty.id } }])
+    expect(validatePlan(next).ok).toBe(true)
+  })
+
+  it.each([
+    ['length', (p: BoardProject) => { p.length = 0 }],
+    ['thickness', (p: BoardProject) => { p.thickness = 0 }],
+    ['strip widths', (p: BoardProject) => { p.strips = p.strips.map(strip => ({ ...strip, width: 0 })) }],
+  ])('returns an empty plan with an explaining error when the %s is zero', (_name, zero) => {
+    const flat = edgeGrainGolden()
+    zero(flat)
+    const next = generateEdgeGrainPlan(flat, context)
+    expect(next.steps).toEqual([])
+    expect(next.requirements.cuts).toEqual([])
+    expect(next.warnings.map(w => w.severity)).toEqual(['error'])
+    expect(next.warnings[0]?.location).toEqual({ view: 'boards', targetId: flat.id })
     expect(validatePlan(next).ok).toBe(true)
   })
 })

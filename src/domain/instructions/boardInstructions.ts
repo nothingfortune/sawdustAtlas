@@ -169,15 +169,22 @@ function speciesName(inputs: BoardPlanInputs, speciesId: string): string {
   return inputs.woods.find(wood => wood.id === speciesId)?.name ?? speciesId
 }
 
-function warningsFor(inputs: BoardPlanInputs): PlanWarning[] {
+/** Legacy warnings as PlanWarnings. When the plan is empty because the design has no
+ *  positive size and the legacy list says nothing about it, an error explains the empty plan. */
+function warningsFor(inputs: BoardPlanInputs, unbuildable = false): PlanWarning[] {
   const { project, legacy, metrics, prefix } = inputs
   const errorMessages = new Set(project.construction === 'end' ? metrics.errors : [])
-  return legacy.warnings.map((message, index) => ({
+  const location = { view: 'boards' as const, targetId: project.id }
+  const warnings: PlanWarning[] = legacy.warnings.map((message, index) => ({
     id: `${prefix}board-warning-${index + 1}`,
     severity: errorMessages.has(message) ? 'error' : 'warning',
     message,
-    location: { view: 'boards', targetId: project.id },
+    location,
   }))
+  if (unbuildable && project.strips.length > 0 && !warnings.some(warning => warning.severity === 'error')) {
+    warnings.push({ id: `${prefix}board-unbuildable`, severity: 'error', message: 'This design has no buildable size, so no build steps were generated. Check the board dimensions.', location })
+  }
+  return warnings
 }
 
 function cutRefs(inputs: BoardPlanInputs): CutRef[] {
@@ -195,12 +202,14 @@ export const generateEdgeGrainPlan: InstructionGenerator<BoardProject> = (projec
 export function buildEdgeGrainPlan(inputs: BoardPlanInputs): InstructionPlan {
   const { project, build, legacy, marks, prefix, asCompositePanel } = inputs
   const b = new PlanBuilder(prefix)
-  const warnings = warningsFor(inputs)
   const finished: PartDimensions = { length: build.length.finished, width: build.width.finished, thickness: build.thickness.finished }
   const source = { kind: 'board' as const, projectId: project.id, projectName: project.name, designRevision: project.updatedAt }
 
-  if (project.strips.length === 0) {
-    // Nothing to build; the legacy warning explains why. No cuts either, since none are executable.
+  // Nothing buildable: no strips, or no positive finished size. The warnings explain why. No
+  // cuts either, since none are executable.
+  const degenerate = !(build.length.finished > 0) || !(build.width.finished > 0) || !(build.thickness.finished > 0)
+  if (project.strips.length === 0 || degenerate) {
+    const warnings = warningsFor(inputs, true)
     return withRevision({
       version: INSTRUCTION_PLAN_VERSION, key: `board:${project.id}`, source, construction: 'edge', units: 'mm', finished,
       phases: [], steps: [], parts: [], assemblies: [],
@@ -436,7 +445,7 @@ export function buildEdgeGrainPlan(inputs: BoardPlanInputs): InstructionPlan {
     parts: b.parts,
     assemblies,
     requirements: { stock, cuts: cutRefs(inputs), tools: b.tools(), consumables },
-    warnings,
+    warnings: warningsFor(inputs),
   })
 }
 

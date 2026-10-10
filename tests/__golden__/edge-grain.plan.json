@@ -1,0 +1,1754 @@
+{
+  "version": 1,
+  "key": "board:golden-edge",
+  "source": {
+    "kind": "board",
+    "projectId": "golden-edge",
+    "projectName": "Golden edge-grain board",
+    "designRevision": "2026-10-10T00:00:00.000Z"
+  },
+  "construction": "edge",
+  "units": "mm",
+  "finished": {
+    "length": 460,
+    "width": 251,
+    "thickness": 38
+  },
+  "phases": [
+    {
+      "key": "prepare",
+      "order": 1,
+      "title": "Prepare stock"
+    },
+    {
+      "key": "rip",
+      "order": 2,
+      "title": "Rip strips"
+    },
+    {
+      "key": "glue",
+      "order": 3,
+      "title": "Glue-up"
+    },
+    {
+      "key": "finish",
+      "order": 4,
+      "title": "Square and surface"
+    }
+  ],
+  "steps": [
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:walnut|472|56.2|42.5|0",
+          "quantity": 2
+        },
+        {
+          "partKey": "stock:maple|472|28.2|42.5|0",
+          "quantity": 3
+        },
+        {
+          "partKey": "stock:cherry|472|41.2|42.5|0",
+          "quantity": 1
+        },
+        {
+          "partKey": "stock:walnut|472|41.2|42.5|0",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Boards are free of checks and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "after",
+        "highlightPartKeys": [
+          "stock:walnut|472|56.2|42.5|0",
+          "stock:maple|472|28.2|42.5|0",
+          "stock:cherry|472|41.2|42.5|0",
+          "stock:walnut|472|41.2|42.5|0"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select stock",
+      "instruction": "Pull the rough boards for every species in the design and check each one for checks, wind, and loose knots.",
+      "key": "select-stock",
+      "phaseKey": "prepare",
+      "order": 1
+    },
+    {
+      "dependsOn": [
+        "select-stock"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:walnut|472|56.2|42.5|0",
+          "quantity": 2,
+          "consumed": true
+        },
+        {
+          "partKey": "stock:maple|472|28.2|42.5|0",
+          "quantity": 3,
+          "consumed": true
+        },
+        {
+          "partKey": "stock:cherry|472|41.2|42.5|0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "stock:walnut|472|41.2|42.5|0",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "stock:walnut|472|56.2|42.5|0/milled",
+          "quantity": 2
+        },
+        {
+          "partKey": "stock:maple|472|28.2|42.5|0/milled",
+          "quantity": 3
+        },
+        {
+          "partKey": "stock:cherry|472|41.2|42.5|0/milled",
+          "quantity": 1
+        },
+        {
+          "partKey": "stock:walnut|472|41.2|42.5|0/milled",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 39.5,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "reference-face",
+          "text": "Reference face is flat before planing",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cross-section",
+        "state": "after",
+        "highlightPartKeys": [
+          "stock:walnut|472|56.2|42.5|0/milled",
+          "stock:maple|472|28.2|42.5|0/milled",
+          "stock:cherry|472|41.2|42.5|0/milled",
+          "stock:walnut|472|41.2|42.5|0/milled"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "mill",
+      "title": "Mill stock",
+      "instruction": "Joint one face and one edge, then plane every board to the same milled thickness.",
+      "batch": {
+        "count": 7,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 39.5,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "mill",
+      "phaseKey": "prepare",
+      "order": 2
+    },
+    {
+      "dependsOn": [
+        "mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:walnut|472|56.2|42.5|0/milled",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "strip:e1",
+          "quantity": 1
+        },
+        {
+          "partKey": "strip:e7",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "strip:e1"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "strip:e1",
+          "strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "rip-1",
+        "rip-7"
+      ],
+      "kind": "cut",
+      "title": "Rip Walnut strips",
+      "instruction": "Rip the Walnut strips (S1, S7) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 2,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 56.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:walnut|50|0|56.2",
+      "phaseKey": "rip",
+      "order": 3
+    },
+    {
+      "dependsOn": [
+        "mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:maple|472|28.2|42.5|0/milled",
+          "quantity": 3,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "strip:e2",
+          "quantity": 1
+        },
+        {
+          "partKey": "strip:e4",
+          "quantity": 1
+        },
+        {
+          "partKey": "strip:e6",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 28.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 28.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "strip:e2"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "strip:e2",
+          "strip:e4",
+          "strip:e6"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "rip-2",
+        "rip-4",
+        "rip-6"
+      ],
+      "kind": "cut",
+      "title": "Rip Hard maple strips",
+      "instruction": "Rip the Hard maple strips (S2, S4, S6) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 3,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 28.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:maple|25|0|28.2",
+      "phaseKey": "rip",
+      "order": 4
+    },
+    {
+      "dependsOn": [
+        "mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:cherry|472|41.2|42.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "strip:e3",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "strip:e3"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "strip:e3"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "rip-3"
+      ],
+      "kind": "cut",
+      "title": "Rip Cherry strips",
+      "instruction": "Rip the Cherry strips (S3) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 41.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:cherry|38|0|41.2",
+      "phaseKey": "rip",
+      "order": 5
+    },
+    {
+      "dependsOn": [
+        "mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:walnut|472|41.2|42.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "strip:e5",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "strip:e5"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "strip:e5"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "rip-5"
+      ],
+      "kind": "cut",
+      "title": "Rip Walnut strips",
+      "instruction": "Rip the Walnut strips (S5) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 41.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:walnut|38|0|41.2",
+      "phaseKey": "rip",
+      "order": 6
+    },
+    {
+      "dependsOn": [
+        "rip:walnut|50|0|56.2",
+        "rip:maple|25|0|28.2",
+        "rip:cherry|38|0|41.2",
+        "rip:walnut|38|0|41.2"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "strip:e1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e3",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e4",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e5",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e6",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e7",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "mark-e1",
+          "text": "Write S1 on the Walnut strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e2",
+          "text": "Write S2 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e3",
+          "text": "Write S3 on the Cherry strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e4",
+          "text": "Write S4 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e5",
+          "text": "Write S5 on the Walnut strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e6",
+          "text": "Write S6 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e7",
+          "text": "Write S7 on the Walnut strip",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "strip:e1",
+          "strip:e2",
+          "strip:e3",
+          "strip:e4",
+          "strip:e5",
+          "strip:e6",
+          "strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "label",
+            "text": "Strip labels"
+          }
+        ]
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark the strips",
+      "instruction": "Write each strip label on its reference face so the design order survives handling.",
+      "key": "mark-strips",
+      "phaseKey": "rip",
+      "order": 7
+    },
+    {
+      "dependsOn": [
+        "mark-strips"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "strip:e1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e3",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e4",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e5",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e6",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "strip:e7",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "place-e1",
+          "text": "Position 1: S1",
+          "critical": false
+        },
+        {
+          "key": "place-e2",
+          "text": "Position 2: S2",
+          "critical": false
+        },
+        {
+          "key": "place-e3",
+          "text": "Position 3: S3",
+          "critical": false
+        },
+        {
+          "key": "place-e4",
+          "text": "Position 4: S4",
+          "critical": false
+        },
+        {
+          "key": "place-e5",
+          "text": "Position 5: S5",
+          "critical": false
+        },
+        {
+          "key": "place-e6",
+          "text": "Position 6: S6",
+          "critical": false
+        },
+        {
+          "key": "place-e7",
+          "text": "Position 7: S7",
+          "critical": false
+        },
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "strip:e1",
+          "strip:e2",
+          "strip:e3",
+          "strip:e4",
+          "strip:e5",
+          "strip:e6",
+          "strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Arrange and dry fit",
+      "instruction": "Lay the strips out in design order with reference faces up, then dry clamp to check the joints.",
+      "key": "dry-fit",
+      "phaseKey": "glue",
+      "order": 8
+    },
+    {
+      "dependsOn": [
+        "dry-fit"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "strip:e1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e2",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e3",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e4",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e5",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e6",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "strip:e7",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:golden-edge",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp",
+      "instruction": "Spread glue on each joint, assemble the strips in order, and clamp evenly.",
+      "key": "glue-up",
+      "phaseKey": "glue",
+      "order": 9
+    },
+    {
+      "dependsOn": [
+        "glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:golden-edge",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "panel:golden-edge"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the panel clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "glue-wait",
+      "phaseKey": "glue",
+      "order": 10
+    },
+    {
+      "dependsOn": [
+        "glue-wait"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:golden-edge",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-edge/ends-squared",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "length-before",
+          "label": "Panel length before trimming",
+          "target": 472,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "panel:golden-edge"
+        },
+        {
+          "key": "length",
+          "label": "Finished length",
+          "target": 460,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-edge/ends-squared"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "End trim"
+          }
+        ]
+      },
+      "cutIds": [
+        "trim-length"
+      ],
+      "kind": "cut",
+      "title": "Square the ends",
+      "instruction": "Trim both ends square to reach the finished length.",
+      "key": "trim-length",
+      "phaseKey": "finish",
+      "order": 11
+    },
+    {
+      "dependsOn": [
+        "trim-length"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "board:golden-edge/ends-squared",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-edge/squared",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "width-before",
+          "label": "Panel width before trimming",
+          "target": 279.4,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "board:golden-edge/ends-squared"
+        },
+        {
+          "key": "width",
+          "label": "Finished width",
+          "target": 251,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-edge/squared"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "board:golden-edge/ends-squared"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Edge trim"
+          }
+        ]
+      },
+      "cutIds": [
+        "trim-width"
+      ],
+      "kind": "cut",
+      "title": "Square the edges",
+      "instruction": "Trim both outside edges square to reach the finished width.",
+      "key": "trim-width",
+      "phaseKey": "finish",
+      "order": 12
+    },
+    {
+      "dependsOn": [
+        "trim-width"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "board:golden-edge/squared",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-edge/surfaced",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "start-thickness",
+          "label": "Thickness before surfacing",
+          "target": 39.5,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "board:golden-edge/squared"
+        },
+        {
+          "key": "thickness",
+          "label": "Finished thickness",
+          "target": 38,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-edge/surfaced"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cross-section",
+        "state": "after",
+        "highlightPartKeys": [
+          "board:golden-edge/surfaced"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "surface",
+      "title": "Surface to thickness",
+      "instruction": "Flatten and smooth both faces down to the finished thickness.",
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 38,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "surface",
+      "phaseKey": "finish",
+      "order": 13
+    },
+    {
+      "dependsOn": [
+        "surface"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "board:golden-edge/surfaced",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-edge",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "finish",
+          "name": "Finishing supplies",
+          "category": "finish"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "board:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "finish",
+      "title": "Finish the board",
+      "instruction": "Sand through the grits and apply food-safe finish.",
+      "key": "finish",
+      "phaseKey": "finish",
+      "order": 14
+    }
+  ],
+  "parts": [
+    {
+      "key": "stock:walnut|472|56.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "stock:walnut|472|56.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Walnut",
+      "name": "Walnut milled stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "stock:maple|472|28.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "stock:maple|472|28.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Hard maple",
+      "name": "Hard maple milled stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "stock:cherry|472|41.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Cherry",
+      "name": "Cherry rough stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "stock:cherry|472|41.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Cherry",
+      "name": "Cherry milled stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "stock:walnut|472|41.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "stock:walnut|472|41.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Walnut",
+      "name": "Walnut milled stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e1",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S1",
+      "name": "Walnut strip S1",
+      "speciesId": "walnut",
+      "sourceId": "e1",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e2",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S2",
+      "name": "Hard maple strip S2",
+      "speciesId": "maple",
+      "sourceId": "e2",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e3",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S3",
+      "name": "Cherry strip S3",
+      "speciesId": "cherry",
+      "sourceId": "e3",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e4",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S4",
+      "name": "Hard maple strip S4",
+      "speciesId": "maple",
+      "sourceId": "e4",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e5",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S5",
+      "name": "Walnut strip S5",
+      "speciesId": "walnut",
+      "sourceId": "e5",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e6",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S6",
+      "name": "Hard maple strip S6",
+      "speciesId": "maple",
+      "sourceId": "e6",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "strip:e7",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S7",
+      "name": "Walnut strip S7",
+      "speciesId": "walnut",
+      "sourceId": "e7",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:golden-edge",
+      "kind": "panel",
+      "stage": "glued",
+      "label": "P1",
+      "name": "Glued panel",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 472,
+        "width": 279.4,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "board:golden-edge/ends-squared",
+      "kind": "board",
+      "stage": "cut",
+      "label": "B1",
+      "name": "Board with squared ends",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 460,
+        "width": 279.4,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "board:golden-edge/squared",
+      "kind": "board",
+      "stage": "cut",
+      "label": "B1",
+      "name": "Squared board",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 460,
+        "width": 251,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "board:golden-edge/surfaced",
+      "kind": "board",
+      "stage": "surfaced",
+      "label": "B1",
+      "name": "Surfaced board",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 460,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "board:golden-edge",
+      "kind": "board",
+      "stage": "finished",
+      "label": "B1",
+      "name": "Finished board",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 460,
+        "width": 251,
+        "thickness": 38
+      }
+    }
+  ],
+  "assemblies": [
+    {
+      "key": "assembly:panel",
+      "label": "P1",
+      "name": "Glued panel",
+      "partKeys": [
+        "strip:e1",
+        "strip:e2",
+        "strip:e3",
+        "strip:e4",
+        "strip:e5",
+        "strip:e6",
+        "strip:e7",
+        "panel:golden-edge"
+      ],
+      "stepKeys": [
+        "dry-fit",
+        "glue-up",
+        "glue-wait"
+      ],
+      "parentKey": "assembly:board"
+    },
+    {
+      "key": "assembly:board",
+      "label": "B1",
+      "name": "Finished board",
+      "partKeys": [
+        "board:golden-edge"
+      ],
+      "stepKeys": [
+        "trim-length",
+        "trim-width",
+        "surface",
+        "finish"
+      ]
+    }
+  ],
+  "requirements": {
+    "stock": [
+      {
+        "key": "walnut|472|56.2|42.5|0",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 2,
+        "length": 472,
+        "width": 56.2,
+        "thickness": 42.5,
+        "boardFeet": 0.9555063948273128,
+        "partKey": "stock:walnut|472|56.2|42.5|0"
+      },
+      {
+        "key": "maple|472|28.2|42.5|0",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 3,
+        "length": 472,
+        "width": 28.2,
+        "thickness": 42.5,
+        "boardFeet": 0.7191800800924436,
+        "partKey": "stock:maple|472|28.2|42.5|0"
+      },
+      {
+        "key": "cherry|472|41.2|42.5|0",
+        "speciesId": "cherry",
+        "speciesName": "Cherry",
+        "quantity": 1,
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5,
+        "boardFeet": 0.35023899881570547,
+        "partKey": "stock:cherry|472|41.2|42.5|0"
+      },
+      {
+        "key": "walnut|472|41.2|42.5|0",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 1,
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5,
+        "boardFeet": 0.35023899881570547,
+        "partKey": "stock:walnut|472|41.2|42.5|0"
+      }
+    ],
+    "cuts": [
+      {
+        "id": "rip-1",
+        "label": "Rip strip 1",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-2",
+        "label": "Rip strip 2",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-3",
+        "label": "Rip strip 3",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-4",
+        "label": "Rip strip 4",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-5",
+        "label": "Rip strip 5",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-6",
+        "label": "Rip strip 6",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "rip-7",
+        "label": "Rip strip 7",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "trim-length",
+        "label": "Square both ends",
+        "stage": "trim",
+        "quantity": 1
+      },
+      {
+        "id": "trim-width",
+        "label": "Square outside edges",
+        "stage": "trim",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      {
+        "key": "measuring",
+        "name": "Tape measure and calipers",
+        "category": "measuring"
+      },
+      {
+        "key": "jointer",
+        "name": "Jointer",
+        "category": "jointer"
+      },
+      {
+        "key": "planer",
+        "name": "Thickness planer",
+        "category": "planer"
+      },
+      {
+        "key": "table-saw",
+        "name": "Table saw",
+        "category": "table-saw"
+      },
+      {
+        "key": "marking",
+        "name": "Pencil and marking knife",
+        "category": "marking"
+      },
+      {
+        "key": "clamps",
+        "name": "Bar clamps",
+        "category": "clamps"
+      },
+      {
+        "key": "glue",
+        "name": "Wood glue",
+        "category": "glue"
+      },
+      {
+        "key": "finish",
+        "name": "Finishing supplies",
+        "category": "finish"
+      }
+    ],
+    "consumables": [
+      "Wood glue",
+      "Food-safe finish",
+      "Sandpaper"
+    ]
+  },
+  "warnings": [],
+  "revision": "r-125955446d6e7c"
+}

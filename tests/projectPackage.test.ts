@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { starterData } from '../src/data'
 import { normalizeData } from '../src/storage'
-import { buildProjectPackage, mergeProjectPackage, PROJECT_PACKAGE_KIND, readProjectPackage } from '../src/projectPackage'
+import { buildProjectPackage, mergeProjectPackage, PROJECT_PACKAGE_KIND, projectPackageFileName, readProjectPackage } from '../src/projectPackage'
 import type { AtlasData, BoardProject, CompositeBoard, WoodSpecies } from '../src/types'
 
 const NOW = '2026-10-10T12:00:00.000Z'
@@ -201,5 +201,23 @@ describe('mergeProjectPackage', () => {
     expect(data.shops).toEqual(snapshot.shops)
     expect(data.pricing).toEqual(snapshot.pricing)
     expect(data.allowances).toEqual(snapshot.allowances)
+  })
+})
+
+describe('projectPackageFileName', () => {
+  it('names the file after the project with the package extension', () => {
+    const pkg = buildProjectPackage(workspace(), { type: 'board', id: 'b1' }, NOW)!
+    expect(projectPackageFileName(pkg)).toBe('Board b1.sawdust-project.json')
+    const composite = buildProjectPackage(workspace(), { type: 'composite', id: 'c1' }, NOW)!
+    expect(projectPackageFileName(composite)).toBe('Composite c1.sawdust-project.json')
+  })
+
+  it('strips path separators and falls back when the name is empty', () => {
+    const pkg = buildProjectPackage(workspace(), { type: 'board', id: 'b1' }, NOW)!
+    if (pkg.project.type !== 'board') throw new Error('expected board')
+    pkg.project.board = { ...pkg.project.board, name: '../my:board/?' }
+    expect(projectPackageFileName(pkg)).toBe('-my-board--.sawdust-project.json')
+    pkg.project.board = { ...pkg.project.board, name: '   ' }
+    expect(projectPackageFileName(pkg)).toBe('project.sawdust-project.json')
   })
 })

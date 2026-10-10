@@ -245,13 +245,13 @@ describe('validatePlan rules', () => {
   })
 
   describe('dimension-in-prose', () => {
-    it.each(['Cut to 30 mm', 'Plane to 22mm', 'About 2.5 cm', 'Set 45°', 'Tilt to 45 deg', 'Make it 3/4 in.', 'Trim to 12"', 'Leave 1 inch'])('flags %s in an instruction', text => {
+    it.each(['Cut to 30 mm', 'Plane to 22mm', 'About 2.5 cm', 'Set 45°', 'Tilt to 45 deg', 'Make it 3/4 in.', 'Trim to 12"', 'Leave 1 inch', 'Make it 12 in wide', 'Keep it 1 in thick'])('flags %s in an instruction', text => {
       expectIssue(mutate(p => { stepOf(p, 'rip').instruction = text }), 'dimension-in-prose', { stepKey: 'rip' })
     })
     it('flags a title', () => {
       expectIssue(mutate(p => { stepOf(p, 'rip').title = 'Rip to 30 mm' }), 'dimension-in-prose', { stepKey: 'rip' })
     })
-    it.each(['Step 2 in the sequence', 'Mark the 3 strips', 'Use the mm scale', 'Pass 2 times', 'Check the machine setup'])('does not flag %s', text => {
+    it.each(['Step 2 in the sequence', 'Mark the 3 strips', 'Use the mm scale', 'Pass 2 times', 'Do 3 in order', 'Check the machine setup'])('does not flag %s', text => {
       expect(issuesOf(mutate(p => { stepOf(p, 'rip').instruction = text }), 'dimension-in-prose')).toEqual([])
     })
   })

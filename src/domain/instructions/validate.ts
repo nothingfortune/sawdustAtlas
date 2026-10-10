@@ -11,9 +11,16 @@ import type { WarningSeverity } from '../workspaceWarnings'
 /** Kinds that observe or position material without producing a new part. */
 const OUTPUTLESS_KINDS: readonly OperationKind[] = ['wait', 'mark', 'dry-fit']
 
-// A number followed by a unit. `in` only counts when not followed by a word ("2 in the
-// list"), so ordinary prose is not flagged.
-const DIMENSION_IN_PROSE = /(?:\d+\/\d+|\d+(?:[.,]\d+)?)\s*(?:mm(?![A-Za-z])|cm(?![A-Za-z])|in(?![A-Za-z])(?!\s+[A-Za-z])|inch(?:es)?(?![A-Za-z])|deg(?:rees?)?(?![A-Za-z])|["”″°])/i
+// A number followed by a unit. `in` is also an ordinary preposition, so it only counts
+// when the next word is not a common function word ("2 in the list", "3 in order"); a
+// real dimension such as "12 in wide" is still flagged.
+const DIMENSION_IN_PROSE = new RegExp(
+  '(?:\\d+\\/\\d+|\\d+(?:[.,]\\d+)?)\\s*(?:' +
+    'mm(?![A-Za-z])|cm(?![A-Za-z])|' +
+    'in(?![A-Za-z])(?!\\s+(?:the|a|an|this|that|these|those|each|every|order|sequence|turn|total|case|your|its|their|any|all|one)\\b)|' +
+    'inch(?:es)?(?![A-Za-z])|deg(?:rees?)?(?![A-Za-z])|["\u201d\u2033\u00b0])',
+  'i',
+)
 
 function compareKeys(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0

@@ -63,7 +63,7 @@ test.describe('data safety', () => {
     await expect(page.getByRole('button', { name: STARTER_BOARD })).toBeVisible()
     await expect(page.getByRole('button', { name: /Heirloom board/ })).toHaveCount(0)
 
-    await page.locator('input[type=file]').setInputFiles(backupPath)
+    await page.getByLabel('Backup file').setInputFiles(backupPath)
     const summary = page.locator('.import-dialog')
     await expect(summary).toBeVisible()
     await expect(summary).toContainText('Imported 1 shop, 1 board, and 0 composites')
@@ -91,7 +91,7 @@ test.describe('data safety', () => {
       boards: [{ id: 'imp', name: 'Replacement board', construction: 'edge', strips: [] }],
       composites: [],
     }
-    await page.locator('input[type=file]').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) })
+    await page.getByLabel('Backup file').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) })
     const summary = page.locator('.import-dialog')
     await expect(summary).toContainText('Imported 1 shop, 1 board')
     await summary.getByRole('button', { name: 'Done' }).click()

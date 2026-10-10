@@ -342,7 +342,7 @@ export default function App() {
           {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
         </section>
       </main>
-      <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+      <input ref={importRef} type="file" accept="application/json" hidden aria-label="Backup file" onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
       {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
       {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
       <BuildBadge />

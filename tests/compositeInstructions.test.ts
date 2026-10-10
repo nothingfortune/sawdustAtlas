@@ -177,6 +177,10 @@ describe('composite failure cases', () => {
     expect(plan.warnings.some(w => w.id === 'composite-no-rows' && w.severity === 'error')).toBe(true)
     expect(plan.steps.some(s => s.key === 'final-glue-up')).toBe(false)
     expect(plan.parts.filter(p => p.kind === 'wafer')).toHaveLength(9)
+    // Panel assemblies must not point at a board assembly that was never created.
+    expect(plan.assemblies.some(a => a.key === 'assembly:board')).toBe(false)
+    expect(plan.assemblies.filter(a => a.parentKey !== undefined)).toEqual([])
+    expect(validatePlan(plan).ok).toBe(true)
   })
 
   it('a panel that yields no wafers warns and produces no cut step', () => {

@@ -274,6 +274,9 @@ export const generateCompositeInstructionPlan: InstructionGenerator<CompositeBoa
   return finishPlan()
 
   function finishPlan(): InstructionPlan {
+    // Without placed wafers there is no board assembly, so panels must not name it as a parent.
+    const hasBoardAssembly = assemblies.some(assembly => assembly.key === boardAssemblyKey)
+    const finalAssemblies = hasBoardAssembly ? assemblies : assemblies.map(({ parentKey: _parentKey, ...rest }) => rest)
     return withRevision({
       version: INSTRUCTION_PLAN_VERSION,
       key: `composite:${composite.id}`,
@@ -284,7 +287,7 @@ export const generateCompositeInstructionPlan: InstructionGenerator<CompositeBoa
       phases: b.phases,
       steps: b.steps,
       parts: b.parts,
-      assemblies,
+      assemblies: finalAssemblies,
       requirements: { stock, cuts, tools: b.tools(), consumables: [...consumables] },
       warnings,
     })

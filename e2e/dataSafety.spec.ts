@@ -66,7 +66,7 @@ test.describe('data safety', () => {
     await page.getByLabel('Backup file').setInputFiles(backupPath)
     const summary = page.locator('.import-dialog')
     await expect(summary).toBeVisible()
-    await expect(summary).toContainText('Imported 1 shop, 1 board, and 0 composites')
+    await expect(summary).toContainText('Imported 1 shop, 1 board, 0 composites, and 0 furniture projects')
     await summary.getByRole('button', { name: 'Done' }).click()
     await expect(summary).toHaveCount(0)
 

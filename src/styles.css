@@ -686,11 +686,11 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .template-choice small { font-size:12px; color:#737970; line-height:1.35; }
 .template-params { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:0 12px; margin-top:6px; }
 .field-error { color:#9c3f2f; font-size:12px; }
+.field > label { font:13px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#777d76; }
 .furniture-designer { display:flex; flex-direction:column; height:calc(100vh - 63px); }
 .furniture-header { display:flex; align-items:center; flex-wrap:wrap; gap:12px 16px; padding:11px 20px; background:var(--paper); border-bottom:1px solid var(--line); }
 .furniture-header h2 { margin:0; font-size:18px; }
 .furniture-size, .furniture-parts, .furniture-issue-count { font:13px 'DM Mono'; color:#6d786f; }
-.furniture-empty-center { flex:1; display:grid; place-items:center; color:#7b827a; background:#e9e7df; }
 @media (pointer: coarse) {
   .furniture-card-actions .icon-button { width:44px; height:44px; }
   .furniture-card-open { padding-bottom:62px; }
@@ -721,3 +721,61 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 @container (max-width: 960px) {
   .topbar-actions .backup-button:has(.lucide-undo-2, .lucide-redo-2) { font-size:0; gap:0; }
 }
+.visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.furniture-name { flex:1 1 220px; max-width:360px; }
+.furniture-name .field { margin-top:0; }
+.furniture-name input { font-weight:700; font-size:16px; }
+.furniture-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(260px,320px) minmax(0,1fr) minmax(260px,330px); }
+.furniture-left, .furniture-right { background:#f8f6f0; overflow-y:auto; min-height:0; }
+.furniture-left { border-right:1px solid var(--line); }
+.furniture-right { border-left:1px solid var(--line); padding:16px 16px 24px; }
+.furniture-center { background:#e9e7df; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:24px; text-align:center; color:#4f574f; }
+.furniture-center p { margin:2px 0; }
+.furniture-tabs { display:flex; border-bottom:1px solid var(--line); position:sticky; top:0; background:#f8f6f0; z-index:1; }
+.furniture-tabs button { flex:1; min-height:44px; border:0; border-bottom:3px solid transparent; background:transparent; font-weight:600; font-size:14px; }
+.furniture-tabs button.active { border-bottom-color:var(--green); color:var(--green); }
+.furniture-tabpanel { padding:14px 14px 24px; }
+.part-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
+.part-actions .button { min-height:44px; padding:8px 6px; font-size:13px; }
+.part-group h4 { margin:14px 0 6px; font:12px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#737970; }
+.part-group ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+.part-row { width:100%; min-height:44px; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; border:1px solid var(--line); background:white; padding:7px 10px; border-radius:2px; }
+.part-row small { font:12px 'DM Mono'; color:#737970; }
+.part-row.selected { border:2px solid var(--green); background:#eef2ea; padding:6px 9px; }
+.part-row-issue { display:inline-flex; align-items:center; gap:4px; }
+.part-row-issue.error { color:#9c3f2f; }
+.part-row-issue.warning { color:#8a5a14; }
+.panel-hint { font-size:13px; line-height:1.45; color:#737970; margin:0 0 12px; }
+.panel-hint code, .furniture-center code { font:12px 'DM Mono'; background:#ece9e1; padding:1px 5px; border-radius:3px; }
+.part-inspector h3 { margin:0 0 4px; font-size:16px; }
+.part-issues { list-style:none; margin:8px 0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:13px; }
+.part-issues li { display:flex; gap:6px; align-items:flex-start; padding:6px 8px; border:1px solid currentColor; }
+.part-issues li.error { color:#9c3f2f; border-style:solid; }
+.part-issues li.warning { color:#8a5a14; border-style:dashed; }
+.part-issues li span { color:var(--ink); }
+.field select { min-height:40px; }
+.field-group .field { margin-top:10px; }
+.dim-input-row { display:flex; align-items:center; gap:6px; }
+.dim-input-row input { flex:1; min-width:0; }
+.dim-fx { font:italic 700 13px 'DM Mono'; color:#3d5d6b; background:#dfe5e8; padding:6px 7px; border-radius:2px; }
+.dim-field input[aria-invalid="true"] { border-color:#9c3f2f; box-shadow:inset 0 0 0 1px #9c3f2f; }
+.dim-field input:disabled { background:#efede6; color:#4f574f; }
+.dim-evaluated, .dim-driver { font:12px 'DM Mono'; color:#4f574f; }
+.material-row { display:flex; align-items:center; gap:8px; }
+.material-row select { flex:1; min-width:0; }
+.swatch { width:24px; height:24px; border:1px solid #0003; border-radius:3px; flex:none; }
+.face-picks { border:0; padding:0; margin:14px 0 0; display:grid; grid-template-columns:1fr 1fr; gap:2px 12px; }
+.face-picks legend { padding:0; margin-bottom:4px; }
+.face-pick { display:flex; align-items:center; gap:8px; min-height:44px; font-size:14px; }
+.face-pick input { width:20px; height:20px; }
+.color-field input[type=color] { width:56px; min-height:44px; padding:3px; }
+.parameter-list, .sheet-list { list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:12px; }
+.parameter-row, .sheet-row { border:1px solid var(--line); background:white; padding:4px 12px 12px; display:flex; flex-direction:column; align-items:stretch; }
+.parameter-row > .button, .sheet-row > .button { margin-top:10px; align-self:flex-start; min-height:44px; }
+.parameter-issue { display:flex; gap:6px; align-items:flex-start; font-size:13px; margin:8px 0 0; }
+.parameter-issue.error { color:#9c3f2f; }
+.parameter-issue.warning { color:#8a5a14; }
+.furniture-settings-panel h4 { margin:0 0 6px; font:12px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#737970; }
+.furniture-settings-panel section + section { margin-top:22px; }
+.furniture-parameters-panel > .button, .furniture-settings-panel > section > .button { min-height:44px; }
+@media(max-width:1100px){ .furniture-body { grid-template-columns:minmax(230px,270px) minmax(0,1fr) minmax(230px,280px); } }

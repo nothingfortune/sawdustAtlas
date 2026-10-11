@@ -1,3 +1,5 @@
+# A fixed project name, so every checkout and worktree manages the same preview container.
+name: sawdust-atlas
 services:
   sawdust-atlas:
     build:

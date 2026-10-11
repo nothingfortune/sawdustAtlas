@@ -1,6 +1,6 @@
 import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { assembledSize, compositeCutPlan, materialBySpecies, stockBySpecies } from '../../domain/compositeBoard'
-import { formatDimensions, formatNumber } from '../../domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatNumber } from '../../domain/lengthUnits'
 import { calculatePrice, classifyComposite, materialCost } from '../../domain/pricing'
 import { PriceBreakdownCard } from '../board/PriceBreakdownCard'
 import { useUnitSystem } from '../unitSystem'
@@ -23,17 +23,22 @@ export function CompositeSummary({ composite, boards, woods, pricing }: Composit
   const estimatedCost = stock.reduce((sum, s) => sum + materialCost(s.boardFeet, woodById.get(s.speciesId)?.pricePerBoardFoot ?? 0), 0)
   const totalBoardFeet = stock.reduce((sum, s) => sum + s.boardFeet, 0)
   const price = calculatePrice({ materialCost: estimatedCost, roughBoardFeet: totalBoardFeet, construction: composite.construction, tier: classifyComposite(), pricing })
+  // Until a wafer is placed there is no board to price: labor, consumables, and the floor
+  // would otherwise quote a full price for a 0 × 0 × 0 board.
+  const priced = finished.length > 0
 
   return (
     <section className="composite-summary" aria-label="Build summary">
       <h3>Build sheet</h3>
       <dl className="summary-stats">
         <div><dt>Finished size</dt><dd>{formatDimensions([size.lengthMm, size.widthMm, size.thicknessMm], lengthUnit)}</dd></div>
-        <div><dt>Material estimate</dt><dd>${estimatedCost.toFixed(2)}</dd></div>
-        <div><dt>Price</dt><dd>${price.total.toFixed(2)}</dd></div>
+        <div><dt>Material estimate</dt><dd>{priced ? `$${estimatedCost.toFixed(2)}` : '—'}</dd></div>
+        <div><dt>Price</dt><dd>{priced ? `$${price.total.toFixed(2)}` : '—'}</dd></div>
       </dl>
 
-      <PriceBreakdownCard price={price} roughBoardFeet={totalBoardFeet} construction={composite.construction}/>
+      {priced
+        ? <PriceBreakdownCard price={price} roughBoardFeet={totalBoardFeet} construction={composite.construction}/>
+        : <p className="muted small">Place wafers to see the material estimate and price.</p>}
 
       <h4>Material by species</h4>
       <div className="plan-table">
@@ -54,7 +59,7 @@ export function CompositeSummary({ composite, boards, woods, pricing }: Composit
       <h4>Cut plan</h4>
       {cutPlan.stages.map(stage => (
         <div key={stage.boardId} className="cut-stage">
-          <ol>{stage.steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
+          <ol>{stage.steps.map((step, i) => <li key={i}>{convertMetricText(step, lengthUnit)}</li>)}</ol>
         </div>
       ))}
     </section>

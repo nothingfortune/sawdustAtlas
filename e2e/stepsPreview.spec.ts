@@ -71,3 +71,12 @@ test('an end-grain board shows a crosscut batch step and a slice-marking step', 
   await expect(marking).toBeVisible()
   await expect(marking).toContainText(/slice letter/i)
 })
+
+test('a fence setting and its re-check read as one line, and repeated parts are counted', async ({ page }) => {
+  await openSteps(page)
+  const rip = page.locator('.steps-step[data-step-kind="cut"]').first()
+  await expect(rip.locator('.steps-setup li').filter({ hasText: 'Fence to blade' })).toContainText('verify before')
+  await expect(rip.locator('.steps-measurements li').filter({ hasText: 'Fence to blade' })).toHaveCount(0)
+  const select = page.locator('.steps-step[data-step-kind="select-stock"]').first()
+  await expect(select.locator('.steps-outputs')).toContainText('Walnut ×2')
+})

@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
 // interaction (tap-vs-drag disambiguation, drag state, the composite assembly desk);
 // the rest (keyboard shortcuts, dialogs, layout text order, imports…) don't exercise
 // touch semantics and would just double the run for no signal.
-const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts']
+const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts', '**/boardWorkflow.spec.ts', '**/shopWorkflow.spec.ts']
 
 // E2E_PORT lets several checkouts (git worktrees) run the suite side by side without
 // one run silently reusing another checkout's dev server. Defaults to Vite's 5173.
@@ -20,6 +20,7 @@ const port = Number(process.env.E2E_PORT ?? 5173)
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/prod/**', // production-build specs run via playwright.prod.config.ts
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

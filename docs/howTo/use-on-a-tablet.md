@@ -6,6 +6,14 @@ Pick the option that fits you. The first is the simplest. The third gives you a 
 
 ---
 
+## Why a "Limited bench mode" notice appears
+
+Browsers only allow offline use and keeping the screen awake on a secure address, one that starts with `https://` (or the computer's own `localhost`). If you open SawdustAtlas on a plain `http://` network address such as Option 1 below, it still works for designing and saving projects, but it shows a "Limited bench mode" notice explaining that offline use and keep-awake are switched off. You can dismiss the notice, and it stays dismissed on that device. To remove the limits, use Option 3 for a secure address.
+
+On a secure address, SawdustAtlas also asks the browser once to keep your saved projects from being cleared automatically when the device runs low on space.
+
+---
+
 ## Option 1 — Open the computer's network address (simplest)
 
 On the tablet, open a browser and go to `http://<computer-ip>:8080`, replacing `<computer-ip>` with the host computer's private network address.

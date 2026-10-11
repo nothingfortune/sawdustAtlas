@@ -46,7 +46,7 @@ export function FurniturePrint({ project, resolved, list, plan }: {
     </section>
     <section className="furniture-print-section" aria-label="Cut list">
       <h2>Cut list</h2>
-      <FurnitureCutList list={list} />
+      <FurnitureCutList list={list} joints={project.joints} />
     </section>
     <section className="furniture-print-section furniture-print-steps" aria-label="Build steps">
       <h2>Build steps</h2>

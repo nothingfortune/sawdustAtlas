@@ -41,7 +41,7 @@ export function FurnitureOutputs({ project, resolved, woods, boards, allowances 
         <button type="button" className="button secondary" onClick={() => window.print()}><Printer size={15} />Print</button>
       </div>
       {open && <div role="tabpanel" id={`furniture-output-${open}`} aria-labelledby={`furniture-output-tab-${open}`} className="furniture-bottom-panel">
-        {open === 'cut-list' ? <FurnitureCutList list={list} /> : <FurnitureSteps plan={plan} validation={validation} />}
+        {open === 'cut-list' ? <FurnitureCutList list={list} joints={project.joints} /> : <FurnitureSteps plan={plan} validation={validation} />}
       </div>}
     </section>
     <FurniturePrint project={project} resolved={resolved} list={list} plan={plan} />

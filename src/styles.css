@@ -250,7 +250,9 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .row-rail { flex:none; width:32px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
 .row-grip { color:#9a9d94; display:grid; place-items:center; }
 .row-body { flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:0; background:#cfd2cb; border:1px solid #b9bdb3; position:relative; cursor:pointer; }
-.row-empty-hint { font:13px 'DM Mono'; color:#7a8079; padding:10px; }
+.row-empty-hint { font:13px 'DM Mono'; color:#7a8079; padding:5px 10px; text-align:center; }
+/* An empty row is only 28 px tall; let it grow when its hint wraps on a narrow desk. */
+.row-body:has(> .row-empty-hint) { min-height:fit-content; }
 .desk-wafer { position:relative; flex:none; touch-action:none; cursor:grab; }
 .desk-wafer.dragging { opacity:.4; }
 .desk-wafer svg { display:block; width:100%; height:100%; }
@@ -624,7 +626,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .steps-setup, .steps-measurements { list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:13px; }
 .steps-setup li, .steps-measurements li { display:flex;flex-wrap:wrap;align-items:baseline;gap:8px; }
 .steps-setup b, .steps-measurements b { font:13px 'DM Mono'; }
-.steps-measurements small { font:11px 'DM Mono';color:#737970; }
+.steps-setup small, .steps-measurements small { font:11px 'DM Mono';color:#737970; }
 .steps-assumption { font-size:12px;color:#9a6242; }
 .steps-outputs { display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#737970; }
 .steps-outputs code { font:12px 'DM Mono';background:#ece9e1;border-radius:3px;padding:1px 6px;color:var(--ink); }
@@ -633,3 +635,25 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .connection-notice { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin:10px 16px 0; padding:10px 14px; background:#fbf3e4; border:1px solid var(--orange); border-radius:6px; font-size:14px; line-height:1.4; }
 .connection-notice ul { margin:6px 0; padding-left:18px; }
 .connection-notice a { color: var(--focus-ring); }
+
+/* Header fit. The designer toolbar row grows instead of clipping its eyebrow and the
+   finished size (imperial sizes are longer); its buttons still fold their labels onto
+   two lines when space runs short, as before. The top bar sizes against its own width,
+   which changes with the sidebar: when it runs short, routine labels (saved, undo,
+   redo, export) drop to their icons. Their accessible names stay the same, and the
+   not-saved error always keeps its words. */
+.board-layout, .designer-layout { grid-template-rows:auto 1fr; }
+.designer-toolbar { min-height:72px; gap:16px; }
+.designer-toolbar > div:first-child { flex:none; }
+.toolbar-finished-size b { white-space:nowrap; }
+.toolbar-actions .button svg { flex:none; }
+.topbar { container-type:inline-size; gap:16px; }
+.breadcrumb { min-width:0; white-space:nowrap; }
+.breadcrumb strong { overflow:hidden; text-overflow:ellipsis; }
+.save-state, .backup-button { white-space:nowrap; }
+@container (max-width: 1180px) {
+  .save-state:not(.save-state-error), .topbar-actions .backup-button:last-child { font-size:0; gap:0; }
+}
+@container (max-width: 960px) {
+  .topbar-actions .backup-button:has(.lucide-undo-2, .lucide-redo-2) { font-size:0; gap:0; }
+}

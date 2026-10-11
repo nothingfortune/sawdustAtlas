@@ -41,7 +41,7 @@ test.describe('project package', () => {
 
   test('exports a composite and imports it back with its panels', async ({ page }) => {
     await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
-    await page.getByRole('button', { name: 'Make a composite board from this design' }).click()
+    await page.getByRole('button', { name: 'Make composite: build a composite board from this design' }).click()
     const screen = page.locator('.composite-screen')
     await expect(screen).toBeVisible()
     const name = await screen.getByLabel('Composite name').inputValue()

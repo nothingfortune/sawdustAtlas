@@ -289,10 +289,14 @@ export default function App() {
     else if (location.view === 'woods') setView('woods')
   }
 
+  // Accessible names start with the visible label (WCAG 2.5.3) so a voice-control user can
+  // say what they see.
+  const prestonLabel = lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'
+
   return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
     <div className="app-shell">
       <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
-        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
+        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Sawdust Atlas, go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
         <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
         <nav>
           <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
@@ -319,8 +323,8 @@ export default function App() {
             {saveOk
               ? <div className="save-state" role="status" aria-live="polite" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
               : <div className="save-state save-state-error" role="status" aria-live="polite" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
-            <button className="backup-button" onClick={toggleLengthUnit} aria-label={`Preston's button — toggle measurement units (currently ${lengthUnit})`} title="Toggle imperial / metric units">
-              <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'}
+            <button className="backup-button" onClick={toggleLengthUnit} aria-label={`${prestonLabel}: Preston's button, switches measurement units (currently ${lengthUnit})`} title="Toggle imperial / metric units">
+              <Ruler size={15} />{prestonLabel}
             </button>
             <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
             <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>

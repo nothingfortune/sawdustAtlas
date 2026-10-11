@@ -385,7 +385,7 @@ export default function App() {
           {view === 'furniture' && (() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
-              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
               : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
           })()}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}

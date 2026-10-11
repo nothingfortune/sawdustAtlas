@@ -3,6 +3,31 @@
 Prioritized from a four-track review (domain, UI/state, infra/CI, docs/DX).
 Severity: **P0** fix now · **P1** soon · **P2** when convenient.
 
+## User testing on develop (2026-10-10)
+
+Found by using the merged instruction platform wave 1 in the Docker build as a first-time user, at desktop widths, in imperial, offline, and through print.
+
+Fixed:
+
+- [x] A first-time visitor saw "My workshop: 2 objects overlap a blocked floor zone." on the sample data, and the single-object message read "1 object overlap" (#124).
+- [x] Imperial tolerances in the build steps preview read "± 0 in" because they snapped like lengths (#125).
+- [x] Four controls' accessible names omitted their visible label (brand, Preston's Button, Make composite, Tap to enlarge), so voice control could not reach them (WCAG 2.5.3). An e2e guard now scans every screen (#126).
+- [x] The steps preview listed each fence setting twice and repeated "Walnut, Hard maple, Walnut…"; its label keys caused the React duplicate-key warnings in dev (#127).
+- [x] An empty composite quoted $188.00 for a 0 × 0 × 0 board (#128).
+- [x] In imperial at laptop widths the designer toolbar clipped the finished size and the top bar wrapped its labels (#129).
+- [x] `pnpm container` and the post-merge hook did nothing from WSL, the build badge read "unknown · build 0", and a second checkout collided with the first one's container (#130).
+
+Needs a decision:
+
+- [ ] **Imperial entry snaps to the nearest 1/2 inch** (Preston's Button, `snapLengthMm`, deliberate). A 5/8 or 3/4 inch strip cannot be entered in imperial: 1 5/8 becomes 1 1/2. Woodworkers who think in inches will hit this on most boards. Options: snap to 1/16 or 1/32 (inputs may need to be wider), or snap only the display and keep the entered value.
+- [ ] **Price uses rough board feet; the buy list uses purchased board feet.** For the sample board the material estimate prices 2.86 bf while the build sheet's buy list totals 4.38 bf of whole boards. Decide which one the material cost should follow (ties into RB2, the pricing split).
+- [ ] **Composites have no print path.** The board designer prints a build sheet; the composite designer has no Print button and the print stylesheet does not cover it. The wave 2 Bench Sheet (instruction platform spec) is the planned home for printing every project type.
+- [ ] **Golden plans need a hand-check against a real build** (edge grain, end grain, composite, and the furniture table and bookcase) before strategy Phase 2 exits.
+
+Watch:
+
+- [ ] The main bundle grew from 417 kB to 450 kB with the 2026-10-10 dependency updates (React 19.3, lucide-react 1.52). Worth a bundle visualizer pass before the friend beta.
+
 ## P0 — security & CI enforcement
 
 - [x] **Fix Docker Scout on PRs/develop** — DONE by replacement: both Scout steps removed;

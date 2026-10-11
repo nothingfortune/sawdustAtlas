@@ -89,6 +89,9 @@ jobs:
       - name: Run e2e tests
         run: pnpm test:e2e
 
+      - name: Run production-build offline e2e tests
+        run: pnpm test:e2e:prod
+
   docker-verify:
     name: Docker verify
     runs-on: ubuntu-latest

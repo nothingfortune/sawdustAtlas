@@ -85,9 +85,9 @@ export function PartInspector({ project, resolved, issues, part, woods, onChange
     {part.kind === 'hardware' && <TextField label="Hardware name" value={part.hardwareName ?? ''} onCommit={value => { edit({ hardwareName: value.trim() }); return null }} />}
 
     <div className="field-group">
-      <DimInput label="Length" value={part.length} scope={scope} positive onCommit={value => edit({ length: value })} />
-      <DimInput label="Width" value={part.width} scope={scope} positive onCommit={value => edit({ width: value })} />
-      <DimInput label="Thickness" value={part.thickness} scope={scope} positive onCommit={value => edit({ thickness: value })} />
+      <DimInput label="Length" focusKey="part:length" value={part.length} scope={scope} positive onCommit={value => edit({ length: value })} />
+      <DimInput label="Width" focusKey="part:width" value={part.width} scope={scope} positive onCommit={value => edit({ width: value })} />
+      <DimInput label="Thickness" focusKey="part:thickness" value={part.thickness} scope={scope} positive onCommit={value => edit({ thickness: value })} />
     </div>
 
     <div className="field"><label htmlFor="part-orientation">Orientation</label>
@@ -103,7 +103,7 @@ export function PartInspector({ project, resolved, issues, part, woods, onChange
           return <DimInput key={axis} label={`Position ${axis.toUpperCase()}`} value={resolvedPart ? resolvedPart.box[axis] : 0} scope={scope} disabled
             note={<small className="dim-driver">Driven by: {describeRelationship(project, driver)}</small>} onCommit={NO_EDIT} />
         }
-        return <DimInput key={axis} label={`Position ${axis.toUpperCase()}`} value={part.position[axis]} scope={scope} onCommit={value => setPosition(axis, value)} />
+        return <DimInput key={axis} label={`Position ${axis.toUpperCase()}`} focusKey={`part:position.${axis}`} value={part.position[axis]} scope={scope} onCommit={value => setPosition(axis, value)} />
       })}
     </div>
 

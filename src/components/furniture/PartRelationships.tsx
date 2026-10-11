@@ -20,7 +20,7 @@ export function PartRelationships({ project, resolved, partId, onChange }: {
         const text = describeRelationship(project, relationship)
         return <li key={relationship.id}>
           <span>{text}</span>
-          <button type="button" className="button secondary" aria-label={`Remove relationship: ${text}`}
+          <button type="button" className="button secondary" data-focus-key={`relationship:${relationship.id}`} aria-label={`Remove relationship: ${text}`}
             onClick={() => onChange(removeRelationship(project, resolved, relationship.id), `Removed: ${text}. Parts stay where they are.`)}><Unlink size={14} aria-hidden="true" />Remove</button>
         </li>
       })}

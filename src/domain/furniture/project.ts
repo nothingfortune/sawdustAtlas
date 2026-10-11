@@ -20,7 +20,7 @@ export const PART_ROLES: readonly FurniturePartRole[] = [
 const KINDS: readonly FurniturePartKind[] = ['solid', 'sheet', 'hardware']
 const AXES: readonly Axis[] = ['x', 'y', 'z']
 /** Joints that are glued unless the data says otherwise. */
-const GLUED_BY_DEFAULT: readonly JointKind[] = ['mortise-tenon', 'loose-tenon', 'dowel', 'dado', 'rabbet', 'groove']
+export const GLUED_BY_DEFAULT: readonly JointKind[] = ['mortise-tenon', 'loose-tenon', 'dowel', 'dado', 'rabbet', 'groove']
 const MAX_EXPRESSION_LENGTH = 200
 
 export interface NormalizeFurnitureOptions {

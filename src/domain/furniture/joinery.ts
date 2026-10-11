@@ -2,7 +2,7 @@ import type { SetupValue, ToolCategory } from '../instructions/types'
 import { HIGH_FACE, LOW_FACE } from './faces'
 import { TOUCH_TOLERANCE, contactBetween, overlapVolume, partSurfaceAt } from './geometry'
 import type {
-  Axis, BoxFace, CutAllowance, FurnitureIssue, FurnitureJoint, FurniturePart, HardwareLine, JointKind, JointOperation, JointOperationName, PartCutSize, ResolvedFurniture,
+  Axis, BoxFace, CutAllowance, FurnitureIssue, FurnitureJoint, FurniturePart, HardwareLine, JointKind, JointOperation, JointOperationName, JointParams, PartCutSize, ResolvedFurniture,
   ResolvedPart,
 } from './types'
 
@@ -65,7 +65,8 @@ export const CROSS_GRAIN_GLUE_LIMIT = 50
 const AXES: readonly Axis[] = ['x', 'y', 'z']
 const SIZE_KEY = { x: 'sx', y: 'sy', z: 'sz' } as const
 
-const KIND_LABEL: Record<JointKind, string> = {
+/** Plain names for the joint kinds, used in issue messages and the joint editor. */
+export const JOINT_KIND_LABELS: Readonly<Record<JointKind, string>> = {
   'mortise-tenon': 'Mortise and tenon',
   'loose-tenon': 'Loose tenon',
   'dowel': 'Dowel',
@@ -156,6 +157,30 @@ function operation(joint: FurnitureJoint, partId: string, name: JointOperationNa
 
 interface HardwareDraft { key: string; name: string; quantity: number }
 
+/** A joint parameter's effective value: what the woodworker entered, or the default
+ *  (an assumption) when `entered` is false. */
+export interface JointValue {
+  key: JointParamKey
+  value: number
+  entered: boolean
+}
+
+export type JointParamKey = keyof JointParams
+
+/** The parameters each joint kind takes, in the order the editor shows them. */
+export const JOINT_PARAMETERS: Readonly<Record<JointKind, readonly JointParamKey[]>> = {
+  'mortise-tenon': ['thickness', 'width', 'shoulder', 'depth'],
+  'loose-tenon': ['thickness', 'width', 'depth', 'count'],
+  'dowel': ['diameter', 'depth', 'count'],
+  'dado': ['depth'],
+  'rabbet': ['depth'],
+  'groove': ['depth'],
+  'pocket-screw': ['count'],
+  'screw': ['diameter', 'count'],
+  'tabletop-fastener': ['count'],
+  'butt': [],
+}
+
 interface Usable {
   part: ResolvedPart
   target: ResolvedPart
@@ -163,6 +188,7 @@ interface Usable {
   allowance: { dimension: 'length' | 'width'; amount: number; reason: string } | null
   operations: JointOperation[]
   hardware: HardwareDraft | null
+  values: JointValue[]
 }
 
 interface JointPlan {
@@ -197,7 +223,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
   const part = projectParts.get(joint.partId)
   const target = projectParts.get(joint.targetId)
   if (!part || !target) return fail('joint-invalid', `Joint ${joint.id} refers to a part that no longer exists.`)
-  const label = `${KIND_LABEL[joint.kind]} joint, ${part.name} to ${target.name}`
+  const label = `${JOINT_KIND_LABELS[joint.kind]} joint, ${part.name} to ${target.name}`
   if (joint.partId === joint.targetId) return fail('joint-invalid', `${label}: a part cannot be joined to itself.`)
   if (part.kind === 'hardware' || target.kind === 'hardware') return fail('joint-invalid', `${label}: hardware is bought, not joined. Join the wooden parts instead.`)
   if (joint.kind === 'tabletop-fastener' && joint.glue) return fail('joint-invalid', `${label}: a tabletop fastener lets the top move, so it cannot be glued.`, 'glue')
@@ -228,10 +254,11 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
   const shallowest = Math.min(along(resolvedPart), targetExtent)
   const thinner = Math.min(smallestDimension(resolvedPart), smallestDimension(resolvedTarget))
   const countFor = (spacing: number) => sized(params.count, Math.max(1, Math.round(engagement.longSide / spacing)))
-  const usable = (extra: Partial<Pick<Usable, 'allowance' | 'operations' | 'hardware'>>): JointPlan => ({
+  const value = (key: JointParamKey, { value: amount, entered }: Sized): JointValue => ({ key, value: amount, entered })
+  const usable = (extra: Partial<Pick<Usable, 'allowance' | 'operations' | 'hardware' | 'values'>>): JointPlan => ({
     joint,
     issues: [],
-    usable: { part: resolvedPart, target: resolvedTarget, engagement, allowance: null, operations: [], hardware: null, ...extra },
+    usable: { part: resolvedPart, target: resolvedTarget, engagement, allowance: null, operations: [], hardware: null, values: [], ...extra },
   })
 
   switch (joint.kind) {
@@ -247,6 +274,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
       if (width.value <= 0) return paramFail('shoulder', 'the shoulders leave no room for the tenon.')
       if (depth.value + MORTISE_CLEARANCE >= targetExtent) return paramFail('depth', `the mortise would go all the way through ${target.name}.`)
       return usable({
+        values: [value('thickness', thickness), value('width', width), value('shoulder', shoulder), value('depth', depth)],
         allowance: { dimension: engaged === 'length' ? 'length' : 'width', amount: depth.value, reason: `Tenon into the ${lowerFirst(target.name)}` },
         operations: [
           operation(joint, joint.partId, 'tenon', 1, [
@@ -270,10 +298,11 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
       if (depth.value >= targetExtent) return paramFail('depth', `the ${joint.kind} would go all the way through ${target.name}.`)
       const name = joint.kind
       return usable({
+        values: [value('depth', depth)],
         allowance: { dimension: engaged === 'length' ? 'length' : 'width', amount: depth.value, reason: `Sits in a ${name} in the ${lowerFirst(target.name)}` },
         operations: [operation(joint, joint.targetId, name, 1, [
-          setting(`${KIND_LABEL[joint.kind]} width`, resolvedPart.size.thickness, true),
-          setting(`${KIND_LABEL[joint.kind]} depth`, depth.value, depth.entered),
+          setting(`${JOINT_KIND_LABELS[joint.kind]} width`, resolvedPart.size.thickness, true),
+          setting(`${JOINT_KIND_LABELS[joint.kind]} depth`, depth.value, depth.entered),
         ])],
       })
     }
@@ -285,6 +314,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
       if (depth.value >= shallowest) return paramFail('depth', 'the dowel holes would go all the way through a part.')
       const settings = [setting('Hole diameter', diameter.value, diameter.entered), setting('Hole depth', depth.value, depth.entered)]
       return usable({
+        values: [value('diameter', diameter), value('depth', depth), value('count', count)],
         operations: [
           operation(joint, joint.partId, 'dowel-holes', count.value, settings),
           operation(joint, joint.targetId, 'dowel-holes', count.value, settings),
@@ -306,6 +336,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
         setting('Mortise depth', depth.value, depth.entered),
       ]
       return usable({
+        values: [value('thickness', thickness), value('width', width), value('depth', depth), value('count', count)],
         operations: [
           operation(joint, joint.partId, 'mortise', count.value, settings, 'loose-tenon-joiner'),
           operation(joint, joint.targetId, 'mortise', count.value, settings, 'loose-tenon-joiner'),
@@ -316,6 +347,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
     case 'pocket-screw': {
       const count = countFor(DEFAULT_POCKET_SCREW_SPACING)
       return usable({
+        values: [value('count', count)],
         operations: [operation(joint, joint.partId, 'pocket-holes', count.value, [
           setting('Bit diameter', DEFAULT_POCKET_BIT_DIAMETER, false),
           setting('Stock thickness', resolvedPart.size.thickness, true),
@@ -327,6 +359,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
       const diameter = sized(params.diameter, DEFAULT_SCREW_DIAMETER)
       const count = countFor(DEFAULT_SCREW_SPACING)
       return usable({
+        values: [value('diameter', diameter), value('count', count)],
         operations: [operation(joint, joint.partId, 'pilot-holes', count.value, [
           setting('Screw diameter', diameter.value, diameter.entered),
           setting('Pilot hole diameter', diameter.value * PILOT_HOLE_FRACTION, false),
@@ -337,6 +370,7 @@ function planJoint(joint: FurnitureJoint, projectParts: ReadonlyMap<string, Furn
     case 'tabletop-fastener': {
       const count = countFor(DEFAULT_FASTENER_SPACING)
       return usable({
+        values: [value('count', count)],
         operations: [operation(joint, joint.targetId, 'fastener-slots', count.value, [
           setting('Slot width', DEFAULT_FASTENER_SLOT_WIDTH, false),
           setting('Slot depth', DEFAULT_FASTENER_SLOT_DEPTH, false),
@@ -353,7 +387,7 @@ function glueIssues(plan: JointPlan): FurnitureIssue[] {
   const { joint, usable } = plan
   if (!usable || !joint.glue) return []
   const { part, target, engagement } = usable
-  const label = `${KIND_LABEL[joint.kind]} joint, ${part.part.name} to ${target.part.name}`
+  const label = `${JOINT_KIND_LABELS[joint.kind]} joint, ${part.part.name} to ${target.part.name}`
   const grain = (resolved: ResolvedPart) => resolved.part.orientation.charAt(0) as Axis
   const issues: FurnitureIssue[] = []
   const warn = (code: FurnitureIssue['code'], message: string) => issues.push({ code, severity: 'warning', message: `${label}: ${message}`, partIds: [part.id, target.id], jointId: joint.id })
@@ -419,4 +453,11 @@ export function jointHardware(resolved: ResolvedFurniture): HardwareLine[] {
 /** Joint errors and glue warnings, in joint order: structure, then sizes, then glue. */
 export function validateJoints(resolved: ResolvedFurniture): FurnitureIssue[] {
   return planJoints(resolved).flatMap(plan => [...plan.issues, ...glueIssues(plan)])
+}
+
+/** The effective parameters of a joint that can be made: entered values and, where the
+ *  woodworker entered none, the defaults, which are assumptions. Empty when the joint
+ *  has an error, does not exist, or takes no parameters. */
+export function jointValues(resolved: ResolvedFurniture, jointId: string): JointValue[] {
+  return planJoints(resolved).find(plan => plan.joint.id === jointId)?.usable?.values ?? []
 }

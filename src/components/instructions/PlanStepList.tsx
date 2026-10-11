@@ -1,11 +1,11 @@
 import { AlertTriangle, ChevronRight, OctagonAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { generateBoardInstructionPlan } from '../../domain/instructions/boardInstructions'
-import type { InstructionPlan, InstructionStep, PlanWarning, SetupValue } from '../../domain/instructions/types'
+import type { InstructionPlan, InstructionStep, Measurement, PlanWarning, SetupValue } from '../../domain/instructions/types'
 import type { LengthUnit } from '../../domain/lengthUnits'
 import type { BoardProject, WoodSpecies } from '../../types'
 import { useUnitSystem } from '../unitSystem'
-import { formatQuantity, formatTolerance } from './planFormat'
+import { formatQuantity, formatTolerance, outputChips, splitSetupChecks } from './planFormat'
 
 interface Props { project: BoardProject; woods: readonly WoodSpecies[]; boards: readonly BoardProject[] }
 
@@ -15,16 +15,19 @@ function WarningNote({ warning }: { warning: PlanWarning }) {
   </div>
 }
 
-function SetupLine({ setting, lengthUnit }: { setting: SetupValue; lengthUnit: LengthUnit }) {
+function SetupLine({ setting, check, lengthUnit }: { setting: SetupValue; check: Measurement | undefined; lengthUnit: LengthUnit }) {
   return <li>
     <span>{setting.label}</span>
     <b>{formatQuantity(setting.value, setting.unit, lengthUnit)}</b>
     {setting.source === 'assumption' && <em className="steps-assumption">(assumption)</em>}
+    {check && formatTolerance(check, lengthUnit) && <small>{formatTolerance(check, lengthUnit)}</small>}
+    {check && <small>verify before</small>}
   </li>
 }
 
 function StepItem({ step, labels, lengthUnit }: { step: InstructionStep; labels: Map<string, string>; lengthUnit: LengthUnit }) {
-  const outputs = step.outputs.map(output => labels.get(output.partKey)).filter((label): label is string => !!label)
+  const outputs = outputChips(step.outputs.map(output => labels.get(output.partKey)).filter((label): label is string => !!label))
+  const { checks, measurements } = splitSetupChecks(step)
   return <li className="steps-step" data-step-kind={step.kind}>
     <div className="steps-step-head">
       <span className="steps-order">{step.order}</span>
@@ -35,17 +38,17 @@ function StepItem({ step, labels, lengthUnit }: { step: InstructionStep; labels:
     </div>
     <p>{step.instruction}</p>
     {step.machineSetup && step.machineSetup.settings.length > 0 && <ul className="steps-setup" aria-label={`${step.title} machine setup`}>
-      {step.machineSetup.settings.map(setting => <SetupLine key={setting.label} setting={setting} lengthUnit={lengthUnit}/>)}
+      {step.machineSetup.settings.map(setting => <SetupLine key={setting.label} setting={setting} check={checks.get(setting.label)} lengthUnit={lengthUnit}/>)}
     </ul>}
-    {step.measurements.length > 0 && <ul className="steps-measurements" aria-label={`${step.title} measurements`}>
-      {step.measurements.map(measurement => <li key={measurement.key}>
+    {measurements.length > 0 && <ul className="steps-measurements" aria-label={`${step.title} measurements`}>
+      {measurements.map(measurement => <li key={measurement.key}>
         <span>{measurement.label}</span>
         <b>{formatQuantity(measurement.target, measurement.unit, lengthUnit)}</b>
         {formatTolerance(measurement, lengthUnit) && <small>{formatTolerance(measurement, lengthUnit)}</small>}
         <small>{measurement.phase === 'verify-before' ? 'verify before' : 'achieve after'}</small>
       </li>)}
     </ul>}
-    {outputs.length > 0 && <div className="steps-outputs"><span>Makes</span>{outputs.map(label => <code key={label}>{label}</code>)}</div>}
+    {outputs.length > 0 && <div className="steps-outputs"><span>Makes</span>{outputs.map(({ label, count }) => <code key={label}>{count > 1 ? `${label} ×${count}` : label}</code>)}</div>}
     {step.warnings.map(warning => <WarningNote key={warning.id} warning={warning}/>)}
   </li>
 }

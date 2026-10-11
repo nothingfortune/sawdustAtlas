@@ -271,6 +271,6 @@ export function compositeCutPlan(board: CompositeBoard, boards: readonly BoardPr
   }
   const size = assembledSize(board, boards)
   const placed = board.rows.reduce((a, r) => a + r.wafers.length, 0)
-  steps.push(`Assemble ${board.rows.length} row(s), ${placed} wafers; glue and trim to ${Math.round(size.lengthMm)}×${Math.round(size.widthMm)}mm.`)
+  steps.push(`Assemble ${board.rows.length} row(s), ${placed} wafers; glue and trim to ${Math.round(size.lengthMm)}mm × ${Math.round(size.widthMm)}mm.`)
   return { stages: [{ boardId: board.id, boardName: board.name, steps }] }
 }

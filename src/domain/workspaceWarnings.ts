@@ -1,6 +1,7 @@
 import type { AtlasData, BoardProject, CompositeBoard, ShopProject, WoodSpecies } from '../types'
 import { calculateEndGrainMetrics } from './boardGeometry'
 import { panelPieces } from './compositeBoard'
+import { furnitureWarnings } from './furniture/validation'
 import { getBlockedZoneConflicts } from './shopGeometry'
 
 // UX-006: one app-wide list of everything that needs attention, each linked to the
@@ -36,6 +37,9 @@ export function collectWorkspaceWarnings(data: AtlasData, saveOk: boolean): Work
   }
   for (const composite of data.composites) {
     warnings.push(...compositeWarnings(composite, data.boards))
+  }
+  for (const project of data.furniture) {
+    warnings.push(...furnitureWarnings(project, { woods: data.woods, allowances: data.allowances }))
   }
   warnings.push(...placeholderWoodWarnings(data))
   for (const shop of data.shops) {

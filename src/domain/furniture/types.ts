@@ -444,6 +444,9 @@ export interface FurniturePartsList {
 export interface TemplateParameter {
   name: string
   label: string
+  /** 'mm' (the default when absent) is a length shown in display units; 'count' is a
+   *  whole number such as a shelf count. */
+  unit?: 'mm' | 'count'
   defaultValue: number
   min: number
   max: number

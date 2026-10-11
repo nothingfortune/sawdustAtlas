@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { collectWorkspaceWarnings } from '../src/domain/workspaceWarnings'
 import { DEFAULT_ALLOWANCES } from '../src/domain/boardAllowances'
 import { DEFAULT_PRICING } from '../src/data'
+import type { FurniturePart, FurnitureProject } from '../src/domain/furniture/types'
 import type { AtlasData, BoardProject, ShopProject, WoodSpecies } from '../src/types'
 
 const wood = (id: string, over: Partial<WoodSpecies> = {}): WoodSpecies => ({ id, name: id === over.name ? id : 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12, ...over })
@@ -66,5 +67,43 @@ describe('collectWorkspaceWarnings', () => {
     const warnings = collectWorkspaceWarnings(data({ boards: [warnBoard, errorBoard] }), false)
     const severities = warnings.map(w => w.severity)
     expect(severities.indexOf('warning')).toBeGreaterThan(severities.lastIndexOf('error'))
+  })
+
+  describe('furniture', () => {
+    const part = (id: string, over: Partial<FurniturePart> = {}): FurniturePart => ({
+      id, label: id, name: `Part ${id}`, role: 'other', kind: 'solid', length: 400, width: 100, thickness: 20, orientation: 'xyz',
+      position: { x: 0, y: 0, z: 0 }, speciesId: 'walnut', visibleFaces: [], ...over,
+    })
+    const project = (parts: FurniturePart[], over: Partial<FurnitureProject> = {}): FurnitureProject => ({
+      id: 'desk', name: 'Desk', parameters: [], parts, relationships: [], joints: [], subassemblies: [], sheetMaterials: [], maxBoardWidth: 140, updatedAt: '', ...over,
+    })
+
+    it('stays quiet for a sound furniture project', () => {
+      expect(collectWorkspaceWarnings(data({ furniture: [project([part('top')])] }), true)).toEqual([])
+    })
+
+    it('reports a furniture issue linked to the project and its part', () => {
+      const broken = project([part('top', { length: -5 })])
+      const warnings = collectWorkspaceWarnings(data({ furniture: [broken] }), true)
+      expect(warnings).toEqual([expect.objectContaining({
+        id: 'furniture:desk:dimension-not-positive:top.length',
+        severity: 'error',
+        location: { view: 'furniture', targetId: 'desk', focusId: 'top' },
+      })])
+    })
+
+    it('checks wood against the workspace library', () => {
+      const oak = project([part('top', { speciesId: 'oak' })])
+      expect(collectWorkspaceWarnings(data({ furniture: [oak] }), true).map(w => w.id)).toEqual(['furniture:desk:material-missing:top.speciesId'])
+      expect(collectWorkspaceWarnings(data({ furniture: [oak], woods: [wood('walnut'), wood('oak')] }), true)).toEqual([])
+    })
+
+    it('sorts furniture errors ahead of warnings from other tools', () => {
+      const warnBoard = endBoard('warn', [{ id: 's', speciesId: 'walnut', width: 40, trailingAngle: -40 }], { stockThickness: 40 })
+      const broken = project([part('top', { length: -5 })])
+      const severities = collectWorkspaceWarnings(data({ boards: [warnBoard], furniture: [broken] }), true).map(w => w.severity)
+      expect(severities[0]).toBe('error')
+      expect(severities.indexOf('warning')).toBeGreaterThan(severities.lastIndexOf('error'))
+    })
   })
 })

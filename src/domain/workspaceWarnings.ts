@@ -9,9 +9,11 @@ import { getBlockedZoneConflicts } from './shopGeometry'
 export type WarningSeverity = 'error' | 'warning'
 
 export interface WarningLocation {
-  view: 'boards' | 'shop' | 'woods'
-  /** Board or shop id to open; omitted for views without a selection (e.g. woods). */
+  view: 'boards' | 'shop' | 'woods' | 'furniture'
+  /** Board, shop, or furniture project id to open; omitted for views without a selection (e.g. woods). */
   targetId?: string
+  /** Something inside the target to select and focus, such as a furniture part id. */
+  focusId?: string
 }
 
 export interface WorkspaceWarning {

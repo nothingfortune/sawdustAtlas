@@ -3,6 +3,8 @@ import { DEFAULT_PRICING, defaultSpecies, starterData } from './data'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
 import { LATEST_SCHEMA_VERSION, migrate } from './domain/migrations'
 import { normalizeShopItem } from './domain/shopObjects'
+import { normalizeFurnitureProject } from './domain/furniture/project'
+import type { FurnitureProject } from './domain/furniture/types'
 import type { Sketch, SketchMember, SketchPoint } from './domain/geometry2d'
 import { createId } from './id'
 
@@ -80,6 +82,10 @@ export function normalizeData(input: Partial<AtlasData>): AtlasData {
   // Composites reference boards (to infer construction) and can spawn migrated
   // boards, so normalize them after the boards list exists.
   const composites = records(data.composites).map(c => normalizeComposite(c, migratedBoards, allowances, normalizedBoards))
+  const furnitureOptions = { createId, now: new Date().toISOString(), fallbackSpeciesId: normalizedWoods[0]?.id ?? 'walnut' }
+  const furniture = records(data.furniture)
+    .map(raw => normalizeFurnitureProject(raw, furnitureOptions))
+    .filter((project): project is FurnitureProject => project !== null)
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     allowances,
@@ -88,10 +94,11 @@ export function normalizeData(input: Partial<AtlasData>): AtlasData {
     woods: [...normalizedWoods, ...[...new Set(missingIds)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }))],
     shops: shops.map(normalizeShop),
     boards: [...normalizedBoards, ...migratedBoards],
+    furniture,
   }
 }
 
-export interface ImportCounts { shops: number; boards: number; composites: number; woods: number }
+export interface ImportCounts { shops: number; boards: number; composites: number; furniture: number; woods: number }
 export interface ImportResult {
   ok: boolean
   data: AtlasData | null
@@ -100,8 +107,8 @@ export interface ImportResult {
   errors: string[]
 }
 
-const NO_COUNTS: ImportCounts = { shops: 0, boards: 0, composites: 0, woods: 0 }
-const TOP_LEVEL_KEYS = new Set(['schemaVersion', 'shops', 'boards', 'woods', 'allowances', 'pricing', 'composites'])
+const NO_COUNTS: ImportCounts = { shops: 0, boards: 0, composites: 0, furniture: 0, woods: 0 }
+const TOP_LEVEL_KEYS = new Set(['schemaVersion', 'shops', 'boards', 'woods', 'allowances', 'pricing', 'composites', 'furniture'])
 const BOARD_KEYS = new Set(['id', 'name', 'length', 'thickness', 'construction', 'endGrain', 'allowances', 'strips', 'updatedAt'])
 const SHOP_KEYS = new Set(['id', 'name', 'width', 'depth', 'gridSize', 'blockedZones', 'items', 'updatedAt'])
 const WOOD_KEYS = new Set(['id', 'name', 'color', 'accent', 'pricePerBoardFoot', 'availableAt'])
@@ -121,7 +128,7 @@ export function importData(parsed: unknown): ImportResult {
 
   const migrated = migrate(parsed)
   const data = normalizeData(parsed as Partial<AtlasData>)
-  const counts: ImportCounts = { shops: data.shops.length, boards: data.boards.length, composites: data.composites.length, woods: data.woods.length }
+  const counts: ImportCounts = { shops: data.shops.length, boards: data.boards.length, composites: data.composites.length, furniture: data.furniture.length, woods: data.woods.length }
   return { ok: true, data, counts, warnings: collectImportWarnings(parsed, migrated.tooNew, migrated.fromVersion), errors: [] }
 }
 

@@ -61,7 +61,8 @@ image before pushing the multi-arch image to Docker Hub.
 - `src/components/**` — React UI. Components consume domain functions and render; they should not
   re-implement geometry or measurement math.
 - `src/types.ts` — the entire data model (`AtlasData` is the root: `shops`, `boards`, `woods`,
-  `composites`, shop-wide `allowances`).
+  `composites`, `furniture`, shop-wide `allowances`). Furniture project types live in
+  `src/domain/furniture/types.ts`.
 
 **State and persistence flow.** `App.tsx` holds one `AtlasData` object in state and is the single
 source of truth. All mutations go through `commitData(updater)`, which records the previous state
@@ -115,6 +116,10 @@ add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` 
 - `shopGeometry.ts`, `shopObjects.ts` — workshop layout geometry and item normalization.
 - `lengthUnits.ts` — metric/imperial conversion (the UI "Preston's Button" toggles display units;
   storage stays metric).
+- `furniture/` — furniture modeler domain: `types.ts` (contracts), `project.ts` (defaults and the
+  normalizer storage runs). World axes are x left→right, y front→back, z up; a part's position is
+  its min corner. Relationships move parts and never resize them; joinery adds reported cut
+  allowances and never rewrites the modeled size. See the furniture spec in `docs/superpowers/specs`.
 
 ## Testing layers
 

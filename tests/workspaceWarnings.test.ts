@@ -14,7 +14,7 @@ const endBoard = (id: string, strips: BoardProject['strips'], over: Partial<Boar
 })
 
 const data = (over: Partial<AtlasData> = {}): AtlasData => ({
-  schemaVersion: 2, shops: [], boards: [], woods: [wood('walnut')], allowances: { ...DEFAULT_ALLOWANCES }, pricing: { ...DEFAULT_PRICING }, composites: [], ...over,
+  schemaVersion: 2, shops: [], boards: [], woods: [wood('walnut')], allowances: { ...DEFAULT_ALLOWANCES }, pricing: { ...DEFAULT_PRICING }, composites: [], furniture: [], ...over,
 })
 
 describe('collectWorkspaceWarnings', () => {

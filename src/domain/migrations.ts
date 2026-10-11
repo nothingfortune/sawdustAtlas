@@ -4,7 +4,7 @@
 // first, then coerces to the typed model. Adding a future schema change means adding
 // one named step here — never editing old steps.
 
-export const LATEST_SCHEMA_VERSION = 2
+export const LATEST_SCHEMA_VERSION = 3
 
 type Raw = Record<string, unknown>
 
@@ -27,6 +27,7 @@ interface MigrationStep {
 
 const MIGRATIONS: MigrationStep[] = [
   { from: 1, to: 2, name: 'running-bond-offsets-to-cell-fractions', migrate: offsetsMmToFractions },
+  { from: 2, to: 3, name: 'add-furniture-projects', migrate: addFurnitureProjects },
 ]
 
 export function migrate(raw: Raw): MigrationResult {
@@ -65,6 +66,11 @@ function offsetsMmToFractions(raw: Raw): Raw {
       }
     }),
   }
+}
+
+// v2 -> v3: furniture projects arrive as a new top-level list. Older data has none.
+function addFurnitureProjects(raw: Raw): Raw {
+  return Array.isArray(raw['furniture']) ? raw : { ...raw, furniture: [] }
 }
 
 function averageWidth(strips: unknown): number {

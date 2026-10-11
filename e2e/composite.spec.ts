@@ -18,6 +18,10 @@ test.describe('composite board designer', () => {
 
     const screen = page.locator('.composite-screen')
     await expect(screen).toBeVisible()
+    // Nothing placed yet, so nothing to price.
+    const summary = page.locator('.composite-summary')
+    await expect(summary).toContainText('Place wafers to see the material estimate and price.')
+    await expect(summary.locator('.summary-stats')).not.toContainText('$')
 
     // Add a second panel inline — design a fresh board for it, give it a strip so it
     // actually yields wafers, then return to the composite (the panel editor's "Back"
@@ -38,8 +42,9 @@ test.describe('composite board designer', () => {
     // The grid picked it up — there's already one empty row from composite creation.
     await expect(page.locator('.desk-wafer')).toHaveCount(1)
 
-    // The build sheet reflects real, non-zero material now that something's placed.
-    const summary = page.locator('.composite-summary')
+    // The build sheet reflects real, non-zero material and a price now that something's placed.
+    await expect(summary.locator('.summary-stats')).toContainText('$')
+    await expect(summary).not.toContainText('Place wafers to see')
     await expect(summary.locator('.plan-table')).not.toContainText('No wafers placed yet')
     await expect(summary.locator('.plan-table')).toContainText(/bf/)
 

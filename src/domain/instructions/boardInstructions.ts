@@ -23,7 +23,7 @@ import { calculateAngleSetup } from '../boardAngle'
 // id, rip-group identity, board id), never from list position, and carry
 // `context.keyPrefix` so a plan can be embedded in a composite.
 
-const TOOLS = {
+export const TOOLS = {
   jointer: { key: 'jointer', name: 'Jointer', category: 'jointer' },
   planer: { key: 'planer', name: 'Thickness planer', category: 'planer' },
   tableSaw: { key: 'table-saw', name: 'Table saw', category: 'table-saw' },

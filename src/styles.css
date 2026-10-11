@@ -887,3 +887,6 @@ button.furniture-issue-count[aria-expanded="true"] { border-color:var(--green); 
   .cut-list-table th, .cut-list-table td { padding:4px 5px; }
   .furniture-print .steps-phase h4 { break-after:avoid; }
 }
+
+/* Placeholder while a lazily loaded section's code arrives. */
+.section-loading { padding:40px 32px; font:13px 'DM Mono'; color:#737970; }

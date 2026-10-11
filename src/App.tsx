@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Armchair, Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { FurnitureProject } from './domain/furniture/types'
@@ -25,8 +25,6 @@ import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
 import { PricingSettings } from './components/PricingSettings'
 import { UnitSystemProvider } from './components/unitSystem'
-import { FurnitureDesigner } from './components/furniture/FurnitureDesigner'
-import { FurnitureGallery } from './components/furniture/FurnitureGallery'
 import type { NewFurnitureRequest } from './components/furniture/FurnitureGallery'
 import { emptyFurnitureProject } from './domain/furniture/project'
 import { templateById } from './domain/furniture/templates'
@@ -34,6 +32,12 @@ import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
 import type { LengthUnit } from './domain/lengthUnits'
+
+// The furniture section is large and most sessions never open it, so it loads on demand
+// (three.js is split further, inside the designer). The service worker precaches every
+// emitted chunk, so this still works offline after the first visit.
+const FurnitureDesigner = lazy(() => import('./components/furniture/FurnitureDesigner').then(module => ({ default: module.FurnitureDesigner })))
+const FurnitureGallery = lazy(() => import('./components/furniture/FurnitureGallery').then(module => ({ default: module.FurnitureGallery })))
 
 interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
 
@@ -417,12 +421,12 @@ export default function App() {
               )
               : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
           })()}
-          {view === 'furniture' && (() => {
+          {view === 'furniture' && <Suspense fallback={<p className="section-loading" role="status">Loading furniture…</p>}>{(() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
               ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
               : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
-          })()}
+          })()}</Suspense>}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
           {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={updateSketch} />}
           {view === 'allowances' && <MillingAllowances allowances={data.allowances} onChange={updateAllowances} />}

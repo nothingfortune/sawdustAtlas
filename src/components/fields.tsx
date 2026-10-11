@@ -15,7 +15,7 @@ interface LengthInputProps {
 
 // Shared labelled dimension input used across the editor panels. Metric mode
 // keeps the current number-input behavior; imperial mode accepts inches as text
-// and snaps the committed value to a display-friendly 1/32".
+// and snaps the committed value to the nearest 1/2" (Preston's Button, snapLengthMm).
 export function NumberField({ label, value, min = 0, step = 1, onChange }: { label: string; value: number; min?: number; step?: number; onChange: (value: number) => void }) {
   const { lengthUnit } = useUnitSystem()
   return <label className="field"><span>{formatFieldLabel(label, lengthUnit)}</span><LengthInput value={value} min={min} step={step} onChange={onChange}/></label>

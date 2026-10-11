@@ -57,6 +57,14 @@ test.describe('furniture designer editing', () => {
     await expect(partRow(page, /Front left leg/)).toContainText('60')
   })
 
+  test('each parameter card is a named group, so its Value field is told apart', async ({ page }) => {
+    await createTable(page)
+    await page.getByRole('tab', { name: 'Parameters' }).click()
+    const height = page.getByRole('group', { name: 'Overall height' })
+    await expect(height.getByRole('textbox', { name: /^Value/ })).toHaveValue('750')
+    await expect(page.getByRole('group', { name: 'Leg size' }).getByRole('textbox', { name: /^Value/ })).toHaveValue('45')
+  })
+
   test('adds, duplicates, and deletes a part', async ({ page }) => {
     await createTable(page)
     await page.getByRole('button', { name: 'Solid part' }).click()

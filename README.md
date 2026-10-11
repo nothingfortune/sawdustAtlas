@@ -76,7 +76,9 @@ pnpm dev
 
 `pnpm container` builds and (re)starts the Docker preview at **http://localhost:8080**,
 stamping the in-app build badge with the current git branch / build number / commit
-(e.g. `develop · build 169 · e31445b · container`).
+(e.g. `develop · build 169 · e31445b · container`). It uses `docker`, or `docker.exe` from
+WSL when only Docker Desktop's Windows CLI is available, and every checkout or worktree
+shares the one `sawdust-atlas` container.
 
 `pnpm install` runs a `prepare` step that points `core.hooksPath` at the committed
 `.githooks/`, so a fresh clone is set up automatically — no per-machine steps. From then

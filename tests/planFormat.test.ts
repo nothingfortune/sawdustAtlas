@@ -19,4 +19,8 @@ describe('planFormat', () => {
     expect(formatTolerance(m({ tolerance: { minus: 0, plus: 0 } }), 'metric')).toBe('')
     expect(formatTolerance(m({ unit: 'deg', tolerance: { minus: 0.2, plus: 0.2 } }), 'imperial')).toBe('± 0.2°')
   })
+  it('shows imperial length tolerances in thousandths so small tolerances never read as zero', () => {
+    expect(formatTolerance(m({ tolerance: { minus: 0.25, plus: 0.25 } }), 'imperial')).toBe('± 0.010 in')
+    expect(formatTolerance(m({ tolerance: { minus: 0.5, plus: 1 } }), 'imperial')).toBe('− 0.020 in / + 0.039 in')
+  })
 })

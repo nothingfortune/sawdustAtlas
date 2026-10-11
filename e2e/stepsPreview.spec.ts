@@ -51,6 +51,9 @@ test('steps preview measurements switch to inches under imperial units', async (
   await page.getByRole('button', { name: /Preston/ }).click()
   await expect(measurements).toContainText(/\d\s*in\b/)
   await expect(measurements).not.toContainText('mm')
+  // A quarter-millimeter tolerance must not round away to "± 0 in".
+  await expect(measurements).toContainText('± 0.010 in')
+  await expect(measurements).not.toContainText(/± 0 in/)
   const setup = page.locator('.steps-setup').first()
   await expect(setup).not.toContainText('mm')
 })

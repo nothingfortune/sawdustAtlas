@@ -27,7 +27,7 @@ test.describe('furniture designer views', () => {
     await expect(page.getByRole('textbox', { name: 'Project name' })).toBeVisible()
   }
   const partRow = (page: Page, name: RegExp | string) => page.getByRole('button', { name }).filter({ has: page.locator('.part-row-title') })
-  const drawn = (page: Page, name: string) => page.locator('svg.furniture-drawing').getByRole('button', { name, exact: true })
+  const drawn = (page: Page, name: string) => page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing').getByRole('button', { name, exact: true })
   const view = (page: Page, name: string) => page.getByRole('group', { name: 'View', exact: true }).getByRole('button', { name, exact: true })
   const field = (page: Page, name: RegExp | string) => page.getByRole('textbox', { name })
   const status = (page: Page) => page.locator('p[role=status]')
@@ -36,23 +36,23 @@ test.describe('furniture designer views', () => {
   test('switches between the orthographic, isometric, and exploded drawings', async ({ page }) => {
     await createTable(page)
     // Iso is the default, so the page never needs WebGL to show the piece.
-    await expect(page.locator('svg.furniture-drawing')).toHaveAttribute('data-view', 'iso')
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing')).toHaveAttribute('data-view', 'iso')
     await expect(view(page, 'Iso')).toHaveAttribute('aria-pressed', 'true')
     for (const [name, key] of [['Front', 'front'], ['Side', 'side'], ['Top', 'top'], ['Exploded', 'exploded'], ['Iso', 'iso']] as const) {
       await view(page, name).click()
-      await expect(page.locator('svg.furniture-drawing')).toHaveAttribute('data-view', key)
+      await expect(page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing')).toHaveAttribute('data-view', key)
       await expect(view(page, name)).toHaveAttribute('aria-pressed', 'true')
     }
-    await expect(page.locator('.furniture-dimension')).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('.furniture-dimension')).toHaveCount(0)
     await view(page, 'Front').click()
-    await expect(page.locator('.furniture-dimension')).toHaveCount(2)
-    await expect(page.locator('.furniture-dimension').first()).toContainText('1200')
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('.furniture-dimension')).toHaveCount(2)
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('.furniture-dimension').first()).toContainText('1200')
   })
 
   test('the exploded view spreads the parts and the slider changes how far', async ({ page }) => {
     await createTable(page)
     await view(page, 'Iso').click()
-    const width = async () => (await page.locator('svg.furniture-drawing').getAttribute('viewBox'))!.split(' ').map(Number)[2]!
+    const width = async () => (await page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing').getAttribute('viewBox'))!.split(' ').map(Number)[2]!
     const together = await width()
     await view(page, 'Exploded').click()
     const apart = await width()
@@ -85,7 +85,7 @@ test.describe('furniture designer views', () => {
     await expect(drawn(page, 'L3 Back left leg')).toHaveAttribute('aria-pressed', 'true')
 
     // Empty drawing space clears it.
-    await page.locator('svg.furniture-drawing').click({ position: { x: 6, y: 6 } })
+    await page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing').click({ position: { x: 6, y: 6 } })
     await expect(selectionLine(page)).toHaveText('No part selected')
     await expect(page.getByText('Select a part in the Parts list')).toBeVisible()
   })
@@ -172,14 +172,14 @@ test.describe('furniture designer views', () => {
     await expect(relationships).toContainText('left face against')
     // The part sits 10 mm off the first part's right face: 500 + 10.
     await view(page, 'Front').click()
-    await expect(page.locator('.furniture-dimension').first()).toContainText('1010')
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('.furniture-dimension').first()).toContainText('1010')
 
     await relationships.getByRole('button', { name: /^Remove relationship/ }).click()
     await expect(relationships).toBeHidden()
     await expect(field(page, /^Position X/)).toBeEnabled()
     await expect(field(page, /^Position X/)).toHaveValue('510')
     await expect(status(page)).toContainText('Parts stay where they are')
-    await expect(page.locator('.furniture-dimension').first()).toContainText('1010')
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('.furniture-dimension').first()).toContainText('1010')
 
     await page.getByRole('button', { name: 'Undo', exact: true }).click()
     await expect(page.getByRole('region', { name: 'Relationships' })).toContainText('left face against')
@@ -262,7 +262,7 @@ test.describe('furniture designer views', () => {
     await expect(page.getByRole('heading', { name: '3D view unavailable' })).toBeVisible()
     await expect(page.getByText('cannot draw WebGL graphics')).toBeVisible()
     await page.getByRole('button', { name: 'Show the isometric view' }).click()
-    await expect(page.locator('svg.furniture-drawing')).toHaveAttribute('data-view', 'iso')
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing')).toHaveAttribute('data-view', 'iso')
     await expect(view(page, 'Iso')).toHaveAttribute('aria-pressed', 'true')
     await expect(status(page)).toContainText('isometric view is showing')
   })

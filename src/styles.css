@@ -855,7 +855,7 @@ button.furniture-issue-count[aria-expanded="true"] { border-color:var(--green); 
 .cut-list-table .num { font:13px 'DM Mono'; white-space:nowrap; }
 .cut-list-table td small { display:block; font:11px 'DM Mono'; color:#737970; white-space:normal; }
 .cut-list-table.compact { width:auto; min-width:280px; }
-.cut-list-allowances { list-style:none; margin:0; padding:0; }
+.cut-list-allowances { list-style:none; margin:0; padding:0; min-width:14em; }
 .cut-list-none { color:#8a8d85; }
 .cut-list-totals { display:flex; flex-wrap:wrap; gap:0 32px; align-items:flex-start; }
 .cut-list-total { display:flex; justify-content:space-between; gap:16px; max-width:360px; margin:4px 0 14px; font-size:14px; }

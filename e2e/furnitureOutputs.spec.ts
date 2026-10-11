@@ -35,7 +35,9 @@ test.describe('furniture outputs', () => {
     const apron = row(page, 'A1, A2')
     await expect(apron).toContainText('1060 × 100 × 20 mm')
     await expect(apron).toContainText('1120 × 100 × 20 mm')
-    await expect(apron).toContainText('+30 mm length: Tenon into the front left leg')
+    // A1 and A2 share a line, so the tenons are counted rather than named after A1's legs.
+    await expect(apron).toContainText('+30 mm length for each of 2 tenons')
+    await expect(apron).not.toContainText('front left leg')
     await expect(apron.locator('td').last()).toHaveText('2.28')
 
     await expect(outputs(page).getByRole('table', { name: 'Lumber by species' }).locator('tr', { hasText: 'Walnut' })).toContainText('10.38 bf')

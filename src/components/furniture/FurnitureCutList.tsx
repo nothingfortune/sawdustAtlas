@@ -1,12 +1,13 @@
-import type { FurniturePartsList, PartDims, PartsListLine } from '../../domain/furniture/types'
+import type { FurnitureJoint, FurniturePartsList, PartDims, PartsListLine } from '../../domain/furniture/types'
 import { convertMetricText, formatDimensions, formatLength, formatNumber } from '../../domain/lengthUnits'
 import type { LengthUnit } from '../../domain/lengthUnits'
 import { useUnitSystem } from '../unitSystem'
+import { summarizeAllowances } from './cutListFormat'
 
 const money = (value: number) => `$${value.toFixed(2)}`
 const sizeText = (size: PartDims, lengthUnit: LengthUnit) => formatDimensions([size.length, size.width, size.thickness], lengthUnit)
 
-function LineRow({ line, lengthUnit }: { line: PartsListLine; lengthUnit: LengthUnit }) {
+function LineRow({ line, joints, lengthUnit }: { line: PartsListLine; joints: readonly FurnitureJoint[]; lengthUnit: LengthUnit }) {
   return <tr>
     <td className="num">{line.quantity}</td>
     <td>{line.labels.join(', ')}</td>
@@ -15,9 +16,13 @@ function LineRow({ line, lengthUnit }: { line: PartsListLine; lengthUnit: Length
     <td className="num">{sizeText(line.modeled, lengthUnit)}</td>
     <td>{line.allowances.length === 0
       ? <span className="cut-list-none">None</span>
-      : <ul className="cut-list-allowances">{line.allowances.map((allowance, index) => <li key={index}>
-        <b>+{formatLength(allowance.amount, lengthUnit)}</b> {allowance.dimension}: {allowance.reason}
-      </li>)}</ul>}
+      : line.quantity > 1
+        ? <ul className="cut-list-allowances">{summarizeAllowances(line.allowances, joints).map((summary, index) => <li key={index}>
+          <b>+{formatLength(summary.amount, lengthUnit)}</b> {summary.dimension} for {summary.what}
+        </li>)}</ul>
+        : <ul className="cut-list-allowances">{line.allowances.map((allowance, index) => <li key={index}>
+          <b>+{formatLength(allowance.amount, lengthUnit)}</b> {allowance.dimension}: {allowance.reason}
+        </li>)}</ul>}
     </td>
     <td className="num">{sizeText(line.cut, lengthUnit)}</td>
     <td className="num">{line.rough
@@ -30,7 +35,7 @@ function LineRow({ line, lengthUnit }: { line: PartsListLine; lengthUnit: Length
 
 /** The reconciled parts list as tables: parts, material totals, hardware, cost, and the
  *  assumptions behind them. Lengths follow the display unit; the domain stays in mm. */
-export function FurnitureCutList({ list }: { list: FurniturePartsList }) {
+export function FurnitureCutList({ list, joints }: { list: FurniturePartsList; joints: readonly FurnitureJoint[] }) {
   const { lengthUnit } = useUnitSystem()
   const empty = list.lines.length === 0 && list.hardware.length === 0
   if (empty) return <p className="furniture-empty">No parts to list yet. Add a solid or sheet part to build the cut list.</p>
@@ -42,7 +47,7 @@ export function FurnitureCutList({ list }: { list: FurniturePartsList }) {
           <th scope="col">Qty</th><th scope="col">Marks</th><th scope="col">Part</th><th scope="col">Material</th>
           <th scope="col">Modeled L × W × T</th><th scope="col">Allowances</th><th scope="col">Cut L × W × T</th><th scope="col">Rough L × W × T</th><th scope="col">Board feet</th>
         </tr></thead>
-        <tbody>{list.lines.map(line => <LineRow key={line.key} line={line} lengthUnit={lengthUnit} />)}</tbody>
+        <tbody>{list.lines.map(line => <LineRow joints={joints} key={line.key} line={line} lengthUnit={lengthUnit} />)}</tbody>
       </table>
     </div>}
     <div className="cut-list-totals">

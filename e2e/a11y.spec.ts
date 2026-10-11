@@ -28,7 +28,7 @@ test.describe('overlay keyboard dismissal', () => {
     await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
     await page.goto('/')
     page.on('dialog', dialog => { void dialog.accept() })
-    await page.locator('input[type=file]').setInputFiles({ name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ schemaVersion: 2, shops: [], boards: [] })) })
+    await page.getByLabel('Backup file').setInputFiles({ name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ schemaVersion: 2, shops: [], boards: [] })) })
     await expect(page.locator('.import-dialog')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.locator('.import-dialog')).toHaveCount(0)

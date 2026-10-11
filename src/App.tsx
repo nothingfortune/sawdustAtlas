@@ -8,11 +8,15 @@ import type { Sketch } from './domain/geometry2d'
 import { DEFAULT_END_GRAIN, DEFAULT_KERF_MM } from './data'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
+import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './projectPackage'
+import type { ProjectMergeSummary } from './projectPackage'
+import { downloadProjectPackage } from './projectPackageDownload'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
+import { ConnectionNotice } from './components/ConnectionNotice'
 import { BuildBadge } from './components/BuildBadge'
 import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
@@ -62,6 +66,8 @@ export default function App() {
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  // Result of the most recent single-project import (merge, not replace).
+  const [projectImport, setProjectImport] = useState<{ ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string } | null>(null)
   // First-run welcome (UX-004): shown until dismissed; reopenable from Home.
   const [showWelcome, setShowWelcome] = useState(() => !hasOnboarded())
   const importRef = useRef<HTMLInputElement>(null)
@@ -239,6 +245,27 @@ export default function App() {
     // Show the summary (counts + warnings) on success, or the errors on failure.
     setImportResult(result)
   }
+  const exportProject = (ref: { type: 'board' | 'composite'; id: string }) => {
+    const pkg = buildProjectPackage(data, ref, new Date().toISOString())
+    if (pkg) downloadProjectPackage(pkg)
+  }
+  // Merges one project into the workspace through commitData, so Undo removes it again.
+  const importProjectFile = async (file: File | undefined) => {
+    if (!file) return
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(await file.text())
+    } catch {
+      setProjectImport({ ok: false, error: 'That file is not valid JSON.' })
+      return
+    }
+    const read = readProjectPackage(parsed)
+    if (!read.ok) { setProjectImport(read); return }
+    const merged = mergeProjectPackage(dataRef.current, read.pkg, createId)
+    commitData(() => merged.data)
+    const project = read.pkg.project
+    setProjectImport({ ok: true, summary: merged.summary, name: project.type === 'board' ? project.board.name : project.composite.name })
+  }
   const restorePreImport = () => {
     if (!preImport) return
     commitData(() => preImport)
@@ -257,6 +284,7 @@ export default function App() {
   const goToWarning = (location?: WarningLocation) => {
     if (!location) return
     if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); setView('boards') }
+    else if (location.view === 'composite' && location.targetId) { openComposite(location.targetId); setView('boards') }
     else if (location.view === 'shop' && location.targetId) { setActiveShop(location.targetId); setView('shop') }
     else if (location.view === 'woods') setView('woods')
   }
@@ -299,11 +327,12 @@ export default function App() {
             <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
           </div>
         </header>
+        <ConnectionNotice />
         <section className="workspace">
           {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
           {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
           {view === 'boards' && boardsMode === 'gallery' && (
-            <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+            <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
           )}
           {view === 'boards' && boardsMode === 'board' && (
             <BoardDesigner
@@ -316,6 +345,7 @@ export default function App() {
               onChange={updateBoard}
               onDelete={deleteBoard}
               onMakeComposite={makeComposite}
+              onExportProject={() => exportProject({ type: 'board', id: (data.boards.find(p => p.id === activeBoard) ?? data.boards[0])?.id ?? '' })}
               onBack={() => setBoardsMode(boardBackTo)}
             />
           )}
@@ -329,12 +359,13 @@ export default function App() {
                   woods={data.woods}
                   pricing={data.pricing}
                   onChange={updateComposite}
+                  onExportProject={() => exportProject({ type: 'composite', id: composite.id })}
                   onCreateBoardForPanel={createBoardForPanel}
                   onEditBoard={editPanelBoard}
                   onBack={() => setBoardsMode('gallery')}
                 />
               )
-              : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+              : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
           })()}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
           {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={updateSketch} />}
@@ -342,8 +373,9 @@ export default function App() {
           {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
         </section>
       </main>
-      <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+      <input ref={importRef} type="file" accept="application/json" hidden aria-label="Backup file" onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
       {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+      {projectImport && <ProjectImportDialog result={projectImport} onClose={() => setProjectImport(null)} />}
       {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
       <BuildBadge />
     </div>
@@ -367,6 +399,25 @@ function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: Impo
         {ok && <button className="button" onClick={onExportBackup}><Upload size={15} />Export a backup now</button>}
         <button className="button secondary" onClick={onClose}>{ok ? 'Done' : 'Close'}</button>
       </footer>
+    </div>
+  </div>
+}
+
+// Single-project import confirmation: what was added, whether it came in as a copy, and
+// how the wood library was affected. The import is one undo step.
+function ProjectImportDialog({ result, onClose }: { result: { ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string }; onClose: () => void }) {
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div ref={dialogRef} tabIndex={-1} className="import-dialog" role="dialog" aria-modal="true" aria-label={result.ok ? 'Project import summary' : 'Project import failed'}>
+      <header><strong>{result.ok ? 'Project imported' : "Couldn't import that project"}</strong></header>
+      {result.ok
+        ? <>
+          <p className="import-counts">Added <b>{result.name}</b> to your boards ({result.summary.boards} board{result.summary.boards === 1 ? '' : 's'}{result.summary.composites > 0 ? ` and ${result.summary.composites} composite` : ''}). Nothing you already had was changed. Use Undo to take it back out.</p>
+          {result.summary.importedAsCopy && <div className="import-warnings"><span className="eyebrow">HEADS UP</span><ul><li>You already had this project, so it was added as a copy marked "(imported)".</li></ul></div>}
+          <p className="import-counts">Woods: {result.summary.woodsAdded} added to your library, {result.summary.woodsKept} already there (your versions were kept).</p>
+        </>
+        : <ul className="import-errors"><li>{result.error}</li></ul>}
+      <footer><button className="button secondary" onClick={onClose}>{result.ok ? 'Done' : 'Close'}</button></footer>
     </div>
   </div>
 }

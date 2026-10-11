@@ -604,3 +604,6 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .compound-results { border-top:1px solid var(--line); }
 .compound-result-row { display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid #ece9e0;font-size:15px; }
 .compound-result-row b { font-variant-numeric:tabular-nums;font-size:17px; }
+.connection-notice { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin:10px 16px 0; padding:10px 14px; background:#fbf3e4; border:1px solid var(--orange); border-radius:6px; font-size:14px; line-height:1.4; }
+.connection-notice ul { margin:6px 0; padding-left:18px; }
+.connection-notice a { color: var(--focus-ring); }

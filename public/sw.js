@@ -1,10 +1,23 @@
 const CACHE = 'sawdust-atlas-__SW_BUILD__'
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
+// Every file under /assets/ that the build emitted (hashed JS and CSS, lazy chunks,
+// woff2 fonts), stamped in by the build (vite.config.ts). If the placeholder was not
+// replaced (this file served without the build step) it stays a string and the scan
+// below runs instead.
+const BUILD_ASSETS = '__SW_ASSETS__'
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE).then(async cache => {
       await cache.addAll(SHELL)
+      if (Array.isArray(BUILD_ASSETS)) {
+        // Lazy chunks are not referenced by the shell HTML or the stylesheet, so only the
+        // build's own list reaches them; without it the first offline visit to a lazily
+        // loaded view would fail.
+        await cache.addAll(BUILD_ASSETS)
+        return
+      }
       // The first visit's JS/CSS were fetched before this worker controlled the page, so
       // fetch events never saw them. Precache the hashed assets the shell HTML references,
       // otherwise going offline right after the first load leaves a blank page.

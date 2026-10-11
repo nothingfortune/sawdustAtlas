@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
 // Runs against the production build (playwright.prod.config.ts): the service worker
@@ -44,4 +45,30 @@ test('app shell and cutting board designer work offline via the service worker',
   await expect(page.locator('[data-strip-row]').first()).toBeVisible()
 
   expect(failedAssets).toEqual([])
+})
+
+// FD11: the build stamps every emitted asset into sw.js, so lazy chunks (which neither
+// the shell HTML nor the stylesheet reference) are cached before the first offline visit.
+test('the service worker precaches every asset the build emitted', async ({ page, request }) => {
+  await page.addInitScript(() => window.localStorage.setItem('sawdust-atlas:onboarded', '1'))
+  await page.goto('/')
+  await page.evaluate(async () => { await navigator.serviceWorker.ready })
+
+  const source = await (await request.get('/sw.js')).text()
+  const stamped = /const BUILD_ASSETS = (\[[^\]]*\])/.exec(source)
+  expect(stamped, 'sw.js should carry the stamped asset list, not the placeholder').not.toBeNull()
+  const listed = JSON.parse(stamped![1]!) as string[]
+  expect(listed.length).toBeGreaterThan(0)
+
+  // The list is exactly the build output minus source maps and .woff fallbacks.
+  const emitted = readdirSync('dist/assets').filter(file => !file.endsWith('.map') && !file.endsWith('.woff')).map(file => `/assets/${file}`).sort()
+  expect(listed).toEqual(emitted)
+  expect(listed.some(url => url.endsWith('.js'))).toBe(true)
+  expect(listed.some(url => url.endsWith('.css'))).toBe(true)
+  expect(listed.some(url => url.endsWith('.woff') || url.endsWith('.map'))).toBe(false)
+
+  await expect.poll(() => page.evaluate(async urls => {
+    const hits = await Promise.all(urls.map(url => caches.match(url, { ignoreVary: true }).then(Boolean)))
+    return urls.filter((_, index) => !hits[index])
+  }, listed)).toEqual([])
 })

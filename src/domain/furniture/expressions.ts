@@ -1,3 +1,4 @@
+import { stronglyConnectedComponents } from './graph'
 import type { DimExpr, FurnitureIssue, FurnitureParameter } from './types'
 
 // Dimension expressions: the small arithmetic language behind parametric furniture
@@ -88,7 +89,7 @@ export function evaluateParameters(parameters: readonly FurnitureParameter[]): {
     dependencies.set(parameter, names.flatMap(name => owners.get(name) ?? []))
   }
 
-  for (const group of dependencyOrder(usable, dependencies)) {
+  for (const group of stronglyConnectedComponents(usable, parameter => dependencies.get(parameter)!)) {
     const first = group[0]!
     if (group.length > 1 || dependencies.get(first)!.includes(first)) {
       const names = group.map(member => `"${member.name}"`).join(', ')
@@ -107,47 +108,6 @@ export function evaluateParameters(parameters: readonly FurnitureParameter[]): {
     else report(first, result.code, result.message, 'value')
   }
   return { values, issues }
-}
-
-// ---- Dependency order ----------------------------------------------------------
-
-/** Tarjan's strongly connected components. Each group is either one parameter or a cycle,
- *  and groups come out with every dependency before its dependents. */
-function dependencyOrder(nodes: readonly FurnitureParameter[], edges: ReadonlyMap<FurnitureParameter, FurnitureParameter[]>): FurnitureParameter[][] {
-  const groups: FurnitureParameter[][] = []
-  const index = new Map<FurnitureParameter, number>()
-  const low = new Map<FurnitureParameter, number>()
-  const stack: FurnitureParameter[] = []
-  const onStack = new Set<FurnitureParameter>()
-  let counter = 0
-
-  const visit = (node: FurnitureParameter) => {
-    index.set(node, counter)
-    low.set(node, counter)
-    counter += 1
-    stack.push(node)
-    onStack.add(node)
-    for (const next of edges.get(node) ?? []) {
-      if (!index.has(next)) {
-        visit(next)
-        low.set(node, Math.min(low.get(node)!, low.get(next)!))
-      } else if (onStack.has(next)) {
-        low.set(node, Math.min(low.get(node)!, index.get(next)!))
-      }
-    }
-    if (low.get(node) === index.get(node)) {
-      const group: FurnitureParameter[] = []
-      let member: FurnitureParameter
-      do {
-        member = stack.pop()!
-        onStack.delete(member)
-        group.push(member)
-      } while (member !== node)
-      groups.push(group.reverse())
-    }
-  }
-  for (const node of nodes) if (!index.has(node)) visit(node)
-  return groups
 }
 
 // ---- Tokenizer and evaluator -----------------------------------------------------

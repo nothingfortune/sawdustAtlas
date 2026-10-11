@@ -1,10 +1,15 @@
 import { evaluateDim, evaluateParameters } from './expressions'
+import { HIGH_FACE, LOW_FACE, faceAxis } from './faces'
+import type { PartExtents, Position } from './relationships'
+import { planRelationships } from './relationships'
 import type {
   Axis, Box, BoxFace, DimExpr, FurnitureContext, FurnitureIssue, FurniturePart, FurnitureProject, PartDims, PartOrientation, ResolvedFurniture, ResolvedPart,
 } from './types'
 
 // Box geometry and the resolver that turns a furniture project into boxes. Pure
 // millimeter math at full float precision: nothing here rounds.
+
+export { faceAxis, isHighFace } from './faces'
 
 /** Two planes closer than this are the same plane; a span shorter than this is no span. */
 export const TOUCH_TOLERANCE = 1e-6
@@ -14,11 +19,6 @@ const NEUTRAL_COLOR = '#b9a48a'
 
 const AXES: readonly Axis[] = ['x', 'y', 'z']
 
-const FACE_AXIS: Readonly<Record<BoxFace, Axis>> = { left: 'x', right: 'x', front: 'y', back: 'y', bottom: 'z', top: 'z' }
-
-const LOW_FACE: Readonly<Record<Axis, BoxFace>> = { x: 'left', y: 'front', z: 'bottom' }
-const HIGH_FACE: Readonly<Record<Axis, BoxFace>> = { x: 'right', y: 'back', z: 'top' }
-
 /** Extent along each world axis: the part's length, width, and thickness run along the
  *  axes named by the orientation, in that order. */
 export function orientedExtents(size: PartDims, orientation: PartOrientation): { sx: number; sy: number; sz: number } {
@@ -27,10 +27,6 @@ export function orientedExtents(size: PartDims, orientation: PartOrientation): {
   along[orientation[1] as Axis] = size.width
   along[orientation[2] as Axis] = size.thickness
   return { sx: along.x, sy: along.y, sz: along.z }
-}
-
-export function faceAxis(face: BoxFace): Axis {
-  return FACE_AXIS[face]
 }
 
 /** The coordinate of a box face's plane along the face's axis. */
@@ -104,7 +100,7 @@ function sharedInterval(a: Box, b: Box, axis: Axis): { min: number; max: number 
  *  width axis), or a face (across the thickness axis). Joinery decides which dimension a
  *  joint grows from this. */
 export function partSurfaceAt(orientation: PartOrientation, face: BoxFace): 'end' | 'edge' | 'face' {
-  const index = orientation.indexOf(FACE_AXIS[face])
+  const index = orientation.indexOf(faceAxis(face))
   return index === 0 ? 'end' : index === 1 ? 'edge' : 'face'
 }
 
@@ -127,14 +123,40 @@ export function boundsOf(boxes: readonly Box[]): Box | null {
 export function resolveFurniture(project: FurnitureProject, context: FurnitureContext): ResolvedFurniture {
   const { values: parameters, issues } = evaluateParameters(project.parameters)
 
+  // Sizes come first and never depend on positions: relationships only need the extents.
+  const sizes = new Map<string, PartDims>()
+  const extents = new Map<string, PartExtents>()
+  for (const part of project.parts) {
+    const size = resolveSize(part, parameters, issues)
+    if (!size) continue
+    sizes.set(part.id, size)
+    extents.set(part.id, orientedExtents(size, part.orientation))
+  }
+  const plan = planRelationships(project, extents, parameters)
+
+  // Stored positions apply only on axes no relationship drives. A part missing an axis
+  // (its expression failed) is left out by the solver. Every bad field is reported.
+  const literal = new Map<string, Position>()
+  for (const part of project.parts) {
+    const driven = plan.drivenAxes(part.id)
+    const position: Position = {}
+    for (const axis of AXES) {
+      if (driven.includes(axis)) continue
+      const value = evaluateField(part, `position.${axis}`, part.position[axis], parameters, issues)
+      if (value !== null) position[axis] = value
+    }
+    if (sizes.has(part.id)) literal.set(part.id, position)
+  }
+  const solution = plan.solve(literal)
+  issues.push(...plan.issues, ...solution.issues)
+
   const parts: ResolvedPart[] = []
   for (const part of project.parts) {
-    // Both are evaluated so one pass reports every bad field of the part.
-    const size = resolveSize(part, parameters, issues)
-    const position = resolvePosition(part, parameters, issues)
+    const size = sizes.get(part.id)
+    const position = solution.placed.get(part.id)
     if (!size || !position) continue
-    const box: Box = { ...position, ...orientedExtents(size, part.orientation) }
-    parts.push({ id: part.id, part, size, box, color: colorOf(part, project, context), drivenAxes: [] })
+    const box: Box = { ...position, ...extents.get(part.id)! }
+    parts.push({ id: part.id, part, size, box, color: colorOf(part, project, context), drivenAxes: plan.drivenAxes(part.id) })
   }
 
   return { project, parameters, parts, issues, bounds: boundsOf(parts.map(resolved => resolved.box)) }
@@ -151,13 +173,6 @@ function resolveSize(part: FurniturePart, scope: Readonly<Record<string, number>
   return size.length !== undefined && size.width !== undefined && size.thickness !== undefined
     ? { length: size.length, width: size.width, thickness: size.thickness }
     : null
-}
-
-function resolvePosition(part: FurniturePart, scope: Readonly<Record<string, number>>, issues: FurnitureIssue[]): { x: number; y: number; z: number } | null {
-  const x = evaluateField(part, 'position.x', part.position.x, scope, issues)
-  const y = evaluateField(part, 'position.y', part.position.y, scope, issues)
-  const z = evaluateField(part, 'position.z', part.position.z, scope, issues)
-  return x === null || y === null || z === null ? null : { x, y, z }
 }
 
 function evaluateField(part: FurniturePart, field: string, value: DimExpr, scope: Readonly<Record<string, number>>, issues: FurnitureIssue[]): number | null {

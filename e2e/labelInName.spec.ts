@@ -25,7 +25,7 @@ test('every labelled control includes its visible text in its accessible name', 
   if (await welcome.isVisible()) await welcome.click()
   expect(await mismatches(page)).toEqual([])
 
-  for (const view of ['Workshop layout', 'Cutting boards', 'Wood library', 'Geometry', 'Milling allowances', 'Pricing']) {
+  for (const view of ['Workshop layout', 'Cutting boards', 'Furniture', 'Wood library', 'Geometry', 'Milling allowances', 'Pricing']) {
     await page.getByRole('button', { name: view, exact: true }).click()
     expect(await mismatches(page), view).toEqual([])
   }
@@ -37,4 +37,19 @@ test('every labelled control includes its visible text in its accessible name', 
   expect(await mismatches(page), 'board designer in imperial').toEqual([])
   await page.getByRole('button', { name: /^Make composite/ }).click()
   expect(await mismatches(page), 'composite designer').toEqual([])
+})
+
+test('furniture screens include their visible text in accessible names', async ({ page }) => {
+  await page.addInitScript(() => { window.localStorage.setItem('sawdust-atlas:onboarded', '1') })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Furniture', exact: true }).click()
+  await page.getByRole('button', { name: 'New project' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New furniture project' })
+  await dialog.getByRole('radio').nth(1).check()
+  expect(await mismatches(page), 'new project dialog').toEqual([])
+  await dialog.getByRole('button', { name: 'Create project' }).click()
+  await expect(page.locator('.furniture-header')).toBeVisible()
+  expect(await mismatches(page), 'furniture designer').toEqual([])
+  await page.getByRole('button', { name: /^Preston/ }).click()
+  expect(await mismatches(page), 'furniture designer in imperial').toEqual([])
 })

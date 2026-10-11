@@ -142,3 +142,11 @@ export function mergeProjectPackage(data: AtlasData, pkg: ProjectPackage, create
     },
   }
 }
+
+/** The download name for a package: `<project name>.sawdust-project.json`, made filesystem-safe. */
+export function projectPackageFileName(pkg: ProjectPackage): string {
+  const name = pkg.project.type === 'board' ? pkg.project.board.name : pkg.project.composite.name
+  // eslint-disable-next-line no-control-regex
+  const safe = name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-').replace(/\s+/g, ' ').trim().replace(/^\.+/, '')
+  return `${safe || 'project'}.sawdust-project.json`
+}

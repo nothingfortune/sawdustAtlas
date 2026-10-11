@@ -284,6 +284,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 }
 .board-gallery { padding:24px; overflow-y:auto; height:calc(100vh - 63px); }
 .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+.gallery-actions { display:flex;justify-content:flex-end;margin-bottom:14px; }
 .gallery-card { display:flex; flex-direction:column; gap:6px; align-items:flex-start; text-align:left; border:1px solid var(--line); background:white; padding:16px; border-radius:4px; cursor:pointer; min-height:96px; }
 .gallery-card:hover { border-color:#9da696; box-shadow:0 4px 14px #0000000f; }
 .gallery-new { align-items:center; justify-content:center; color:var(--green); border-style:dashed; }

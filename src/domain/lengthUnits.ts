@@ -16,6 +16,13 @@ export function formatNumber(value: number, digits = 2): string {
   return Number(value.toFixed(digits)).toString()
 }
 
+// Drop binary-float noise (3 * 12.7 -> 38.099999999999994) for what an input shows,
+// without rounding the stored value: 12 significant digits is far beyond any real
+// dimension but below double-precision error.
+export function tidyFloat(value: number): number {
+  return Number.isFinite(value) ? Number(value.toPrecision(12)) : value
+}
+
 export function lengthUnitLabel(unit: LengthUnit): 'mm' | 'in' {
   return unit === 'imperial' ? 'in' : 'mm'
 }

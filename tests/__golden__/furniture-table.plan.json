@@ -1,0 +1,4754 @@
+{
+  "version": 1,
+  "key": "furniture:table",
+  "source": {
+    "kind": "furniture",
+    "projectId": "table",
+    "projectName": "Basic table",
+    "designRevision": "2026-10-10T00:00:00.000Z"
+  },
+  "units": "mm",
+  "finished": {
+    "length": 1200,
+    "width": 700,
+    "thickness": 750
+  },
+  "phases": [
+    {
+      "key": "stock",
+      "order": 1,
+      "title": "Select stock"
+    },
+    {
+      "key": "panels",
+      "order": 2,
+      "title": "Edge-glued panels"
+    },
+    {
+      "key": "mill",
+      "order": 3,
+      "title": "Mill stock"
+    },
+    {
+      "key": "cut",
+      "order": 4,
+      "title": "Cut to size"
+    },
+    {
+      "key": "mark",
+      "order": 5,
+      "title": "Mark parts"
+    },
+    {
+      "key": "joinery",
+      "order": 6,
+      "title": "Cut the joinery"
+    },
+    {
+      "key": "dry-fit",
+      "order": 7,
+      "title": "Dry fit"
+    },
+    {
+      "key": "sand",
+      "order": 8,
+      "title": "Sand before glue-up"
+    },
+    {
+      "key": "assembly",
+      "order": 9,
+      "title": "Assembly"
+    },
+    {
+      "key": "finish",
+      "order": 10,
+      "title": "Finish"
+    }
+  ],
+  "steps": [
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:solid:maple:1120x100x20",
+          "quantity": 2
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Hard maple for A1, A2",
+      "instruction": "Pull the rough boards for these parts and check each one for checks, wind, and loose knots. Keep the best faces for the parts that show them.",
+      "key": "select:solid:maple:1120x100x20",
+      "phaseKey": "stock",
+      "order": 1
+    },
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:solid:maple:620x100x20",
+          "quantity": 2
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-left/cut",
+          "part:apron-right/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Hard maple for A3, A4",
+      "instruction": "Pull the rough boards for these parts and check each one for checks, wind, and loose knots. Keep the best faces for the parts that show them.",
+      "key": "select:solid:maple:620x100x20",
+      "phaseKey": "stock",
+      "order": 2
+    },
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:solid:maple:725x45x45",
+          "quantity": 4
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Hard maple for L1, L2, L3, L4",
+      "instruction": "Pull the rough boards for these parts and check each one for checks, wind, and loose knots. Keep the best faces for the parts that show them.",
+      "key": "select:solid:maple:725x45x45",
+      "phaseKey": "stock",
+      "order": 3
+    },
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:solid:walnut:1200x700x25",
+          "quantity": 5
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Walnut for T",
+      "instruction": "Pull the rough boards for this edge-glued panel and check each one for checks, wind, and loose knots. Choose boards whose grain and color match across the panel.",
+      "key": "select:solid:walnut:1200x700x25",
+      "phaseKey": "stock",
+      "order": 4
+    },
+    {
+      "dependsOn": [
+        "select:solid:walnut:1200x700x25"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:solid:walnut:1200x700x25",
+          "quantity": 5,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:top/ripped",
+          "quantity": 5
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 144.4,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Board width",
+          "target": 144.4,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "panel:top/ripped"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "cut",
+      "title": "Rip the boards for the top",
+      "instruction": "Joint one edge of each board, then rip every board to the same width at one fence setting, keeping the best edges for the glue joints.",
+      "batch": {
+        "count": 5,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 144.4,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel-rip:top",
+      "phaseKey": "panels",
+      "order": 5
+    },
+    {
+      "dependsOn": [
+        "panel-rip:top"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:top/ripped",
+          "quantity": 5,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:top/glued",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap on a dry clamp",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue up the top",
+      "instruction": "Arrange the boards for the best grain match, spread glue on each joint, and clamp evenly with the faces flush.",
+      "key": "panel-glue:top",
+      "phaseKey": "panels",
+      "order": 6
+    },
+    {
+      "dependsOn": [
+        "panel-glue:top"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:top/glued",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "part:top/cut"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the top glue set",
+      "instruction": "Leave the panel clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "panel-cure:top",
+      "phaseKey": "panels",
+      "order": 7
+    },
+    {
+      "dependsOn": [
+        "panel-cure:top"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:top/glued",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:walnut:1200x700x25/milled",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "rough-thickness",
+          "label": "Thickness before flattening",
+          "target": 28,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "panel:top/glued"
+        },
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 25,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:walnut:1200x700x25/milled"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "surface",
+      "title": "Flatten the top",
+      "instruction": "Remove the glue squeeze-out and flatten both faces to the milled thickness.",
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 25,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel-flatten:top",
+      "phaseKey": "panels",
+      "order": 8
+    },
+    {
+      "dependsOn": [
+        "select:solid:maple:1120x100x20",
+        "select:solid:maple:620x100x20"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:solid:maple:1120x100x20",
+          "quantity": 2,
+          "consumed": true
+        },
+        {
+          "partKey": "stock:solid:maple:620x100x20",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:maple:1120x100x20/milled",
+          "quantity": 2
+        },
+        {
+          "partKey": "blank:solid:maple:620x100x20/milled",
+          "quantity": 2
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "rough-thickness",
+          "label": "Thickness before milling",
+          "target": 23,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "stock:solid:maple:1120x100x20"
+        },
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 20,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:maple:1120x100x20/milled"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "reference-face",
+          "text": "Reference face is flat before planing",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut",
+          "part:apron-left/cut",
+          "part:apron-right/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "mill",
+      "title": "Mill the Hard maple to thickness",
+      "instruction": "Joint one face and one edge of each board, then plane every board to the same milled thickness.",
+      "batch": {
+        "count": 4,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 20,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "mill:maple@20",
+      "phaseKey": "mill",
+      "order": 9
+    },
+    {
+      "dependsOn": [
+        "select:solid:maple:725x45x45"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:solid:maple:725x45x45",
+          "quantity": 4,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:maple:725x45x45/milled",
+          "quantity": 4
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "rough-thickness",
+          "label": "Thickness before milling",
+          "target": 48,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "stock:solid:maple:725x45x45"
+        },
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 45,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:maple:725x45x45/milled"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "reference-face",
+          "text": "Reference face is flat before planing",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "mill",
+      "title": "Mill the Hard maple to thickness",
+      "instruction": "Joint one face and one edge of each board, then plane every board to the same milled thickness.",
+      "batch": {
+        "count": 4,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 45,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "mill:maple@45",
+      "phaseKey": "mill",
+      "order": 10
+    },
+    {
+      "dependsOn": [
+        "mill:maple@20"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:maple:1120x100x20/milled",
+          "quantity": 2,
+          "consumed": true
+        },
+        {
+          "partKey": "blank:solid:maple:620x100x20/milled",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:maple:1120x100x20/ripped",
+          "quantity": 2
+        },
+        {
+          "partKey": "blank:solid:maple:620x100x20/ripped",
+          "quantity": 2
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 100,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Part width",
+          "target": 100,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:maple:1120x100x20/ripped"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut",
+          "part:apron-left/cut",
+          "part:apron-right/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:maple:1120x100x20:rip",
+        "cut:solid:maple:620x100x20:rip"
+      ],
+      "kind": "cut",
+      "title": "Rip parts to width",
+      "instruction": "Rip A1, A2, A3, A4 at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 4,
+        "unitLabel": "piece"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 100,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:100",
+      "phaseKey": "cut",
+      "order": 11
+    },
+    {
+      "dependsOn": [
+        "mill:maple@45"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:maple:725x45x45/milled",
+          "quantity": 4,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:maple:725x45x45/ripped",
+          "quantity": 4
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 45,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Part width",
+          "target": 45,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:maple:725x45x45/ripped"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:maple:725x45x45:rip"
+      ],
+      "kind": "cut",
+      "title": "Rip parts to width",
+      "instruction": "Rip L1, L2, L3, L4 at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 4,
+        "unitLabel": "piece"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 45,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:45",
+      "phaseKey": "cut",
+      "order": 12
+    },
+    {
+      "dependsOn": [
+        "panel-flatten:top"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:walnut:1200x700x25/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "blank:solid:walnut:1200x700x25/ripped",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 700,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Part width",
+          "target": 700,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "blank:solid:walnut:1200x700x25/ripped"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:walnut:1200x700x25:rip"
+      ],
+      "kind": "cut",
+      "title": "Rip parts to width",
+      "instruction": "Rip T at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "piece"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 700,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "rip:700",
+      "phaseKey": "cut",
+      "order": 13
+    },
+    {
+      "dependsOn": [
+        "rip:100"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:maple:1120x100x20/ripped",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:apron-front/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-back/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "crosscut-sled",
+          "name": "Crosscut sled",
+          "category": "crosscut-sled"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Stop block distance",
+          "target": 1120,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "length",
+          "label": "Part length",
+          "target": 1120,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:apron-front/cut"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Crosscut line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:maple:1120x100x20:crosscut"
+      ],
+      "kind": "cut",
+      "title": "Crosscut parts to length",
+      "instruction": "Crosscut A1, A2 against a stop block at one setting so every piece matches.",
+      "batch": {
+        "count": 2,
+        "unitLabel": "part"
+      },
+      "machineSetup": {
+        "tool": "crosscut-sled",
+        "settings": [
+          {
+            "label": "Stop block distance",
+            "value": 1120,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "crosscut:1120",
+      "phaseKey": "cut",
+      "order": 14
+    },
+    {
+      "dependsOn": [
+        "rip:100"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:maple:620x100x20/ripped",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:apron-left/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-right/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "crosscut-sled",
+          "name": "Crosscut sled",
+          "category": "crosscut-sled"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Stop block distance",
+          "target": 620,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "length",
+          "label": "Part length",
+          "target": 620,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:apron-left/cut"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-left/cut",
+          "part:apron-right/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Crosscut line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:maple:620x100x20:crosscut"
+      ],
+      "kind": "cut",
+      "title": "Crosscut parts to length",
+      "instruction": "Crosscut A3, A4 against a stop block at one setting so every piece matches.",
+      "batch": {
+        "count": 2,
+        "unitLabel": "part"
+      },
+      "machineSetup": {
+        "tool": "crosscut-sled",
+        "settings": [
+          {
+            "label": "Stop block distance",
+            "value": 620,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "crosscut:620",
+      "phaseKey": "cut",
+      "order": 15
+    },
+    {
+      "dependsOn": [
+        "rip:45"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:maple:725x45x45/ripped",
+          "quantity": 4,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:leg-fl/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-fr/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-bl/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-br/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "crosscut-sled",
+          "name": "Crosscut sled",
+          "category": "crosscut-sled"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Stop block distance",
+          "target": 725,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "length",
+          "label": "Part length",
+          "target": 725,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:leg-fl/cut"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Crosscut line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:maple:725x45x45:crosscut"
+      ],
+      "kind": "cut",
+      "title": "Crosscut parts to length",
+      "instruction": "Crosscut L1, L2, L3, L4 against a stop block at one setting so every piece matches.",
+      "batch": {
+        "count": 4,
+        "unitLabel": "part"
+      },
+      "machineSetup": {
+        "tool": "crosscut-sled",
+        "settings": [
+          {
+            "label": "Stop block distance",
+            "value": 725,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "crosscut:725",
+      "phaseKey": "cut",
+      "order": 16
+    },
+    {
+      "dependsOn": [
+        "rip:700"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "blank:solid:walnut:1200x700x25/ripped",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "crosscut-sled",
+          "name": "Crosscut sled",
+          "category": "crosscut-sled"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Stop block distance",
+          "target": 1200,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "length",
+          "label": "Part length",
+          "target": 1200,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:top/cut"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Crosscut line"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:solid:walnut:1200x700x25:crosscut"
+      ],
+      "kind": "cut",
+      "title": "Crosscut parts to length",
+      "instruction": "Crosscut T against a stop block at one setting so every piece matches.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "part"
+      },
+      "machineSetup": {
+        "tool": "crosscut-sled",
+        "settings": [
+          {
+            "label": "Stop block distance",
+            "value": 1200,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "crosscut:1200",
+      "phaseKey": "cut",
+      "order": 17
+    },
+    {
+      "dependsOn": [
+        "crosscut:1120",
+        "crosscut:620",
+        "crosscut:725",
+        "crosscut:1200"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:apron-front/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-back/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-left/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-right/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fl/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fr/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-bl/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-br/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "mark:apron-front",
+          "text": "Write A1 on the Front apron; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:apron-back",
+          "text": "Write A2 on the Back apron; keep the back face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:apron-left",
+          "text": "Write A3 on the Left apron; keep the left face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:apron-right",
+          "text": "Write A4 on the Right apron; keep the right face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:leg-fl",
+          "text": "Write L1 on the Front left leg; keep the front, back, left, right faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:leg-fr",
+          "text": "Write L2 on the Front right leg; keep the front, back, left, right faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:leg-bl",
+          "text": "Write L3 on the Back left leg; keep the front, back, left, right faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:leg-br",
+          "text": "Write L4 on the Back right leg; keep the front, back, left, right faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:top",
+          "text": "Write T on the Top; keep the top, front, back, left, right faces clean",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut",
+          "part:apron-left/cut",
+          "part:apron-right/cut",
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut",
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "label",
+            "text": "Part marks"
+          },
+          {
+            "kind": "reference-face",
+            "text": "Reference faces"
+          }
+        ],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark every part",
+      "instruction": "Write each part mark on its reference face, and note which faces show on the finished piece so the best faces end up there.",
+      "key": "mark:parts",
+      "phaseKey": "mark",
+      "order": 18
+    },
+    {
+      "dependsOn": [
+        "mark:parts"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:apron-front/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-back/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-left/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-right/cut",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:apron-front/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-back/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-left/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-right/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Tenon thickness",
+          "target": 8,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Tenon width",
+          "target": 80,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-3",
+          "label": "Tenon length",
+          "target": 30,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:mt-front-fl:apron-front:tenon",
+          "text": "Cut tenons on the Front apron (mt-front-fl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-front-fr:apron-front:tenon",
+          "text": "Cut tenons on the Front apron (mt-front-fr)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-back-bl:apron-back:tenon",
+          "text": "Cut tenons on the Back apron (mt-back-bl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-back-br:apron-back:tenon",
+          "text": "Cut tenons on the Back apron (mt-back-br)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-left-fl:apron-left:tenon",
+          "text": "Cut tenons on the Left apron (mt-left-fl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-left-bl:apron-left:tenon",
+          "text": "Cut tenons on the Left apron (mt-left-bl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-right-fr:apron-right:tenon",
+          "text": "Cut tenons on the Right apron (mt-right-fr)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-right-br:apron-right:tenon",
+          "text": "Cut tenons on the Right apron (mt-right-br)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/cut",
+          "part:apron-back/cut",
+          "part:apron-left/cut",
+          "part:apron-right/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "machine-joinery",
+      "title": "Cut the tenons",
+      "instruction": "Set up the table saw from the setup values. Test the setup on scrap and check the fit, then cut each marked part.",
+      "batch": {
+        "count": 8,
+        "unitLabel": "tenon"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Tenon thickness",
+            "value": 8,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Tenon width",
+            "value": 80,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Tenon length",
+            "value": 30,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+      "phaseKey": "joinery",
+      "order": 19
+    },
+    {
+      "dependsOn": [
+        "joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:leg-fl/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-fr/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-bl/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-br/cut",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "mortiser",
+          "name": "Mortiser",
+          "category": "mortiser"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Mortise width",
+          "target": 8,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Mortise length",
+          "target": 80,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-3",
+          "label": "Mortise depth",
+          "target": 32,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:mt-front-fl:leg-fl:mortise",
+          "text": "Cut mortises on the Front left leg (mt-front-fl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-front-fr:leg-fr:mortise",
+          "text": "Cut mortises on the Front right leg (mt-front-fr)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-back-bl:leg-bl:mortise",
+          "text": "Cut mortises on the Back left leg (mt-back-bl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-back-br:leg-br:mortise",
+          "text": "Cut mortises on the Back right leg (mt-back-br)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-left-fl:leg-fl:mortise",
+          "text": "Cut mortises on the Front left leg (mt-left-fl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-left-bl:leg-bl:mortise",
+          "text": "Cut mortises on the Back left leg (mt-left-bl)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-right-fr:leg-fr:mortise",
+          "text": "Cut mortises on the Front right leg (mt-right-fr)",
+          "critical": false
+        },
+        {
+          "key": "op:mt-right-br:leg-br:mortise",
+          "text": "Cut mortises on the Back right leg (mt-right-br)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:leg-fl/cut",
+          "part:leg-fr/cut",
+          "part:leg-bl/cut",
+          "part:leg-br/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "machine-joinery",
+      "title": "Cut the mortises",
+      "instruction": "Set up the mortiser from the setup values. Test the setup on scrap and check the fit, then cut each marked part.",
+      "batch": {
+        "count": 8,
+        "unitLabel": "mortise"
+      },
+      "machineSetup": {
+        "tool": "mortiser",
+        "settings": [
+          {
+            "label": "Mortise width",
+            "value": 8,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Mortise length",
+            "value": 80,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Mortise depth",
+            "value": 32,
+            "unit": "mm",
+            "source": "assumption"
+          }
+        ]
+      },
+      "key": "joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+      "phaseKey": "joinery",
+      "order": 20
+    },
+    {
+      "dependsOn": [
+        "joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:apron-front/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-back/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-left/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-right/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "router",
+          "name": "Router",
+          "category": "router"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Slot width",
+          "target": 3,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Slot depth",
+          "target": 10,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:tf-front:apron-front:fastener-slots",
+          "text": "Cut fastener slots on the Front apron (tf-front)",
+          "critical": false
+        },
+        {
+          "key": "op:tf-back:apron-back:fastener-slots",
+          "text": "Cut fastener slots on the Back apron (tf-back)",
+          "critical": false
+        },
+        {
+          "key": "op:tf-left:apron-left:fastener-slots",
+          "text": "Cut fastener slots on the Left apron (tf-left)",
+          "critical": false
+        },
+        {
+          "key": "op:tf-right:apron-right:fastener-slots",
+          "text": "Cut fastener slots on the Right apron (tf-right)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "part:apron-back/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "part:apron-left/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+          "part:apron-right/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "machine-joinery",
+      "title": "Cut the fastener slots",
+      "instruction": "Set up the router from the setup values. Test the setup on scrap and check the fit, then cut each marked part.",
+      "batch": {
+        "count": 10,
+        "unitLabel": "slot"
+      },
+      "machineSetup": {
+        "tool": "router",
+        "settings": [
+          {
+            "label": "Slot width",
+            "value": 3,
+            "unit": "mm",
+            "source": "assumption"
+          },
+          {
+            "label": "Slot depth",
+            "value": 10,
+            "unit": "mm",
+            "source": "assumption"
+          }
+        ]
+      },
+      "key": "joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+      "phaseKey": "joinery",
+      "order": 21
+    },
+    {
+      "dependsOn": [
+        "joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the front leg frame",
+      "instruction": "Fit the parts together without glue, check that every joint closes and the unit is square, then take it apart and keep the parts in order.",
+      "key": "dry-fit:sub-front",
+      "phaseKey": "dry-fit",
+      "order": 22
+    },
+    {
+      "dependsOn": [
+        "joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the back leg frame",
+      "instruction": "Fit the parts together without glue, check that every joint closes and the unit is square, then take it apart and keep the parts in order.",
+      "key": "dry-fit:sub-back",
+      "phaseKey": "dry-fit",
+      "order": 23
+    },
+    {
+      "dependsOn": [
+        "joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the base",
+      "instruction": "Fit the parts together without glue, check that every joint closes and the unit is square, then take it apart and keep the parts in order.",
+      "key": "dry-fit:sub-base",
+      "phaseKey": "dry-fit",
+      "order": 24
+    },
+    {
+      "dependsOn": [
+        "joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+        "dry-fit:sub-front",
+        "dry-fit:sub-back",
+        "dry-fit:sub-base"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the whole piece",
+      "instruction": "Fit every assembly and loose part together without glue to confirm the whole piece goes together, then take it apart.",
+      "key": "dry-fit:final",
+      "phaseKey": "dry-fit",
+      "order": 25
+    },
+    {
+      "dependsOn": [
+        "dry-fit:sub-front",
+        "dry-fit:sub-back",
+        "dry-fit:sub-base",
+        "dry-fit:final"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:apron-front/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-back/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-left/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:apron-right/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-fl/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-fr/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-bl/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:leg-br/sand:parts",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "sander",
+          "name": "Sanding supplies",
+          "category": "sander"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "protect-joints",
+          "text": "Joint surfaces and tenon cheeks stay unsanded so the fits stay tight",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+          "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+          "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "surface",
+      "title": "Sand the inside faces",
+      "instruction": "Sand the faces that will be hard to reach once the parts are glued, working through the grits and keeping paper off the joint surfaces.",
+      "batch": {
+        "count": 8,
+        "unitLabel": "part"
+      },
+      "key": "sand:parts",
+      "phaseKey": "sand",
+      "order": 26
+    },
+    {
+      "dependsOn": [
+        "sand:parts"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:leg-fl/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-fr/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-front/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:sub-front",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "diagonal-1",
+          "label": "First diagonal",
+          "target": 1359.4576124322525,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-front"
+        },
+        {
+          "key": "diagonal-2",
+          "label": "Second diagonal",
+          "target": 1359.4576124322525,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-front"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        },
+        {
+          "key": "joint:mt-front-fl",
+          "text": "Close the mortise and tenon joint: Front apron to Front left leg",
+          "critical": false
+        },
+        {
+          "key": "joint:mt-front-fr",
+          "text": "Close the mortise and tenon joint: Front apron to Front right leg",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:leg-fl/sand:parts",
+          "part:leg-fr/sand:parts",
+          "part:apron-front/sand:parts"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp the front leg frame",
+      "instruction": "Spread glue on the joints, bring the parts together in the dry-fit order, and clamp evenly, checking the unit stays square.",
+      "key": "glue:sub-front",
+      "phaseKey": "assembly",
+      "order": 27
+    },
+    {
+      "dependsOn": [
+        "glue:sub-front"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:sub-front",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:sub-front"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the front leg frame glue set",
+      "instruction": "Leave the assembly clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "cure:sub-front",
+      "phaseKey": "assembly",
+      "order": 28
+    },
+    {
+      "dependsOn": [
+        "sand:parts"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:leg-bl/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:leg-br/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-back/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:sub-back",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "diagonal-1",
+          "label": "First diagonal",
+          "target": 1359.4576124322525,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-back"
+        },
+        {
+          "key": "diagonal-2",
+          "label": "Second diagonal",
+          "target": 1359.4576124322525,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-back"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        },
+        {
+          "key": "joint:mt-back-bl",
+          "text": "Close the mortise and tenon joint: Back apron to Back left leg",
+          "critical": false
+        },
+        {
+          "key": "joint:mt-back-br",
+          "text": "Close the mortise and tenon joint: Back apron to Back right leg",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:leg-bl/sand:parts",
+          "part:leg-br/sand:parts",
+          "part:apron-back/sand:parts"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp the back leg frame",
+      "instruction": "Spread glue on the joints, bring the parts together in the dry-fit order, and clamp evenly, checking the unit stays square.",
+      "key": "glue:sub-back",
+      "phaseKey": "assembly",
+      "order": 29
+    },
+    {
+      "dependsOn": [
+        "glue:sub-back"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:sub-back",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:sub-back"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the back leg frame glue set",
+      "instruction": "Leave the assembly clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "cure:sub-back",
+      "phaseKey": "assembly",
+      "order": 30
+    },
+    {
+      "dependsOn": [
+        "sand:parts",
+        "cure:sub-front",
+        "cure:sub-back"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:apron-left/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:apron-right/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "assembly:sub-front",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "assembly:sub-back",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:sub-base",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        },
+        {
+          "key": "joint:mt-left-fl",
+          "text": "Close the mortise and tenon joint: Left apron to Front left leg",
+          "critical": false
+        },
+        {
+          "key": "joint:mt-left-bl",
+          "text": "Close the mortise and tenon joint: Left apron to Back left leg",
+          "critical": false
+        },
+        {
+          "key": "joint:mt-right-fr",
+          "text": "Close the mortise and tenon joint: Right apron to Front right leg",
+          "critical": false
+        },
+        {
+          "key": "joint:mt-right-br",
+          "text": "Close the mortise and tenon joint: Right apron to Back right leg",
+          "critical": false
+        },
+        {
+          "key": "square",
+          "text": "Both diagonals measure the same before the glue sets",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:apron-left/sand:parts",
+          "part:apron-right/sand:parts"
+        ],
+        "ghostPartKeys": [
+          "assembly:sub-front",
+          "assembly:sub-back"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp the base",
+      "instruction": "Spread glue on the joints, bring the parts together in the dry-fit order, and clamp evenly, checking the unit stays square.",
+      "key": "glue:sub-base",
+      "phaseKey": "assembly",
+      "order": 31
+    },
+    {
+      "dependsOn": [
+        "glue:sub-base"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:sub-base",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:sub-base"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the base glue set",
+      "instruction": "Leave the assembly clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "cure:sub-base",
+      "phaseKey": "assembly",
+      "order": 32
+    },
+    {
+      "dependsOn": [
+        "sand:parts",
+        "cure:sub-base"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "assembly:sub-base",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:final",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "screwdriver",
+          "name": "Screwdriver",
+          "category": "screwdriver"
+        },
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joint:tf-front",
+          "text": "Close the tabletop fastener joint: Top to Front apron",
+          "critical": false
+        },
+        {
+          "key": "joint:tf-back",
+          "text": "Close the tabletop fastener joint: Top to Back apron",
+          "critical": false
+        },
+        {
+          "key": "joint:tf-left",
+          "text": "Close the tabletop fastener joint: Top to Left apron",
+          "critical": false
+        },
+        {
+          "key": "joint:tf-right",
+          "text": "Close the tabletop fastener joint: Top to Right apron",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:top/cut"
+        ],
+        "ghostPartKeys": [
+          "assembly:sub-base"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "install",
+      "title": "Fasten the whole piece",
+      "instruction": "Join the parts with the listed fasteners, leaving room for the top to move with the seasons where it is fastened.",
+      "key": "assemble:final",
+      "phaseKey": "assembly",
+      "order": 33
+    },
+    {
+      "dependsOn": [
+        "assemble:final"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:final",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:final/finished",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "sander",
+          "name": "Sanding supplies",
+          "category": "sander"
+        },
+        {
+          "key": "finish",
+          "name": "Finishing supplies",
+          "category": "finish"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "assembly:final/finished"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "finish",
+      "title": "Apply the finish",
+      "instruction": "Do the final sanding through the grits, remove the dust, and apply the finish in thin coats.",
+      "key": "finish:apply",
+      "phaseKey": "finish",
+      "order": 34
+    },
+    {
+      "dependsOn": [
+        "finish:apply"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:final/finished",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:final/finished"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            1967.250891387532,
+            -1017.250891387532,
+            1742.250891387532
+          ],
+          "target": [
+            600,
+            350,
+            375
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the finish dry",
+      "instruction": "Leave the piece undisturbed until the finish has dried hard enough to handle.",
+      "wait": {
+        "minimumMinutes": 240,
+        "reason": "Finish drying time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 240,
+        "kind": "cure"
+      },
+      "key": "finish:dry",
+      "phaseKey": "finish",
+      "order": 35
+    }
+  ],
+  "parts": [
+    {
+      "key": "stock:solid:maple:1120x100x20",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 1132,
+        "width": 103.2,
+        "thickness": 23
+      }
+    },
+    {
+      "key": "stock:solid:maple:620x100x20",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 632,
+        "width": 103.2,
+        "thickness": 23
+      }
+    },
+    {
+      "key": "stock:solid:maple:725x45x45",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 737,
+        "width": 48.2,
+        "thickness": 48
+      }
+    },
+    {
+      "key": "stock:solid:walnut:1200x700x25",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 1212,
+        "width": 144.4,
+        "thickness": 28
+      }
+    },
+    {
+      "key": "blank:solid:walnut:1200x700x25/milled",
+      "kind": "blank",
+      "stage": "milled",
+      "label": "T",
+      "name": "Top blank",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 1212,
+        "width": 722,
+        "thickness": 25
+      }
+    },
+    {
+      "key": "panel:top/ripped",
+      "kind": "board",
+      "stage": "cut",
+      "label": "T",
+      "name": "Top boards",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 1212,
+        "width": 144.4,
+        "thickness": 28
+      }
+    },
+    {
+      "key": "panel:top/glued",
+      "kind": "panel",
+      "stage": "glued",
+      "label": "T",
+      "name": "Top glued panel",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 1212,
+        "width": 722,
+        "thickness": 28
+      }
+    },
+    {
+      "key": "blank:solid:maple:1120x100x20/milled",
+      "kind": "blank",
+      "stage": "milled",
+      "label": "A1, A2",
+      "name": "Apron blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 1132,
+        "width": 103.2,
+        "thickness": 20
+      }
+    },
+    {
+      "key": "blank:solid:maple:620x100x20/milled",
+      "kind": "blank",
+      "stage": "milled",
+      "label": "A3, A4",
+      "name": "Apron blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 632,
+        "width": 103.2,
+        "thickness": 20
+      }
+    },
+    {
+      "key": "blank:solid:maple:725x45x45/milled",
+      "kind": "blank",
+      "stage": "milled",
+      "label": "L1, L2, L3, L4",
+      "name": "Leg blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 737,
+        "width": 48.2,
+        "thickness": 45
+      }
+    },
+    {
+      "key": "blank:solid:maple:1120x100x20/ripped",
+      "kind": "blank",
+      "stage": "cut",
+      "label": "A1, A2",
+      "name": "Apron ripped blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 1132,
+        "width": 100,
+        "thickness": 20
+      }
+    },
+    {
+      "key": "blank:solid:maple:620x100x20/ripped",
+      "kind": "blank",
+      "stage": "cut",
+      "label": "A3, A4",
+      "name": "Apron ripped blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 632,
+        "width": 100,
+        "thickness": 20
+      }
+    },
+    {
+      "key": "blank:solid:maple:725x45x45/ripped",
+      "kind": "blank",
+      "stage": "cut",
+      "label": "L1, L2, L3, L4",
+      "name": "Leg ripped blank",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 737,
+        "width": 45,
+        "thickness": 45
+      }
+    },
+    {
+      "key": "blank:solid:walnut:1200x700x25/ripped",
+      "kind": "blank",
+      "stage": "cut",
+      "label": "T",
+      "name": "Top ripped blank",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 1212,
+        "width": 700,
+        "thickness": 25
+      }
+    },
+    {
+      "key": "part:apron-front/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "A1",
+      "name": "Front apron",
+      "sourceId": "apron-front",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-back/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "A2",
+      "name": "Back apron",
+      "sourceId": "apron-back",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-left/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "A3",
+      "name": "Left apron",
+      "sourceId": "apron-left",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-right/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "A4",
+      "name": "Right apron",
+      "sourceId": "apron-right",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fl/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "L1",
+      "name": "Front left leg",
+      "sourceId": "leg-fl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fr/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "L2",
+      "name": "Front right leg",
+      "sourceId": "leg-fr",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-bl/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "L3",
+      "name": "Back left leg",
+      "sourceId": "leg-bl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-br/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "L4",
+      "name": "Back right leg",
+      "sourceId": "leg-br",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:top/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "T",
+      "name": "Top",
+      "sourceId": "top",
+      "dimensions": {
+        "length": 1200,
+        "width": 700,
+        "thickness": 25
+      },
+      "speciesId": "walnut"
+    },
+    {
+      "key": "part:apron-front/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A1",
+      "name": "Front apron",
+      "sourceId": "apron-front",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-back/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A2",
+      "name": "Back apron",
+      "sourceId": "apron-back",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-left/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A3",
+      "name": "Left apron",
+      "sourceId": "apron-left",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-right/joinery:tenon|table-saw|Tenon thickness=8mm:design|Tenon width=80mm:design|Tenon length=30mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A4",
+      "name": "Right apron",
+      "sourceId": "apron-right",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "L1",
+      "name": "Front left leg",
+      "sourceId": "leg-fl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fr/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "L2",
+      "name": "Front right leg",
+      "sourceId": "leg-fr",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-bl/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "L3",
+      "name": "Back left leg",
+      "sourceId": "leg-bl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-br/joinery:mortise|mortiser|Mortise width=8mm:design|Mortise length=80mm:design|Mortise depth=32mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "L4",
+      "name": "Back right leg",
+      "sourceId": "leg-br",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-front/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A1",
+      "name": "Front apron",
+      "sourceId": "apron-front",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-back/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A2",
+      "name": "Back apron",
+      "sourceId": "apron-back",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-left/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A3",
+      "name": "Left apron",
+      "sourceId": "apron-left",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-right/joinery:fastener-slots|router|Slot width=3mm:assumption|Slot depth=10mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "A4",
+      "name": "Right apron",
+      "sourceId": "apron-right",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-front/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "A1",
+      "name": "Front apron",
+      "sourceId": "apron-front",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-back/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "A2",
+      "name": "Back apron",
+      "sourceId": "apron-back",
+      "dimensions": {
+        "length": 1120,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-left/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "A3",
+      "name": "Left apron",
+      "sourceId": "apron-left",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:apron-right/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "A4",
+      "name": "Right apron",
+      "sourceId": "apron-right",
+      "dimensions": {
+        "length": 620,
+        "width": 100,
+        "thickness": 20
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fl/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "L1",
+      "name": "Front left leg",
+      "sourceId": "leg-fl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-fr/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "L2",
+      "name": "Front right leg",
+      "sourceId": "leg-fr",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-bl/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "L3",
+      "name": "Back left leg",
+      "sourceId": "leg-bl",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "part:leg-br/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "L4",
+      "name": "Back right leg",
+      "sourceId": "leg-br",
+      "dimensions": {
+        "length": 725,
+        "width": 45,
+        "thickness": 45
+      },
+      "speciesId": "maple"
+    },
+    {
+      "key": "assembly:sub-front",
+      "kind": "assembly",
+      "stage": "glued",
+      "label": "F",
+      "name": "Front leg frame",
+      "sourceId": "sub-front",
+      "dimensions": {
+        "length": 1150,
+        "width": 45,
+        "thickness": 725
+      }
+    },
+    {
+      "key": "assembly:sub-back",
+      "kind": "assembly",
+      "stage": "glued",
+      "label": "B",
+      "name": "Back leg frame",
+      "sourceId": "sub-back",
+      "dimensions": {
+        "length": 1150,
+        "width": 45,
+        "thickness": 725
+      }
+    },
+    {
+      "key": "assembly:sub-base",
+      "kind": "assembly",
+      "stage": "glued",
+      "label": "S",
+      "name": "Base",
+      "sourceId": "sub-base",
+      "dimensions": {
+        "length": 1150,
+        "width": 650,
+        "thickness": 725
+      }
+    },
+    {
+      "key": "assembly:final",
+      "kind": "assembly",
+      "stage": "assembled",
+      "label": "Final",
+      "name": "Basic table",
+      "dimensions": {
+        "length": 1200,
+        "width": 700,
+        "thickness": 750
+      }
+    },
+    {
+      "key": "assembly:final/finished",
+      "kind": "assembly",
+      "stage": "finished",
+      "label": "Final",
+      "name": "Basic table",
+      "dimensions": {
+        "length": 1200,
+        "width": 700,
+        "thickness": 750
+      }
+    }
+  ],
+  "assemblies": [
+    {
+      "key": "assembly:sub-front",
+      "label": "F",
+      "name": "Front leg frame",
+      "partKeys": [
+        "part:leg-fl/sand:parts",
+        "part:leg-fr/sand:parts",
+        "part:apron-front/sand:parts",
+        "assembly:sub-front"
+      ],
+      "stepKeys": [
+        "glue:sub-front",
+        "cure:sub-front"
+      ],
+      "parentKey": "assembly:sub-base"
+    },
+    {
+      "key": "assembly:sub-back",
+      "label": "B",
+      "name": "Back leg frame",
+      "partKeys": [
+        "part:leg-bl/sand:parts",
+        "part:leg-br/sand:parts",
+        "part:apron-back/sand:parts",
+        "assembly:sub-back"
+      ],
+      "stepKeys": [
+        "glue:sub-back",
+        "cure:sub-back"
+      ],
+      "parentKey": "assembly:sub-base"
+    },
+    {
+      "key": "assembly:sub-base",
+      "label": "S",
+      "name": "Base",
+      "partKeys": [
+        "part:apron-left/sand:parts",
+        "part:apron-right/sand:parts",
+        "assembly:sub-base"
+      ],
+      "stepKeys": [
+        "glue:sub-base",
+        "cure:sub-base"
+      ],
+      "parentKey": "assembly:final"
+    },
+    {
+      "key": "assembly:final",
+      "label": "Final",
+      "name": "Basic table",
+      "partKeys": [
+        "part:top/cut",
+        "assembly:sub-base",
+        "assembly:final"
+      ],
+      "stepKeys": [
+        "assemble:final"
+      ]
+    },
+    {
+      "key": "assembly:finished",
+      "label": "Finished",
+      "name": "Basic table",
+      "partKeys": [
+        "assembly:final/finished"
+      ],
+      "stepKeys": [
+        "finish:apply",
+        "finish:dry"
+      ]
+    }
+  ],
+  "requirements": {
+    "stock": [
+      {
+        "key": "solid:maple:1120x100x20",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 2,
+        "length": 1132,
+        "width": 103.2,
+        "thickness": 23,
+        "boardFeet": 2.2773003551256448,
+        "partKey": "stock:solid:maple:1120x100x20"
+      },
+      {
+        "key": "solid:maple:620x100x20",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 2,
+        "length": 632,
+        "width": 103.2,
+        "thickness": 23,
+        "boardFeet": 1.2714256399641408,
+        "partKey": "stock:solid:maple:620x100x20"
+      },
+      {
+        "key": "solid:maple:725x45x45",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 4,
+        "length": 737,
+        "width": 48.2,
+        "thickness": 48,
+        "boardFeet": 2.890361161299751,
+        "partKey": "stock:solid:maple:725x45x45"
+      },
+      {
+        "key": "solid:walnut:1200x700x25",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 5,
+        "length": 1212,
+        "width": 144.4,
+        "thickness": 28,
+        "boardFeet": 10.383271422710825,
+        "partKey": "stock:solid:walnut:1200x700x25"
+      }
+    ],
+    "cuts": [
+      {
+        "id": "cut:solid:maple:1120x100x20:rip",
+        "label": "Apron rip to width",
+        "stage": "rip",
+        "quantity": 2
+      },
+      {
+        "id": "cut:solid:maple:1120x100x20:crosscut",
+        "label": "Apron crosscut to length",
+        "stage": "crosscut",
+        "quantity": 2
+      },
+      {
+        "id": "cut:solid:maple:620x100x20:rip",
+        "label": "Apron rip to width",
+        "stage": "rip",
+        "quantity": 2
+      },
+      {
+        "id": "cut:solid:maple:620x100x20:crosscut",
+        "label": "Apron crosscut to length",
+        "stage": "crosscut",
+        "quantity": 2
+      },
+      {
+        "id": "cut:solid:maple:725x45x45:rip",
+        "label": "Leg rip to width",
+        "stage": "rip",
+        "quantity": 4
+      },
+      {
+        "id": "cut:solid:maple:725x45x45:crosscut",
+        "label": "Leg crosscut to length",
+        "stage": "crosscut",
+        "quantity": 4
+      },
+      {
+        "id": "cut:solid:walnut:1200x700x25:rip",
+        "label": "Top rip to width",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "cut:solid:walnut:1200x700x25:crosscut",
+        "label": "Top crosscut to length",
+        "stage": "crosscut",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      {
+        "key": "measuring",
+        "name": "Tape measure and square",
+        "category": "measuring"
+      },
+      {
+        "key": "jointer",
+        "name": "Jointer",
+        "category": "jointer"
+      },
+      {
+        "key": "table-saw",
+        "name": "Table saw",
+        "category": "table-saw"
+      },
+      {
+        "key": "clamps",
+        "name": "Bar clamps",
+        "category": "clamps"
+      },
+      {
+        "key": "glue",
+        "name": "Wood glue",
+        "category": "glue"
+      },
+      {
+        "key": "planer",
+        "name": "Thickness planer",
+        "category": "planer"
+      },
+      {
+        "key": "crosscut-sled",
+        "name": "Crosscut sled",
+        "category": "crosscut-sled"
+      },
+      {
+        "key": "marking",
+        "name": "Pencil and marking knife",
+        "category": "marking"
+      },
+      {
+        "key": "mortiser",
+        "name": "Mortiser",
+        "category": "mortiser"
+      },
+      {
+        "key": "router",
+        "name": "Router",
+        "category": "router"
+      },
+      {
+        "key": "sander",
+        "name": "Sanding supplies",
+        "category": "sander"
+      },
+      {
+        "key": "screwdriver",
+        "name": "Screwdriver",
+        "category": "screwdriver"
+      },
+      {
+        "key": "finish",
+        "name": "Finishing supplies",
+        "category": "finish"
+      }
+    ],
+    "consumables": [
+      "Wood glue",
+      "Sandpaper",
+      "Finish",
+      "Tabletop fastener (10)"
+    ]
+  },
+  "warnings": [],
+  "revision": "r-03d25ee6aa42be"
+}

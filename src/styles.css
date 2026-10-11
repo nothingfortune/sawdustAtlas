@@ -687,10 +687,12 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .template-params { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:0 12px; margin-top:6px; }
 .field-error { color:#9c3f2f; font-size:12px; }
 .field > label { font:13px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#777d76; }
-.furniture-designer { display:flex; flex-direction:column; height:calc(100vh - 63px); }
+.furniture-designer { display:flex; flex-direction:column; height:calc(100vh - 63px); position:relative; }
 .furniture-header { display:flex; align-items:center; flex-wrap:wrap; gap:12px 16px; padding:11px 20px; background:var(--paper); border-bottom:1px solid var(--line); }
 .furniture-header h2 { margin:0; font-size:18px; }
 .furniture-size, .furniture-parts, .furniture-issue-count { font:13px 'DM Mono'; color:#6d786f; }
+button.furniture-issue-count { min-height:44px; padding:0 12px; border:1px solid var(--line); background:white; border-radius:3px; cursor:pointer; }
+button.furniture-issue-count[aria-expanded="true"] { border-color:var(--green); color:var(--green); }
 @media (pointer: coarse) {
   .furniture-card-actions .icon-button { width:44px; height:44px; }
   .furniture-card-open { padding-bottom:62px; }
@@ -705,8 +707,8 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .furniture-right { border-left:1px solid var(--line); padding:16px 16px 24px; }
 .furniture-center { background:#e9e7df; display:flex; flex-direction:column; align-items:stretch; gap:8px; padding:10px 12px; color:#4f574f; min-width:0; min-height:0; }
 .furniture-center p { margin:2px 0; }
-.furniture-tabs { display:flex; border-bottom:1px solid var(--line); position:sticky; top:0; background:#f8f6f0; z-index:1; }
-.furniture-tabs button { flex:1; min-height:44px; border:0; border-bottom:3px solid transparent; background:transparent; font-weight:600; font-size:14px; }
+.furniture-tabs { display:flex; flex-wrap:wrap; border-bottom:1px solid var(--line); position:sticky; top:0; background:#f8f6f0; z-index:1; }
+.furniture-tabs button { flex:1 1 auto; padding:0 4px; min-height:44px; border:0; border-bottom:3px solid transparent; background:transparent; font-weight:600; font-size:13px; }
 .furniture-tabs button.active { border-bottom-color:var(--green); color:var(--green); }
 .furniture-tabpanel { padding:14px 14px 24px; }
 .part-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
@@ -778,3 +780,35 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .part-relationships li { display:flex; flex-direction:column; align-items:flex-start; gap:6px; font-size:13px; line-height:1.4; }
 .part-relationships .button { min-height:44px; }
 .furniture-thumb { display:block; }
+
+/* Furniture joints, assemblies, and the issues list. */
+.furniture-issues-popover { position:absolute; top:62px; right:12px; z-index:20; width:min(540px,calc(100% - 24px)); max-height:min(60vh,520px); overflow:auto; background:#f8f6f0; border:1px solid #d2cec2; box-shadow:0 12px 36px #00000040; padding:12px 14px 16px; }
+.furniture-issues-popover > header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.issue-group h4 { margin:12px 0 6px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+.issue-group ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.issue-row { display:flex; gap:8px; align-items:flex-start; width:100%; min-height:44px; padding:8px 10px; text-align:left; font-size:13px; line-height:1.4; background:white; border:1px solid var(--line); cursor:pointer; }
+.issue-row.error { border-left:4px solid #a32d1b; }
+.issue-row.warning { border-left:4px dashed #8a5a14; }
+.issue-row svg { flex:none; margin-top:2px; }
+.issue-row small { display:block; margin-top:2px; color:#6d786f; }
+.joint-add { border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:12px; }
+.joint-add h4 { margin:0 0 6px; }
+.joint-pair { margin:6px 0 0; font-size:14px; font-weight:600; }
+.joint-actions { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; }
+.joint-actions .button { min-height:44px; }
+.joint-scope { margin:0 0 8px; }
+.joint-list, .assembly-list { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.joint-item, .assembly-item { border:1px solid var(--line); background:white; }
+.joint-row { display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; width:100%; min-height:44px; padding:8px 10px; text-align:left; background:transparent; border:0; cursor:pointer; font-size:13px; line-height:1.35; }
+.joint-row[aria-expanded="true"] { background:#f1efe8; }
+.joint-row-title { flex:1 1 140px; font-weight:600; }
+.joint-row small { font:12px 'DM Mono'; color:#6d786f; }
+.joint-editor, .assembly-editor { padding:2px 12px 14px; border-top:1px solid var(--line); }
+.joint-glue { margin-top:12px; min-height:44px; }
+.joint-param { margin-top:2px; }
+.joint-param .button { min-height:44px; margin-top:6px; }
+.joint-assumption { display:block; margin-top:4px; font-size:12px; color:#8a5a14; }
+.assembly-parts { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:4px; }
+.assembly-parts li { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; }
+.assembly-parts .icon-button { width:44px; height:44px; }
+.assembly-editor .field-row { display:flex; gap:10px; }

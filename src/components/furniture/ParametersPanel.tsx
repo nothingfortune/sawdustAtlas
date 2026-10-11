@@ -38,7 +38,7 @@ export function ParametersPanel({ project, resolved, issues, onChange }: {
             return null
           }} />
           <TextField label="Label" value={parameter.label} onCommit={label => { update(parameter.id, { label: label.trim() }); return null }} />
-          <DimInput label="Value" value={parameter.value} scope={scope} onCommit={value => update(parameter.id, { value })} />
+          <DimInput label="Value" focusKey={`parameter:${parameter.id}`} value={parameter.value} scope={scope} onCommit={value => update(parameter.id, { value })} />
           {own.map((issue, index) => <p key={`${issue.code}-${index}`} className={`parameter-issue ${issue.severity}`}><TriangleAlert size={13} aria-hidden="true" />{issue.message}</p>)}
           <button type="button" className="button secondary danger" aria-label={`Delete parameter ${parameter.name}`} onClick={() => remove(parameter)}><Trash2 size={15} />Delete</button>
         </li>

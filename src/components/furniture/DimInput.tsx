@@ -17,6 +17,8 @@ interface DimInputProps {
   disabled?: boolean
   /** Extra line under the field, e.g. what drives a read-only position. */
   note?: ReactNode
+  /** Names the input for the issue list's "go to the field" (see issueFocus.ts). */
+  focusKey?: string
   onCommit: (value: DimExpr) => void
 }
 
@@ -25,7 +27,7 @@ interface DimInputProps {
 // it commits on blur or Enter, and an entry that does not parse or evaluate shows its
 // error in place and is never committed. Unlike LengthInput there is no half-inch snap
 // in imperial, because furniture parts need true fractions such as 3/4".
-export function DimInput({ label, value, scope, positive = false, allowExpression = true, disabled = false, note, onCommit }: DimInputProps) {
+export function DimInput({ label, value, scope, positive = false, allowExpression = true, disabled = false, note, focusKey, onCommit }: DimInputProps) {
   const { lengthUnit } = useUnitSystem()
   const id = useId()
   const [draft, setDraft] = useState<string | null>(null)
@@ -71,7 +73,7 @@ export function DimInput({ label, value, scope, positive = false, allowExpressio
     <label htmlFor={id}>{label} ({unit})</label>
     <div className="dim-input-row">
       {(isExpression || editingExpression) && <span className="dim-fx" aria-hidden="true">fx</span>}
-      <input id={id} type="text" inputMode="decimal" spellCheck={false} autoComplete="off" value={shown} disabled={disabled}
+      <input id={id} data-focus-key={focusKey} type="text" inputMode="decimal" spellCheck={false} autoComplete="off" value={shown} disabled={disabled}
         aria-invalid={shownError ? true : undefined} aria-describedby={shownError ? errorId : undefined}
         onChange={event => { setDraft(event.target.value); setError(null) }}
         onBlur={commit}

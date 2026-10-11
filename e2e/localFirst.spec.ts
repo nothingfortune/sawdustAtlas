@@ -15,10 +15,10 @@ test.describe('local-first', () => {
     // Cutting board designer.
     await page.getByRole('button', { name: 'Cutting boards' }).click()
     await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
-    await expect(page.getByRole('button', { name: 'Make a composite board from this design' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Make composite: build a composite board from this design' })).toBeVisible()
 
     // Composite screen.
-    await page.getByRole('button', { name: 'Make a composite board from this design' }).click()
+    await page.getByRole('button', { name: 'Make composite: build a composite board from this design' }).click()
     await expect(page.locator('.composite-screen')).toBeVisible()
 
     // Wood library.

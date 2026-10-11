@@ -14,7 +14,7 @@ test.describe('composite board designer', () => {
   test('creates a composite, adds an inline rip panel, places a wafer, and updates the build sheet + boards list', async ({ page }) => {
     // Turn the seeded edge-grain board into a composite's first panel.
     await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
-    await page.getByRole('button', { name: 'Make a composite board from this design' }).click()
+    await page.getByRole('button', { name: 'Make composite: build a composite board from this design' }).click()
 
     const screen = page.locator('.composite-screen')
     await expect(screen).toBeVisible()

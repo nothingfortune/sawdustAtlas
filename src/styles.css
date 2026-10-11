@@ -250,7 +250,9 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .row-rail { flex:none; width:32px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
 .row-grip { color:#9a9d94; display:grid; place-items:center; }
 .row-body { flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:0; background:#cfd2cb; border:1px solid #b9bdb3; position:relative; cursor:pointer; }
-.row-empty-hint { font:13px 'DM Mono'; color:#7a8079; padding:10px; }
+.row-empty-hint { font:13px 'DM Mono'; color:#7a8079; padding:5px 10px; text-align:center; }
+/* An empty row is only 28 px tall; let it grow when its hint wraps on a narrow desk. */
+.row-body:has(> .row-empty-hint) { min-height:fit-content; }
 .desk-wafer { position:relative; flex:none; touch-action:none; cursor:grab; }
 .desk-wafer.dragging { opacity:.4; }
 .desk-wafer svg { display:block; width:100%; height:100%; }

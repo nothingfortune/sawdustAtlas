@@ -1,6 +1,6 @@
 import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { assembledSize, compositeCutPlan, materialBySpecies, stockBySpecies } from '../../domain/compositeBoard'
-import { formatDimensions, formatNumber } from '../../domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatNumber } from '../../domain/lengthUnits'
 import { calculatePrice, classifyComposite, materialCost } from '../../domain/pricing'
 import { PriceBreakdownCard } from '../board/PriceBreakdownCard'
 import { useUnitSystem } from '../unitSystem'
@@ -59,7 +59,7 @@ export function CompositeSummary({ composite, boards, woods, pricing }: Composit
       <h4>Cut plan</h4>
       {cutPlan.stages.map(stage => (
         <div key={stage.boardId} className="cut-stage">
-          <ol>{stage.steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
+          <ol>{stage.steps.map((step, i) => <li key={i}>{convertMetricText(step, lengthUnit)}</li>)}</ol>
         </div>
       ))}
     </section>

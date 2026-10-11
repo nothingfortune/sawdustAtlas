@@ -633,3 +633,25 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .connection-notice { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin:10px 16px 0; padding:10px 14px; background:#fbf3e4; border:1px solid var(--orange); border-radius:6px; font-size:14px; line-height:1.4; }
 .connection-notice ul { margin:6px 0; padding-left:18px; }
 .connection-notice a { color: var(--focus-ring); }
+
+/* Header fit. The designer toolbar row grows instead of clipping its eyebrow and the
+   finished size (imperial sizes are longer); its buttons still fold their labels onto
+   two lines when space runs short, as before. The top bar sizes against its own width,
+   which changes with the sidebar: when it runs short, routine labels (saved, undo,
+   redo, export) drop to their icons. Their accessible names stay the same, and the
+   not-saved error always keeps its words. */
+.board-layout, .designer-layout { grid-template-rows:auto 1fr; }
+.designer-toolbar { min-height:72px; gap:16px; }
+.designer-toolbar > div:first-child { flex:none; }
+.toolbar-finished-size b { white-space:nowrap; }
+.toolbar-actions .button svg { flex:none; }
+.topbar { container-type:inline-size; gap:16px; }
+.breadcrumb { min-width:0; white-space:nowrap; }
+.breadcrumb strong { overflow:hidden; text-overflow:ellipsis; }
+.save-state, .backup-button { white-space:nowrap; }
+@container (max-width: 1180px) {
+  .save-state:not(.save-state-error), .topbar-actions .backup-button:last-child { font-size:0; gap:0; }
+}
+@container (max-width: 960px) {
+  .topbar-actions .backup-button:has(.lucide-undo-2, .lucide-redo-2) { font-size:0; gap:0; }
+}

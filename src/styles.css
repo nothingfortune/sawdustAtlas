@@ -839,3 +839,51 @@ button.furniture-issue-count[aria-expanded="true"] { border-color:var(--green); 
 .assembly-parts li { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; }
 .assembly-parts .icon-button { width:44px; height:44px; }
 .assembly-editor .field-row { display:flex; gap:10px; }
+/* Furniture outputs: bottom tabs (cut list, build steps), and the printed build sheet. */
+.furniture-bottom { flex:none; border-top:1px solid var(--line); background:#f8f6f0; }
+.furniture-bottom-bar { display:flex; align-items:center; gap:8px; padding:0 12px 0 0; }
+.furniture-bottom-bar .furniture-tabs { flex:1; max-width:340px; border-bottom:0; position:static; }
+.furniture-bottom-bar .button { min-height:44px; }
+.furniture-bottom-bar .furniture-collapse { margin-left:auto; }
+.furniture-bottom-panel { max-height:40vh; overflow:auto; padding:12px 20px 20px; border-top:1px solid var(--line); background:var(--paper); }
+.cut-list-scroll { overflow-x:auto; }
+.cut-list-table { border-collapse:collapse; width:100%; font-size:13px; margin:0 0 14px; }
+.cut-list-table caption { text-align:left; font:12px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#9a6242; padding:4px 0 6px; }
+.cut-list-table th, .cut-list-table td { border-bottom:1px solid #e4e2da; padding:6px 8px; text-align:left; vertical-align:top; }
+.cut-list-table thead th { font:11px 'DM Mono'; text-transform:uppercase; letter-spacing:.06em; color:#737970; white-space:nowrap; }
+.cut-list-table tbody th { font-weight:600; }
+.cut-list-table .num { font:13px 'DM Mono'; white-space:nowrap; }
+.cut-list-table td small { display:block; font:11px 'DM Mono'; color:#737970; white-space:normal; }
+.cut-list-table.compact { width:auto; min-width:280px; }
+.cut-list-allowances { list-style:none; margin:0; padding:0; min-width:14em; }
+.cut-list-none { color:#8a8d85; }
+.cut-list-totals { display:flex; flex-wrap:wrap; gap:0 32px; align-items:flex-start; }
+.cut-list-total { display:flex; justify-content:space-between; gap:16px; max-width:360px; margin:4px 0 14px; font-size:14px; }
+.cut-list-total b { font:600 14px 'DM Mono'; }
+.cut-list-assumptions h4 { margin:0 0 6px; font:12px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; color:#737970; }
+.cut-list-assumptions ul { margin:0; padding-left:18px; font-size:13px; line-height:1.5; color:#4f574f; }
+.furniture-steps-summary { margin:0 0 8px; font-size:14px; display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; }
+.furniture-steps-revision { font:12px 'DM Mono'; color:#737970; }
+.furniture-steps-check { margin:0 0 10px; font-size:13px; color:#4f574f; }
+.furniture-steps-check.problems { color:#8a3b17; }
+.furniture-steps-check ul { margin:4px 0 0; padding-left:18px; }
+.furniture-print { display:none; }
+.furniture-print-cover { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:18px; }
+.furniture-print-cover h1 { margin:6px 0 0; font-size:26px; letter-spacing:-.02em; }
+.furniture-print-drawings { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.furniture-print-drawings figure { margin:0; border:1px solid #c4c4bd; height:78mm; display:flex; flex-direction:column; }
+.furniture-print-drawings figure > svg { flex:1; min-height:0; }
+.furniture-print-drawings figcaption { font:12px 'DM Mono'; text-transform:uppercase; letter-spacing:.08em; padding:4px 8px; border-top:1px solid #c4c4bd; }
+.furniture-print-section h2 { font-size:18px; margin:0 0 10px; }
+@media print {
+  .furniture-header, .furniture-body, .furniture-bottom { display:none !important; }
+  .furniture-designer { display:block; height:auto; }
+  .furniture-print { display:block; }
+  .furniture-print-section { break-before:page; }
+  .furniture-print-drawings figure, .cut-list-table tr, .cut-list-total { break-inside:avoid; }
+  .cut-list-scroll { overflow:visible; }
+  .cut-list-table { font-size:10px; }
+  .cut-list-table .num, .cut-list-table thead th { white-space:normal; }
+  .cut-list-table th, .cut-list-table td { padding:4px 5px; }
+  .furniture-print .steps-phase h4 { break-after:avoid; }
+}

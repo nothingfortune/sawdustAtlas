@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
-import type { BuildAllowances, WoodSpecies } from '../../types'
+import type { BoardProject, BuildAllowances, WoodSpecies } from '../../types'
 import { pickPart } from '../../domain/furniture/arrange'
 import { addPart, duplicatePart, partTitle, removePart } from '../../domain/furniture/editing'
 import { resolveFurniture } from '../../domain/furniture/geometry'
@@ -13,6 +13,7 @@ import { createId } from '../../id'
 import { useUnitSystem } from '../unitSystem'
 import { deleteMessage } from './deleteMessage'
 import { DesignArea } from './DesignArea'
+import { FurnitureOutputs } from './FurnitureOutputs'
 import { FurnitureWarnings } from './FurnitureWarnings'
 import { JointsPanel } from './JointsPanel'
 import { ParametersPanel } from './ParametersPanel'
@@ -37,9 +38,11 @@ const LEFT_TABS: readonly { id: LeftTab; label: string }[] = [
 // settings), the design area, and the part inspector. The project is resolved and validated
 // once per change; every edit goes up through `onChange`, which commits it as one
 // undoable change and stamps updatedAt.
-export function FurnitureDesigner({ project, woods, allowances, focusId, onChange, onBack }: {
+export function FurnitureDesigner({ project, woods, boards, allowances, focusId, onChange, onBack }: {
   project: FurnitureProject
   woods: WoodSpecies[]
+  /** Every board in the workspace; the plan generator's context. */
+  boards: BoardProject[]
   allowances: BuildAllowances
   /** A part id (from the warning center) to select on open. */
   focusId?: string
@@ -157,6 +160,7 @@ export function FurnitureDesigner({ project, woods, allowances, focusId, onChang
           : <p className="furniture-empty">Select a part in the Parts list to edit it.</p>}
       </aside>
     </div>
+    <FurnitureOutputs project={project} resolved={resolved} woods={woods} boards={boards} allowances={allowances} />
     <p className="visually-hidden" role="status" aria-live="polite">{status}</p>
   </div>
 }

@@ -256,10 +256,10 @@ test.describe('furniture designer joinery', () => {
     await tab(page, 'Joints').click()
     await jointRow(page, 'Mortise and tenon: A1 Front apron into L1 Front left leg').click()
     await enter(page, /^Depth/, '400')
-    const errored = page.locator('svg.furniture-drawing .furniture-part.error')
+    const errored = page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing .furniture-part.error')
     await expect(errored).toHaveCount(2)
-    await expect(page.locator('svg.furniture-drawing .furniture-error-hatch').first()).toBeAttached()
-    await expect(page.locator('svg.furniture-drawing pattern')).toHaveCount(1)
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing .furniture-error-hatch').first()).toBeAttached()
+    await expect(page.getByRole('region', { name: 'Design area' }).locator('svg.furniture-drawing pattern')).toHaveCount(1)
   })
 
   test('the warning center opens a furniture project with the part selected', async ({ page }) => {

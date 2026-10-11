@@ -32,7 +32,7 @@ test.describe('furniture designer editing', () => {
   test('shows the header, parts grouped by subassembly, and a neutral center', async ({ page }) => {
     await createTable(page)
     await expect(page.locator('.furniture-size')).toContainText('1200 × 700 × 750')
-    await expect(page.locator('.furniture-parts')).toHaveText('9 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('9 parts')
     await expect(page.getByRole('region', { name: 'Front leg frame' })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Design area' })).toContainText('No part selected')
     await partRow(page, /Front left leg/).click()
@@ -68,19 +68,19 @@ test.describe('furniture designer editing', () => {
   test('adds, duplicates, and deletes a part', async ({ page }) => {
     await createTable(page)
     await page.getByRole('button', { name: 'Solid part' }).click()
-    await expect(page.locator('.furniture-parts')).toHaveText('10 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('10 parts')
     await expect(field(page, /^Name/)).toHaveValue('New part')
     await expect(field(page, /^Mark/)).toHaveValue('P1')
     await expect(page.locator('p[role=status]')).toHaveText(/Added P1 New part/)
 
     await page.getByRole('button', { name: 'Duplicate' }).click()
-    await expect(page.locator('.furniture-parts')).toHaveText('11 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('11 parts')
     await expect(field(page, /^Name/)).toHaveValue('New part copy')
     await expect(field(page, /^Mark/)).toHaveValue('P2')
 
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     expect(dialogs.at(-1)).toContain('Delete P2 New part copy?')
-    await expect(page.locator('.furniture-parts')).toHaveText('10 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('10 parts')
     await expect(page.getByText('Select a part in the Parts list')).toBeVisible()
   })
 
@@ -105,7 +105,7 @@ test.describe('furniture designer editing', () => {
     expect(message).toContain('mortise-tenon joint between')
     expect(message).toContain('These relationships are removed')
     expect(message).toContain('It leaves these subassemblies')
-    await expect(page.locator('.furniture-parts')).toHaveText('8 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('8 parts')
   })
 
   test('shows what drives a relationship-controlled position and keeps it read-only', async ({ page }) => {
@@ -210,14 +210,14 @@ test.describe('furniture designer editing', () => {
     await createTable(page)
     await page.getByRole('button', { name: 'Solid part' }).click()
     await enter(page, /^Name/, 'Shelf')
-    await expect(page.locator('.furniture-parts')).toHaveText('10 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('10 parts')
 
     const undo = page.getByRole('button', { name: 'Undo', exact: true })
     const redo = page.getByRole('button', { name: 'Redo', exact: true })
     await undo.click()
     await expect(field(page, /^Name/)).toHaveValue('New part')
     await undo.click()
-    await expect(page.locator('.furniture-parts')).toHaveText('9 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('9 parts')
     await expect(page.getByText('Select a part in the Parts list')).toBeVisible()
     await redo.click()
     await redo.click()
@@ -232,7 +232,7 @@ test.describe('furniture designer editing', () => {
     await page.getByRole('button', { name: 'Furniture', exact: true }).click()
     await expect(page.locator('.furniture-card .gallery-name')).toHaveText('Reloadable')
     await page.locator('.furniture-card-open').click()
-    await expect(page.locator('.furniture-parts')).toHaveText('10 parts')
+    await expect(page.locator('span.furniture-parts')).toHaveText('10 parts')
   })
 
   test('the parts list and inspector work from the keyboard', async ({ page }) => {

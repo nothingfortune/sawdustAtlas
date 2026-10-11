@@ -648,6 +648,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .furniture-select-outline, .furniture-highlight-outline { fill:none;pointer-events:none;stroke-linejoin:round;vector-effect:non-scaling-stroke; }
 .furniture-select-outline { stroke:var(--orange);stroke-width:4; }
 .furniture-highlight-outline { stroke:var(--green);stroke-width:2.5; }
+.furniture-labels { pointer-events:none; }
 .furniture-label, .furniture-badge text { font-family:'DM Mono',monospace;pointer-events:none; }
 .furniture-label { fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:3px;stroke-linejoin:round;vector-effect:non-scaling-stroke; }
 .furniture-badge rect { fill:var(--green);stroke:var(--paper);stroke-width:1.5px;vector-effect:non-scaling-stroke; }
@@ -729,7 +730,7 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .furniture-left, .furniture-right { background:#f8f6f0; overflow-y:auto; min-height:0; }
 .furniture-left { border-right:1px solid var(--line); }
 .furniture-right { border-left:1px solid var(--line); padding:16px 16px 24px; }
-.furniture-center { background:#e9e7df; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:24px; text-align:center; color:#4f574f; }
+.furniture-center { background:#e9e7df; display:flex; flex-direction:column; align-items:stretch; gap:8px; padding:10px 12px; color:#4f574f; min-width:0; min-height:0; }
 .furniture-center p { margin:2px 0; }
 .furniture-tabs { display:flex; border-bottom:1px solid var(--line); position:sticky; top:0; background:#f8f6f0; z-index:1; }
 .furniture-tabs button { flex:1; min-height:44px; border:0; border-bottom:3px solid transparent; background:transparent; font-weight:600; font-size:14px; }
@@ -779,3 +780,28 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .furniture-settings-panel section + section { margin-top:22px; }
 .furniture-parameters-panel > .button, .furniture-settings-panel > section > .button { min-height:44px; }
 @media(max-width:1100px){ .furniture-body { grid-template-columns:minmax(230px,270px) minmax(0,1fr) minmax(230px,280px); } }
+
+/* Furniture design area: view switcher, arranging actions, and the stage. */
+.design-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.design-toolbar .field { margin-top:0; flex:0 0 auto; }
+.design-toolbar .button { min-height:44px; padding:0 9px; }
+.segmented { display:inline-flex; border:1px solid var(--line); background:white; border-radius:3px; overflow:hidden; }
+.segmented button { min-height:44px; min-width:44px; padding:0 12px; border:0; border-right:1px solid var(--line); background:transparent; font:600 13px 'DM Mono'; cursor:pointer; }
+.segmented button:last-child { border-right:0; }
+.segmented button.active { background:var(--green); color:#fff; }
+.design-grid { flex-direction:row; align-items:center; }
+.design-grid select { min-height:44px; width:auto; }
+.design-explode input { min-height:44px; }
+.design-note { margin:0; padding:8px 10px; border-left:3px solid #a7523c; background:#f6e9e4; font-size:13px; line-height:1.4; color:#6e3a2a; }
+.design-stage { flex:1; min-height:240px; position:relative; background:linear-gradient(#f7f5ef,#e9e6db); border:1px solid var(--line); }
+.design-canvas { position:absolute; inset:0; overflow:auto; }
+.design-footer { display:flex; flex-wrap:wrap; gap:4px 16px; align-items:baseline; font-size:13px; }
+.design-footer .panel-hint { margin:0; }
+.arrange-dialog .field-row { display:flex; gap:12px; }
+.arrange-result { font-size:13px; line-height:1.4; margin:12px 0 0; }
+.part-relationships { margin-top:14px; }
+.part-relationships h4 { margin:0; }
+.part-relationships ul { list-style:none; margin:6px 0 0; padding:0; display:grid; gap:8px; }
+.part-relationships li { display:flex; flex-direction:column; align-items:flex-start; gap:6px; font-size:13px; line-height:1.4; }
+.part-relationships .button { min-height:44px; }
+.furniture-thumb { display:block; }

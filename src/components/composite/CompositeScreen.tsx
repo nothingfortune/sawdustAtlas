@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
 import type { BoardProject, CompositeBoard, PricingSettings, WoodSpecies } from '../../types'
 import { addRow, addWaferToRow, pieceKey } from '../../domain/compositeAssembly'
 import { DEFAULT_KERF_MM } from '../../data'
@@ -17,12 +17,13 @@ export interface CompositeScreenProps {
   onChange: (composite: CompositeBoard) => void
   onCreateBoardForPanel: (construction: 'edge' | 'end') => string
   onEditBoard: (boardId: string) => void
+  onExportProject: () => void
   onBack: () => void
 }
 
 const defaultCut = () => ({ axis: 'x' as const, stripWidthMm: 25, kerfMm: DEFAULT_KERF_MM, count: 4 })
 
-export function CompositeScreen({ composite, boards, woods, pricing, onChange, onCreateBoardForPanel, onEditBoard, onBack }: CompositeScreenProps) {
+export function CompositeScreen({ composite, boards, woods, pricing, onChange, onCreateBoardForPanel, onEditBoard, onExportProject, onBack }: CompositeScreenProps) {
   const [activeRowId, setActiveRowId] = useState(composite.rows[0]?.id ?? '')
   const effectiveRow = composite.rows.find(r => r.id === activeRowId) ?? composite.rows[0]
   const effectiveRowId = effectiveRow?.id ?? ''
@@ -60,6 +61,7 @@ export function CompositeScreen({ composite, boards, woods, pricing, onChange, o
           onChange={e => onChange({ ...composite, name: e.target.value })}
         />
         <span className="composite-badge">{composite.construction === 'end' ? 'End grain' : 'Edge grain'}</span>
+        <button type="button" className="backup-button" onClick={onExportProject}><Download size={15} /> Export project</button>
       </header>
 
       <div className="composite-body">

@@ -30,7 +30,8 @@ export function ParametersPanel({ project, resolved, issues, onChange }: {
         // A parameter never sees itself, so a self-reference reads as unknown.
         const scope = Object.fromEntries(Object.entries(resolved.parameters).filter(([name]) => name !== parameter.name))
         const own = issues.filter(issue => issue.parameterId === parameter.id)
-        return <li key={parameter.id} className="parameter-row">
+        // Every card has Name, Label, and Value fields; the group name tells them apart.
+        return <li key={parameter.id} className="parameter-row" role="group" aria-label={parameter.label || parameter.name}>
           <TextField label="Name" value={parameter.name} onCommit={name => {
             const result = renameParameter(project, parameter.id, name.trim())
             if (!result.ok) return result.message

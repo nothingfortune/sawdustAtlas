@@ -697,6 +697,7 @@ button.furniture-issue-count[aria-expanded="true"] { border-color:var(--green); 
 @media (pointer: coarse) {
   .furniture-card-actions .icon-button { width:44px; height:44px; }
   .furniture-card-open { padding-bottom:62px; }
+}
 
 .connection-notice { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin:10px 16px 0; padding:10px 14px; background:#fbf3e4; border:1px solid var(--orange); border-radius:6px; font-size:14px; line-height:1.4; }
 .connection-notice ul { margin:6px 0; padding-left:18px; }

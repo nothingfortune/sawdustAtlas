@@ -1,7 +1,9 @@
-import { ArrowRight, Boxes, Grid2X2, Plus } from 'lucide-react'
+import { useMemo } from 'react'
+import { Armchair, ArrowRight, Boxes, Grid2X2, Plus } from 'lucide-react'
 import type { AtlasData } from '../types'
 import { formatDimensions, formatLength } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
+import { summarizeFurniture } from './furniture/summary'
 
 interface Props {
   data: AtlasData
@@ -9,11 +11,17 @@ interface Props {
   onOpenBoard: (id: string) => void
   onCreateShop: () => void
   onCreateBoard: () => void
+  onOpenFurniture: (id: string) => void
+  onBrowseFurniture: () => void
   onShowGuide: () => void
 }
 
-export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreateBoard, onShowGuide }: Props) {
+export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreateBoard, onOpenFurniture, onBrowseFurniture, onShowGuide }: Props) {
   const { lengthUnit } = useUnitSystem()
+  const furniture = useMemo(
+    () => data.furniture.map(project => ({ project, summary: summarizeFurniture(project, { woods: data.woods, allowances: data.allowances }) })),
+    [data.furniture, data.woods, data.allowances],
+  )
   const starterShop = data.shops[0]
   const starterBoard = data.boards[0]
   return <div className="page dashboard-page">
@@ -21,6 +29,7 @@ export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreat
     <div className="action-grid">
       <button className="action-card shop-action" onClick={onCreateShop}><span className="action-icon"><Grid2X2/></span><div><small>NEW PLAN</small><h2>Lay out a workshop</h2><p>Map machines, benches, storage, and the room needed to work safely.</p></div><ArrowRight/></button>
       <button className="action-card board-action" onClick={onCreateBoard}><span className="action-icon"><Boxes/></span><div><small>NEW DESIGN</small><h2>Design a cutting board</h2><p>Explore wood species, strip widths, dimensions, and material estimates.</p></div><ArrowRight/></button>
+      <button className="action-card furniture-action" onClick={onBrowseFurniture}><span className="action-icon"><Armchair/></span><div><small>NEW DESIGN</small><h2>Design furniture</h2><p>Start from a table, bookcase, or cabinet and size every part.</p></div><ArrowRight/></button>
     </div>
     {(starterShop || starterBoard) && <div className="starter-strip">
       <span className="eyebrow">STARTER PROJECTS</span>
@@ -36,6 +45,9 @@ export function Dashboard({ data, onOpenShop, onOpenBoard, onCreateShop, onCreat
       </button>)}
       {data.boards.map(project => <button className="project-card" key={project.id} onClick={() => onOpenBoard(project.id)}>
         <div className="project-preview board-preview">{project.strips.map(strip => <i key={strip.id} style={{ flex: strip.width, background: data.woods.find(wood => wood.id === strip.speciesId)?.color ?? '#8c6a48' }}/>)}</div><ProjectMeta type="CUTTING BOARD" name={project.name} detail={`${formatLength(project.length, lengthUnit)} long · ${formatLength(project.strips.reduce((n, s) => n + s.width, 0), lengthUnit)} wide`}/>
+      </button>)}
+      {furniture.map(({ project, summary }) => <button className="project-card" key={project.id} onClick={() => onOpenFurniture(project.id)}>
+        <div className="project-preview furniture-preview"><Armchair size={30} strokeWidth={1.2}/></div><ProjectMeta type="FURNITURE" name={project.name} detail={`${summary.size ? formatDimensions(summary.size, lengthUnit) : 'No size yet'} · ${summary.partCount} part${summary.partCount === 1 ? '' : 's'}`}/>
       </button>)}
       <button className="project-card new-project" onClick={onCreateBoard}><Plus/><span>Start something new</span></button>
     </div>

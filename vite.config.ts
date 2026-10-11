@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { resolve, sep } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -42,6 +42,20 @@ function resolveBuildInfo(command: 'build' | 'serve') {
 // caches (previous deploys' hashed /assets/ chunks) get pruned automatically the
 // next time the SW activates. Dev (`command === 'serve'`) never touches dist/, so
 // this plugin is a no-op there.
+//
+// The same step replaces the quoted '__SW_ASSETS__' placeholder with a JSON array of
+// every file emitted under dist/assets, so install precaches lazy chunks (a route's
+// code-split bundle is not referenced by the shell HTML or CSS, and would otherwise
+// fail the first time it is opened offline). Source maps and the .woff fallbacks are
+// left out: no supported browser fetches the latter when woff2 is offered.
+function listBuildAssets(assetsDir: string): string[] {
+  if (!existsSync(assetsDir)) return []
+  return (readdirSync(assetsDir, { recursive: true, encoding: 'utf8' }))
+    .filter(file => statSync(resolve(assetsDir, file)).isFile() && !file.endsWith('.map') && !file.endsWith('.woff'))
+    .map(file => `/assets/${file.split(sep).join('/')}`)
+    .sort()
+}
+
 function swVersionStampPlugin(buildId: string): Plugin {
   let outDir = 'dist'
   let root = process.cwd()
@@ -56,8 +70,9 @@ function swVersionStampPlugin(buildId: string): Plugin {
       const swPath = resolve(root, outDir, 'sw.js')
       if (!existsSync(swPath)) return
       const contents = readFileSync(swPath, 'utf8')
-      if (!contents.includes('__SW_BUILD__')) return
-      writeFileSync(swPath, contents.replaceAll('__SW_BUILD__', buildId))
+      const assets = JSON.stringify(listBuildAssets(resolve(root, outDir, 'assets')))
+      const stamped = contents.replaceAll('__SW_BUILD__', buildId).replaceAll("'__SW_ASSETS__'", assets)
+      if (stamped !== contents) writeFileSync(swPath, stamped)
     },
   }
 }

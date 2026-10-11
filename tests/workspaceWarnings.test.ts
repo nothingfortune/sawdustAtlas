@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { collectWorkspaceWarnings } from '../src/domain/workspaceWarnings'
 import { DEFAULT_ALLOWANCES } from '../src/domain/boardAllowances'
-import { DEFAULT_PRICING } from '../src/data'
+import { DEFAULT_PRICING, starterData } from '../src/data'
 import type { AtlasData, BoardProject, CompositeBoard, ShopProject, WoodSpecies } from '../src/types'
 
 const wood = (id: string, over: Partial<WoodSpecies> = {}): WoodSpecies => ({ id, name: id === over.name ? id : 'Walnut', color: '#5a3828', accent: '#87614a', pricePerBoardFoot: 12, ...over })
@@ -154,5 +154,12 @@ describe('composite warnings', () => {
     const c = composite({ panels: [{ id: 'p1', boardId: 'b1', cut }], rows: [{ id: 'r1', wafers: [cell('p1', 0)] }, { id: 'r2', wafers: [] }, { id: 'r3', wafers: [cell('p1', 7)] }] })
     const severities = run(c).map(w => w.severity)
     expect(severities).toEqual(['error', 'warning'])
+  })
+})
+
+describe('starter workspace', () => {
+  // A first-time visitor should open a clean workspace, not a warning about sample data.
+  it('has nothing to review', () => {
+    expect(collectWorkspaceWarnings(starterData, true)).toEqual([])
   })
 })

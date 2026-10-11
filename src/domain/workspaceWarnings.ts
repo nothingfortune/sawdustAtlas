@@ -42,7 +42,7 @@ export function collectWorkspaceWarnings(data: AtlasData, saveOk: boolean): Work
       warnings.push({
         id: `shop:${shop.id}`,
         severity: 'warning',
-        message: `${shopName(shop)}: ${conflicts.length} object${conflicts.length === 1 ? '' : 's'} overlap a blocked floor zone.`,
+        message: `${shopName(shop)}: ${conflicts.length === 1 ? '1 object overlaps' : `${conflicts.length} objects overlap`} a blocked floor zone.`,
         location: { view: 'shop', targetId: shop.id },
       })
     }

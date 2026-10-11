@@ -140,7 +140,7 @@ test.describe('workshop planner workflow', () => {
     const pill = page.getByRole('button', { name: '1 workspace issue to review' })
     await expect(pill).toBeVisible()
     await pill.click()
-    const row = page.getByRole('menuitem', { name: 'Test shop: 1 object overlap a blocked floor zone.' })
+    const row = page.getByRole('menuitem', { name: 'Test shop: 1 object overlaps a blocked floor zone.' })
     await expect(row).toBeVisible()
     await row.click()
 

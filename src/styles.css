@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,500&display=swap');
-
 :root { font-family: 'DM Sans', sans-serif; color: #243028; background: #f2f0e9; font-synthesis: none; --green: #233b2d; --ink: #243028; --paper: #f7f5ef; --line: #d8d5ca; --orange: #c96f32; --focus-ring: #1c6fb0; }
 * { box-sizing: border-box; }
 /* App-wide visible focus (PLAT-008). :focus-visible = keyboard/AT only; :where() keeps

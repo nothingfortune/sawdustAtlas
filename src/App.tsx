@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import { Armchair, Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import type { FurnitureProject } from './domain/furniture/types'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
 import { GeometryCalculator } from './components/GeometryCalculator'
@@ -8,11 +9,15 @@ import type { Sketch } from './domain/geometry2d'
 import { DEFAULT_END_GRAIN, DEFAULT_KERF_MM } from './data'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
+import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './projectPackage'
+import type { ProjectMergeSummary } from './projectPackage'
+import { downloadProjectPackage } from './projectPackageDownload'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
 import { ShopPlanner } from './components/ShopPlanner'
 import { BoardDesigner } from './components/BoardDesigner'
 import { BoardGallery } from './components/BoardGallery'
+import { ConnectionNotice } from './components/ConnectionNotice'
 import { BuildBadge } from './components/BuildBadge'
 import { CompositeScreen } from './components/composite/CompositeScreen'
 import { Dashboard } from './components/Dashboard'
@@ -20,6 +25,11 @@ import { WoodLibrary } from './components/WoodLibrary'
 import { MillingAllowances } from './components/MillingAllowances'
 import { PricingSettings } from './components/PricingSettings'
 import { UnitSystemProvider } from './components/unitSystem'
+import { FurnitureDesigner } from './components/furniture/FurnitureDesigner'
+import { FurnitureGallery } from './components/furniture/FurnitureGallery'
+import type { NewFurnitureRequest } from './components/furniture/FurnitureGallery'
+import { emptyFurnitureProject } from './domain/furniture/project'
+import { templateById } from './domain/furniture/templates'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
@@ -35,6 +45,12 @@ export default function App() {
   const [activeComposite, setActiveComposite] = useState('')
   const [boardsMode, setBoardsMode] = useState<'gallery' | 'board' | 'composite'>('gallery')
   const [boardBackTo, setBoardBackTo] = useState<'gallery' | 'composite'>('gallery')
+  const [activeFurniture, setActiveFurniture] = useState('')
+  const [furnitureMode, setFurnitureMode] = useState<'gallery' | 'designer'>('gallery')
+  // Part to select when the designer opens from a warning (WarningLocation.focusId).
+  const [furnitureFocus, setFurnitureFocus] = useState<string | undefined>()
+  // Counts opens so the designer remounts (and re-selects focusId) on each one.
+  const [furnitureOpens, setFurnitureOpens] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
@@ -62,6 +78,8 @@ export default function App() {
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  // Result of the most recent single-project import (merge, not replace).
+  const [projectImport, setProjectImport] = useState<{ ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string } | null>(null)
   // First-run welcome (UX-004): shown until dismissed; reopenable from Home.
   const [showWelcome, setShowWelcome] = useState(() => !hasOnboarded())
   const importRef = useRef<HTMLInputElement>(null)
@@ -114,19 +132,21 @@ export default function App() {
   // screens (composite → gallery → home) instead of leaving the app.
   const navRef = useRef({ skip: false, first: true })
   useEffect(() => {
-    const state = { view, boardsMode, activeBoard, activeComposite }
+    const state = { view, boardsMode, activeBoard, activeComposite, furnitureMode, activeFurniture }
     if (navRef.current.skip) { navRef.current.skip = false; return }
     if (navRef.current.first) { navRef.current.first = false; window.history.replaceState(state, ''); return }
     window.history.pushState(state, '')
-  }, [view, boardsMode, activeBoard, activeComposite])
+  }, [view, boardsMode, activeBoard, activeComposite, furnitureMode, activeFurniture])
   useEffect(() => {
     const onPop = (event: PopStateEvent) => {
-      const state = event.state as { view?: View; boardsMode?: 'gallery' | 'board' | 'composite'; activeBoard?: string; activeComposite?: string } | null
+      const state = event.state as { view?: View; boardsMode?: 'gallery' | 'board' | 'composite'; activeBoard?: string; activeComposite?: string; furnitureMode?: 'gallery' | 'designer'; activeFurniture?: string } | null
       navRef.current.skip = true
       setView(state?.view ?? 'home')
       setBoardsMode(state?.boardsMode ?? 'gallery')
       if (typeof state?.activeBoard === 'string') setActiveBoard(state.activeBoard)
       if (typeof state?.activeComposite === 'string') setActiveComposite(state.activeComposite)
+      setFurnitureMode(state?.furnitureMode ?? 'gallery')
+      if (typeof state?.activeFurniture === 'string') setActiveFurniture(state.activeFurniture)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -189,6 +209,34 @@ export default function App() {
     }
     commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board')
   }
+  // Furniture handlers. The designer's updatedAt and new ids come from here, never from
+  // the domain, which stays free of the clock and random ids.
+  const createFurniture = ({ templateId, values }: NewFurnitureRequest) => {
+    const now = new Date().toISOString()
+    const template = templateId ? templateById(templateId) : undefined
+    const project = template ? template.create(values, createId(), now) : emptyFurnitureProject(createId(), 'Untitled furniture', now)
+    commitData(current => ({ ...current, furniture: [...current.furniture, project] }))
+    openFurniture(project.id)
+  }
+  const openFurniture = (id: string, focusId?: string) => { setActiveFurniture(id); setFurnitureFocus(focusId); setFurnitureOpens(count => count + 1); setFurnitureMode('designer') }
+  const duplicateFurniture = (id: string) => {
+    const source = data.furniture.find(p => p.id === id)
+    if (!source) return
+    // Part, joint, and relationship ids only need to be unique within a project, so a
+    // copy keeps them and every internal reference stays valid.
+    const copy = { ...structuredClone(source), id: createId(), name: `${source.name} copy`, updatedAt: new Date().toISOString() }
+    commitData(current => ({ ...current, furniture: [...current.furniture, copy] }))
+  }
+  const updateFurniture = (project: FurnitureProject) => commitData(current => ({
+    ...current,
+    furniture: current.furniture.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p),
+  }))
+  const deleteFurniture = (id: string) => {
+    const project = data.furniture.find(p => p.id === id)
+    if (!project || !window.confirm(`Delete furniture "${project.name}"?`)) return
+    commitData(current => ({ ...current, furniture: current.furniture.filter(p => p.id !== id) }))
+    if (activeFurniture === id) { setActiveFurniture(''); setFurnitureMode('gallery') }
+  }
   // Composite handlers (composites live inside the Cutting Boards module).
   const updateComposite = (project: CompositeBoard) => commitData(current => ({ ...current, composites: current.composites.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p) }))
   const openBoard = (id: string) => { setActiveBoard(id); setBoardBackTo('gallery'); setBoardsMode('board') }
@@ -223,7 +271,7 @@ export default function App() {
     try {
       parsed = JSON.parse(await file.text())
     } catch {
-      setImportResult({ ok: false, data: null, counts: { shops: 0, boards: 0, composites: 0, woods: 0 }, warnings: [], errors: ['That file is not valid JSON.'] })
+      setImportResult({ ok: false, data: null, counts: { shops: 0, boards: 0, composites: 0, furniture: 0, woods: 0 }, warnings: [], errors: ['That file is not valid JSON.'] })
       return
     }
     const result = importData(parsed)
@@ -234,10 +282,33 @@ export default function App() {
       commitData(() => result.data!)
       setActiveShop(result.data.shops[0]?.id ?? '')
       setActiveBoard(result.data.boards[0]?.id ?? '')
+      setActiveFurniture('')
+      setFurnitureMode('gallery')
       setView('home')
     }
     // Show the summary (counts + warnings) on success, or the errors on failure.
     setImportResult(result)
+  }
+  const exportProject = (ref: { type: 'board' | 'composite'; id: string }) => {
+    const pkg = buildProjectPackage(data, ref, new Date().toISOString())
+    if (pkg) downloadProjectPackage(pkg)
+  }
+  // Merges one project into the workspace through commitData, so Undo removes it again.
+  const importProjectFile = async (file: File | undefined) => {
+    if (!file) return
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(await file.text())
+    } catch {
+      setProjectImport({ ok: false, error: 'That file is not valid JSON.' })
+      return
+    }
+    const read = readProjectPackage(parsed)
+    if (!read.ok) { setProjectImport(read); return }
+    const merged = mergeProjectPackage(dataRef.current, read.pkg, createId)
+    commitData(() => merged.data)
+    const project = read.pkg.project
+    setProjectImport({ ok: true, summary: merged.summary, name: project.type === 'board' ? project.board.name : project.composite.name })
   }
   const restorePreImport = () => {
     if (!preImport) return
@@ -257,20 +328,27 @@ export default function App() {
   const goToWarning = (location?: WarningLocation) => {
     if (!location) return
     if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); setView('boards') }
+    else if (location.view === 'composite' && location.targetId) { openComposite(location.targetId); setView('boards') }
+    else if (location.view === 'furniture' && location.targetId) { openFurniture(location.targetId, location.focusId); setView('furniture') }
     else if (location.view === 'shop' && location.targetId) { setActiveShop(location.targetId); setView('shop') }
     else if (location.view === 'woods') setView('woods')
   }
 
+  // Accessible names start with the visible label (WCAG 2.5.3) so a voice-control user can
+  // say what they see.
+  const prestonLabel = lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'
+
   return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
     <div className="app-shell">
       <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
-        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
+        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Sawdust Atlas, go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
         <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
         <nav>
           <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
           <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
           <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
           <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
+          <NavButton active={view === 'furniture'} icon={<Armchair />} label="Furniture" open={sidebarOpen} onClick={() => { setView('furniture'); setFurnitureMode('gallery') }} />
           <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
           <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
           <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => setView('geometry')} />
@@ -285,25 +363,26 @@ export default function App() {
       </aside>
       <main>
         <header className="topbar">
-          <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : 'Cutting boards'}</strong></div>
+          <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : view === 'furniture' ? 'Furniture' : 'Cutting boards'}</strong></div>
           <div className="topbar-actions">
             <WarningCenter warnings={warnings} onNavigate={goToWarning} />
             {saveOk
               ? <div className="save-state" role="status" aria-live="polite" title="Projects are saved in this browser on this device."><Save size={15} />Saved in this browser</div>
               : <div className="save-state save-state-error" role="status" aria-live="polite" title="Storage is full or unavailable, so recent changes are not saved. Export a backup now to avoid losing work."><TriangleAlert size={15} />Not saved — export a backup</div>}
-            <button className="backup-button" onClick={toggleLengthUnit} aria-label={`Preston's button — toggle measurement units (currently ${lengthUnit})`} title="Toggle imperial / metric units">
-              <Ruler size={15} />{lengthUnit === 'imperial' ? 'Take me back to sanity! (metric)' : 'Preston - Click Here!'}
+            <button className="backup-button" onClick={toggleLengthUnit} aria-label={`${prestonLabel}: Preston's button, switches measurement units (currently ${lengthUnit})`} title="Toggle imperial / metric units">
+              <Ruler size={15} />{prestonLabel}
             </button>
             <button className="backup-button" disabled={!history.undo.length} onClick={() => applyHistory(undoHistory)} title={history.undo.length ? 'Undo last change (Ctrl/Cmd+Z)' : 'No change to undo'}><Undo2 size={15} />Undo</button>
             <button className="backup-button" disabled={!history.redo.length} onClick={() => applyHistory(redoHistory)} title={history.redo.length ? 'Redo (Ctrl/Cmd+Shift+Z)' : 'No change to redo'}><Redo2 size={15} />Redo</button>
             <button className="backup-button" onClick={() => downloadData(data)}><Upload size={15} />Export backup</button>
           </div>
         </header>
+        <ConnectionNotice />
         <section className="workspace">
-          {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onShowGuide={() => setShowWelcome(true)} />}
+          {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onOpenFurniture={id => { openFurniture(id); setView('furniture') }} onBrowseFurniture={() => { setFurnitureMode('gallery'); setView('furniture') }} onShowGuide={() => setShowWelcome(true)} />}
           {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
           {view === 'boards' && boardsMode === 'gallery' && (
-            <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+            <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
           )}
           {view === 'boards' && boardsMode === 'board' && (
             <BoardDesigner
@@ -316,6 +395,7 @@ export default function App() {
               onChange={updateBoard}
               onDelete={deleteBoard}
               onMakeComposite={makeComposite}
+              onExportProject={() => exportProject({ type: 'board', id: (data.boards.find(p => p.id === activeBoard) ?? data.boards[0])?.id ?? '' })}
               onBack={() => setBoardsMode(boardBackTo)}
             />
           )}
@@ -329,12 +409,19 @@ export default function App() {
                   woods={data.woods}
                   pricing={data.pricing}
                   onChange={updateComposite}
+                  onExportProject={() => exportProject({ type: 'composite', id: composite.id })}
                   onCreateBoardForPanel={createBoardForPanel}
                   onEditBoard={editPanelBoard}
                   onBack={() => setBoardsMode('gallery')}
                 />
               )
-              : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} />
+              : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
+          })()}
+          {view === 'furniture' && (() => {
+            const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
+            return project
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
+              : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
           })()}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
           {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={updateSketch} />}
@@ -342,8 +429,9 @@ export default function App() {
           {view === 'pricing' && <PricingSettings pricing={data.pricing} onChange={updatePricing} />}
         </section>
       </main>
-      <input ref={importRef} type="file" accept="application/json" hidden onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
+      <input ref={importRef} type="file" accept="application/json" hidden aria-label="Backup file" onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
       {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+      {projectImport && <ProjectImportDialog result={projectImport} onClose={() => setProjectImport(null)} />}
       {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
       <BuildBadge />
     </div>
@@ -360,13 +448,32 @@ function ImportSummaryDialog({ result, onExportBackup, onClose }: { result: Impo
     <div ref={dialogRef} tabIndex={-1} className="import-dialog" role="dialog" aria-modal="true" aria-label={ok ? 'Import summary' : 'Import failed'}>
       <header><strong>{ok ? 'Backup imported' : "Couldn't import that file"}</strong></header>
       {ok
-        ? <p className="import-counts">Imported <b>{counts.shops}</b> shop{counts.shops === 1 ? '' : 's'}, <b>{counts.boards}</b> board{counts.boards === 1 ? '' : 's'}, and <b>{counts.composites}</b> composite{counts.composites === 1 ? '' : 's'}. This replaced your previous workspace — use <b>Undo import</b> in the sidebar to get it back.</p>
+        ? <p className="import-counts">Imported <b>{counts.shops}</b> shop{counts.shops === 1 ? '' : 's'}, <b>{counts.boards}</b> board{counts.boards === 1 ? '' : 's'}, <b>{counts.composites}</b> composite{counts.composites === 1 ? '' : 's'}, and <b>{counts.furniture}</b> furniture project{counts.furniture === 1 ? '' : 's'}. This replaced your previous workspace — use <b>Undo import</b> in the sidebar to get it back.</p>
         : <ul className="import-errors">{errors.map(error => <li key={error}>{error}</li>)}</ul>}
       {ok && warnings.length > 0 && <div className="import-warnings"><span className="eyebrow">HEADS UP</span><ul>{warnings.map(warning => <li key={warning}>{warning}</li>)}</ul></div>}
       <footer>
         {ok && <button className="button" onClick={onExportBackup}><Upload size={15} />Export a backup now</button>}
         <button className="button secondary" onClick={onClose}>{ok ? 'Done' : 'Close'}</button>
       </footer>
+    </div>
+  </div>
+}
+
+// Single-project import confirmation: what was added, whether it came in as a copy, and
+// how the wood library was affected. The import is one undo step.
+function ProjectImportDialog({ result, onClose }: { result: { ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string }; onClose: () => void }) {
+  const dialogRef = useModalDialog<HTMLDivElement>(onClose)
+  return <div className="modal-scrim" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div ref={dialogRef} tabIndex={-1} className="import-dialog" role="dialog" aria-modal="true" aria-label={result.ok ? 'Project import summary' : 'Project import failed'}>
+      <header><strong>{result.ok ? 'Project imported' : "Couldn't import that project"}</strong></header>
+      {result.ok
+        ? <>
+          <p className="import-counts">Added <b>{result.name}</b> to your boards ({result.summary.boards} board{result.summary.boards === 1 ? '' : 's'}{result.summary.composites > 0 ? ` and ${result.summary.composites} composite` : ''}). Nothing you already had was changed. Use Undo to take it back out.</p>
+          {result.summary.importedAsCopy && <div className="import-warnings"><span className="eyebrow">HEADS UP</span><ul><li>You already had this project, so it was added as a copy marked "(imported)".</li></ul></div>}
+          <p className="import-counts">Woods: {result.summary.woodsAdded} added to your library, {result.summary.woodsKept} already there (your versions were kept).</p>
+        </>
+        : <ul className="import-errors"><li>{result.error}</li></ul>}
+      <footer><button className="button secondary" onClick={onClose}>{result.ok ? 'Done' : 'Close'}</button></footer>
     </div>
   </div>
 }

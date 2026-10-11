@@ -25,11 +25,19 @@ describe('migrate', () => {
   })
 
   it('is idempotent on already-current data (no steps applied)', () => {
-    const current = { schemaVersion: 2, shops: [], boards: [{ ...v1Board(), endGrain: { stockThickness: 38, rowOffsets: [0, 0.5] } }] }
+    const current = { schemaVersion: LATEST_SCHEMA_VERSION, shops: [], boards: [{ ...v1Board(), endGrain: { stockThickness: 38, rowOffsets: [0, 0.5] } }], furniture: [] }
     const result = migrate(current)
     expect(result.applied).toEqual([])
     const eg = (result.data['boards'] as Record<string, unknown>[])[0]!['endGrain'] as Record<string, unknown>
     expect(eg['rowOffsets']).toEqual([0, 0.5]) // unchanged
+  })
+
+  it('runs the v2->v3 step: adds an empty furniture list and keeps an existing one', () => {
+    const added = migrate({ schemaVersion: 2, shops: [], boards: [] })
+    expect(added.applied).toEqual(['add-furniture-projects'])
+    expect(added.data['furniture']).toEqual([])
+    const kept = migrate({ schemaVersion: 2, shops: [], boards: [], furniture: [{ id: 'f' }] })
+    expect(kept.data['furniture']).toEqual([{ id: 'f' }])
   })
 
   it('flags a newer-than-app backup and applies no steps', () => {

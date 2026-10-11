@@ -66,6 +66,8 @@ test('the service worker precaches every asset the build emitted', async ({ page
   expect(listed.some(url => url.endsWith('.js'))).toBe(true)
   expect(listed.some(url => url.endsWith('.css'))).toBe(true)
   expect(listed.some(url => url.endsWith('.woff') || url.endsWith('.map'))).toBe(false)
+  // The case this exists for: the furniture 3D viewport is a lazy chunk nothing else references.
+  expect(listed.some(url => /\/FurnitureViewport3D-[^/]+\.js$/.test(url)), 'the lazy three.js viewport chunk is listed').toBe(true)
 
   await expect.poll(() => page.evaluate(async urls => {
     const hits = await Promise.all(urls.map(url => caches.match(url, { ignoreVary: true }).then(Boolean)))

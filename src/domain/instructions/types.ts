@@ -1,4 +1,4 @@
-import type { BoardProject, WoodSpecies } from '../../types'
+import type { BoardProject, BuildAllowances, WoodSpecies } from '../../types'
 import type { WarningLocation, WarningSeverity } from '../workspaceWarnings'
 
 // Shared instruction platform contracts (holistic strategy, Phase 0). Every project
@@ -43,12 +43,14 @@ export type OperationKind =
  *  `irreversible: true` and carry a check before it (validator rule). */
 export const IRREVERSIBLE_KINDS: readonly OperationKind[] = ['mill', 'cut', 'machine-joinery', 'drill', 'glue-clamp', 'surface']
 
-export type PartKind = 'stock' | 'strip' | 'panel' | 'slice' | 'wafer' | 'row' | 'board' | 'offcut'
+/** Furniture adds 'blank' (milled stock before cutting to size), 'part' (a cut furniture
+ *  part), 'assembly' (a glued or fastened unit), and 'hardware'. */
+export type PartKind = 'stock' | 'strip' | 'panel' | 'slice' | 'wafer' | 'row' | 'board' | 'offcut' | 'blank' | 'part' | 'assembly' | 'hardware'
 
 /** Physical state of a part. A transformation consumes a part in one stage and
  *  produces a new part (new key) in the next, so bench inventory is produced minus
  *  consumed with no special cases. */
-export type PartStage = 'rough' | 'milled' | 'cut' | 'arranged' | 'glued' | 'surfaced' | 'finished'
+export type PartStage = 'rough' | 'milled' | 'cut' | 'machined' | 'arranged' | 'glued' | 'assembled' | 'surfaced' | 'finished'
 
 export type ToolCategory =
   | 'table-saw'
@@ -64,6 +66,17 @@ export type ToolCategory =
   | 'measuring'
   | 'marking'
   | 'finish'
+  | 'router'
+  | 'drill'
+  | 'drill-press'
+  | 'chisel'
+  | 'mortiser'
+  | 'pocket-hole-jig'
+  | 'doweling-jig'
+  | 'loose-tenon-joiner'
+  | 'track-saw'
+  | 'band-saw'
+  | 'screwdriver'
   | 'other'
 
 export type MeasurementUnit = 'mm' | 'deg' | 'count'
@@ -77,7 +90,8 @@ export type MeasurementPhase = 'verify-before' | 'achieve-after'
 export type SetupValueSource = 'design' | 'profile' | 'assumption'
 
 /** Stress test C5: the step visual is a per-domain view kind with shared highlight
- *  semantics. Cutting boards use the 2D kinds; 'scene-3d' is reserved for furniture. */
+ *  semantics. Cutting boards use the 2D kinds; furniture uses 'scene-3d', which a
+ *  renderer may draw as an SVG projection (print, bench) or a WebGL scene. */
 export type StepViewKind = 'board-face' | 'cross-section' | 'cut-diagram' | 'assembly-layout' | 'scene-3d'
 
 // ---- Parts ---------------------------------------------------------------------
@@ -294,7 +308,7 @@ export interface ProjectRequirements {
   consumables: string[]
 }
 
-export type PlanSourceKind = 'board' | 'composite'
+export type PlanSourceKind = 'board' | 'composite' | 'furniture'
 
 export interface PlanSource {
   kind: PlanSourceKind
@@ -311,9 +325,12 @@ export interface InstructionPlan {
   /** Content hash of everything except this field (see revisions.ts). */
   revision: string
   source: PlanSource
-  construction: 'edge' | 'end'
+  /** Board domains only (edge or end grain). Furniture plans omit it. */
+  construction?: 'edge' | 'end'
   /** Units of record. Display units are a presentation concern. */
   units: 'mm'
+  /** Finished size. Furniture maps its overall bounds as length = x extent (width),
+   *  width = y extent (depth), thickness = z extent (height). */
   finished: PartDimensions
   phases: InstructionPhase[]
   steps: InstructionStep[]
@@ -335,6 +352,9 @@ export interface GenerationContext {
   /** The board is a composite panel: its plan ends at a flattened panel ready to be cut
    *  into wafers, with no final squaring, surfacing, or finishing steps. */
   asCompositePanel?: boolean
+  /** Shop-wide milling allowances. Furniture reads rough sizes from these; board
+   *  generators keep reading `board.allowances`. */
+  allowances?: BuildAllowances
 }
 
 export type InstructionGenerator<TProject> = (project: TProject, context: GenerationContext) => InstructionPlan

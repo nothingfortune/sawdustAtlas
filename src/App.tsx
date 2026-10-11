@@ -229,7 +229,7 @@ export default function App() {
     try {
       parsed = JSON.parse(await file.text())
     } catch {
-      setImportResult({ ok: false, data: null, counts: { shops: 0, boards: 0, composites: 0, woods: 0 }, warnings: [], errors: ['That file is not valid JSON.'] })
+      setImportResult({ ok: false, data: null, counts: { shops: 0, boards: 0, composites: 0, furniture: 0, woods: 0 }, warnings: [], errors: ['That file is not valid JSON.'] })
       return
     }
     const result = importData(parsed)

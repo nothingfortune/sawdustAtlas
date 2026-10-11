@@ -1,5 +1,6 @@
 import type { AtlasData, PricingSettings, WoodSpecies } from './types'
 import { DEFAULT_ALLOWANCES } from './domain/boardAllowances'
+import { LATEST_SCHEMA_VERSION } from './domain/migrations'
 import { createId } from './id'
 
 // Standard 1/8" table-saw blade kerf — shared by end-grain slicing and composite cuts so
@@ -27,11 +28,12 @@ export const DEFAULT_PRICING: PricingSettings = {
 }
 
 export const starterData: AtlasData = {
-  schemaVersion: 2,
+  schemaVersion: LATEST_SCHEMA_VERSION,
   woods: defaultSpecies.map(wood => ({ ...wood })),
   allowances: { ...DEFAULT_ALLOWANCES },
   pricing: { ...DEFAULT_PRICING },
   composites: [],
+  furniture: [],
   shops: [{
     id: createId(), name: 'My workshop', width: 7300, depth: 4300, gridSize: 300, updatedAt: new Date().toISOString(),
     blockedZones: [

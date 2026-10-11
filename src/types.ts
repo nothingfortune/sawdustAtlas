@@ -1,4 +1,6 @@
-export type View = 'home' | 'shop' | 'boards' | 'woods' | 'allowances' | 'pricing' | 'geometry'
+import type { FurnitureProject } from './domain/furniture/types'
+
+export type View = 'home' | 'shop' | 'boards' | 'furniture' | 'woods' | 'allowances' | 'pricing' | 'geometry'
 
 export type ShopItemKind = 'machine' | 'bench' | 'storage' | 'dust' | 'utility' | 'door' | 'custom'
 export type FeedDirection = 0 | 90 | 180 | 270
@@ -169,4 +171,6 @@ export interface AtlasData {
   /** Shop-wide pricing knobs (markup, labor, consumables, floor). */
   pricing: PricingSettings
   composites: CompositeBoard[]
+  /** Furniture projects (src/domain/furniture/types.ts). */
+  furniture: FurnitureProject[]
 }

@@ -11,13 +11,15 @@ root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
 
 # Need the Docker daemon; if it's not up, hint and get out of the way (never block
-# or fail the merge/pull).
-if ! docker info >/dev/null 2>&1; then
+# or fail the merge/pull). From WSL without Docker's integration, "docker" is a stub
+# and Docker Desktop answers as docker.exe (scripts/container.sh handles both).
+if ! docker info >/dev/null 2>&1 && ! docker.exe info >/dev/null 2>&1; then
   echo "[post-merge] develop updated, but Docker isn't running. Start Docker, then: pnpm container  (then open http://localhost:8080)" >&2
   exit 0
 fi
 
-log="$root/.git/sawdust-container-build.log"
+# --git-common-dir, because in a worktree .git is a file, not a directory.
+log="$(cd "$(git rev-parse --git-common-dir)" && pwd)/sawdust-container-build.log"
 echo "[post-merge] develop updated -> rebuilding container (badge stamped from git) in the background." >&2
 echo "[post-merge]   log:  $log" >&2
 echo "[post-merge]   app:  http://localhost:8080  (ready once the build finishes)" >&2

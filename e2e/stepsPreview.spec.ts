@@ -51,6 +51,9 @@ test('steps preview measurements switch to inches under imperial units', async (
   await page.getByRole('button', { name: /Preston/ }).click()
   await expect(measurements).toContainText(/\d\s*in\b/)
   await expect(measurements).not.toContainText('mm')
+  // A quarter-millimeter tolerance must not round away to "± 0 in".
+  await expect(measurements).toContainText('± 0.010 in')
+  await expect(measurements).not.toContainText(/± 0 in/)
   const setup = page.locator('.steps-setup').first()
   await expect(setup).not.toContainText('mm')
 })
@@ -67,4 +70,13 @@ test('an end-grain board shows a crosscut batch step and a slice-marking step', 
   const marking = page.locator('.steps-step[data-step-kind="mark"]').filter({ hasText: 'Letter the slices' })
   await expect(marking).toBeVisible()
   await expect(marking).toContainText(/slice letter/i)
+})
+
+test('a fence setting and its re-check read as one line, and repeated parts are counted', async ({ page }) => {
+  await openSteps(page)
+  const rip = page.locator('.steps-step[data-step-kind="cut"]').first()
+  await expect(rip.locator('.steps-setup li').filter({ hasText: 'Fence to blade' })).toContainText('verify before')
+  await expect(rip.locator('.steps-measurements li').filter({ hasText: 'Fence to blade' })).toHaveCount(0)
+  const select = page.locator('.steps-step[data-step-kind="select-stock"]').first()
+  await expect(select.locator('.steps-outputs')).toContainText('Walnut ×2')
 })

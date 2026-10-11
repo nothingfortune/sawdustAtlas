@@ -11,13 +11,34 @@ test.describe('composite board designer', () => {
     await page.getByRole('button', { name: 'Cutting boards' }).click()
   })
 
+  test('the cut plan follows imperial units and an empty row holds its hint', async ({ page }) => {
+    await page.setViewportSize({ width: 1180, height: 820 })
+    await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
+    await page.getByRole('button', { name: /^Make composite/ }).click()
+    await page.getByRole('button', { name: /Preston/ }).click()
+
+    const cutPlan = page.locator('.composite-summary .cut-stage')
+    await expect(cutPlan.first()).toContainText('in')
+    await expect(cutPlan.first()).not.toContainText('mm')
+
+    const row = page.locator('.desk-row.active .row-body')
+    const hint = row.locator('.row-empty-hint')
+    await expect(hint).toBeVisible()
+    const [rowBox, hintBox] = [await row.boundingBox(), await hint.boundingBox()]
+    expect(hintBox!.y + hintBox!.height).toBeLessThanOrEqual(rowBox!.y + rowBox!.height + 0.5)
+  })
+
   test('creates a composite, adds an inline rip panel, places a wafer, and updates the build sheet + boards list', async ({ page }) => {
     // Turn the seeded edge-grain board into a composite's first panel.
     await page.getByRole('button', { name: /Walnut & maple daily board/ }).click()
-    await page.getByRole('button', { name: 'Make a composite board from this design' }).click()
+    await page.getByRole('button', { name: 'Make composite: build a composite board from this design' }).click()
 
     const screen = page.locator('.composite-screen')
     await expect(screen).toBeVisible()
+    // Nothing placed yet, so nothing to price.
+    const summary = page.locator('.composite-summary')
+    await expect(summary).toContainText('Place wafers to see the material estimate and price.')
+    await expect(summary.locator('.summary-stats')).not.toContainText('$')
 
     // Add a second panel inline — design a fresh board for it, give it a strip so it
     // actually yields wafers, then return to the composite (the panel editor's "Back"
@@ -38,8 +59,9 @@ test.describe('composite board designer', () => {
     // The grid picked it up — there's already one empty row from composite creation.
     await expect(page.locator('.desk-wafer')).toHaveCount(1)
 
-    // The build sheet reflects real, non-zero material now that something's placed.
-    const summary = page.locator('.composite-summary')
+    // The build sheet reflects real, non-zero material and a price now that something's placed.
+    await expect(summary.locator('.summary-stats')).toContainText('$')
+    await expect(summary).not.toContainText('Place wafers to see')
     await expect(summary.locator('.plan-table')).not.toContainText('No wafers placed yet')
     await expect(summary.locator('.plan-table')).toContainText(/bf/)
 

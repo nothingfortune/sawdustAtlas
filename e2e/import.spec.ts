@@ -19,7 +19,7 @@ test.describe('backup import', () => {
       composites: [],
     }
 
-    await page.locator('input[type=file]').setInputFiles({
+    await page.getByLabel('Backup file').setInputFiles({
       name: 'backup.json',
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(backup)),
@@ -38,7 +38,7 @@ test.describe('backup import', () => {
     await page.goto('/')
     page.on('dialog', dialog => { void dialog.accept() })
 
-    await page.locator('input[type=file]').setInputFiles({
+    await page.getByLabel('Backup file').setInputFiles({
       name: 'not-a-backup.json',
       mimeType: 'application/json',
       buffer: Buffer.from('"just a string"'),

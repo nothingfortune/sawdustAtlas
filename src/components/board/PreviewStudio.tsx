@@ -109,7 +109,7 @@ export function PreviewStudio(props: { project: BoardProject; woods: WoodSpecies
       </div>
     </div>
     <div className="studio-tabs" role="tablist">{tabs.map(tab => <button key={tab.id} role="tab" aria-selected={tab.id === active.id} className={tab.id === active.id ? 'active' : ''} onClick={() => setActiveId(tab.id)}>{tab.label}</button>)}</div>
-    <div className="studio-tap" role="button" tabIndex={0} onClick={() => setPopout(true)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPopout(true) } }} aria-label="Open full-size preview">
+    <div className="studio-tap" role="button" tabIndex={0} onClick={() => setPopout(true)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPopout(true) } }} aria-label="Tap to enlarge: open the full-size preview">
       <StudioStage tab={active} woods={props.woods} idPrefix="studio"/>
       <span className="studio-tap-hint"><Maximize2/>Tap to enlarge</span>
     </div>

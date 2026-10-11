@@ -4,7 +4,7 @@ import { resolveFurniture } from '../src/domain/furniture/geometry'
 import { FURNITURE_TEMPLATES, templateById } from '../src/domain/furniture/templates'
 import { validateFurniture } from '../src/domain/furniture/validation'
 import type { FurnitureProject, FurnitureTemplate } from '../src/domain/furniture/types'
-import { TABLE_BOXES, UPDATED_AT, furnitureContext } from './fixtures/furniture'
+import { BOOKCASE_BOXES, TABLE_BOXES, UPDATED_AT, furnitureContext } from './fixtures/furniture'
 
 const context = furnitureContext()
 
@@ -103,7 +103,8 @@ describe.each(FURNITURE_TEMPLATES.map(template => [template.id, template] as con
 
   it('re-flows: editing a parameter on the project equals creating with that value', () => {
     const base = boxesOf(build(template))
-    for (const parameter of template.parameters) {
+    // A count decides how many parts exist, so it is covered separately below.
+    for (const parameter of template.parameters.filter(found => found.unit !== 'count')) {
       const project = build(template)
       const target = project.parameters.find(found => found.name === parameter.name)!
       target.value = parameter.max
@@ -173,5 +174,78 @@ describe('basic table defaults', () => {
     expect(project.joints.filter(joint => joint.kind === 'tabletop-fastener').map(joint => joint.targetId).sort()).toEqual(['apron-back', 'apron-front', 'apron-left', 'apron-right'])
     expect(project.joints.filter(joint => joint.kind === 'mortise-tenon')).toHaveLength(8)
     expect(project.joints.every(joint => joint.glue === (joint.kind !== 'tabletop-fastener'))).toBe(true)
+  })
+})
+
+describe('bookcase', () => {
+  const bookcase = templateById('bookcase')!
+
+  it('matches the shared bookcase fixture box for box at its defaults', () => {
+    expect(boxesOf(build(bookcase))).toEqual(BOOKCASE_BOXES)
+  })
+
+  it('makes one dadoed shelf per count, spaced evenly between the bottom and the top', () => {
+    for (const shelves of [1, 2, 5, 8]) {
+      const project = build(bookcase, { shelves })
+      const { resolved, issues } = check(project)
+      expect(issues, `${shelves} shelves`).toEqual([])
+      const shelfBoxes = resolved.parts.filter(part => part.part.role === 'shelf').map(part => part.box)
+      expect(shelfBoxes).toHaveLength(shelves)
+      expect(project.joints.filter(joint => joint.kind === 'dado' && joint.partId.startsWith('shelf-'))).toHaveLength(shelves * 2)
+      const bottom = resolved.parts.find(part => part.id === 'bottom')!.box
+      const top = resolved.parts.find(part => part.id === 'top')!.box
+      const gaps = [bottom.z + bottom.sz, ...shelfBoxes.flatMap(box => [box.z, box.z + box.sz]), top.z].reduce<number[]>(
+        (found, plane, index, planes) => (index % 2 === 0 && index + 1 < planes.length ? [...found, planes[index + 1]! - plane] : found), [],
+      )
+      for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0]!, 9)
+    }
+  })
+
+  it('rounds a fractional shelf count', () => {
+    expect(build(bookcase, { shelves: 3.6 })).toEqual(build(bookcase, { shelves: 4 }))
+  })
+
+  it('lists the carcass as one subassembly and leaves the back for the final assembly', () => {
+    const project = build(bookcase, { shelves: 2 })
+    expect(project.subassemblies).toHaveLength(1)
+    expect(project.subassemblies[0]!.partIds).toEqual(['side-l', 'side-r', 'bottom', 'top', 'shelf-1', 'shelf-2'])
+    expect(project.subassemblies[0]!.partIds).not.toContain('back')
+  })
+})
+
+describe('plywood casework', () => {
+  const casework = ['bookcase', 'base-cabinet', 'wall-cabinet'].map(id => templateById(id)!)
+
+  it.each(casework.map(template => [template.id, template] as const))('%s parts are cut from the sheets the project lists, at their thickness', (_id, template) => {
+    const { resolved } = check(build(template))
+    expect(resolved.project.sheetMaterials.length).toBeGreaterThan(0)
+    for (const part of resolved.parts) {
+      const material = resolved.project.sheetMaterials.find(found => found.id === part.part.sheetMaterialId)
+      expect(material, part.id).toBeDefined()
+      expect(part.size.thickness, part.id).toBe(material!.thickness)
+    }
+  })
+
+  it('lets the back into a rabbet in each side', () => {
+    for (const template of casework) {
+      const rabbets = build(template).joints.filter(joint => joint.kind === 'rabbet')
+      expect(rabbets.map(joint => [joint.partId, joint.targetId]), template.id).toEqual([['back', 'side-l'], ['back', 'side-r']])
+    }
+  })
+
+  it('base cabinet raises the bottom on a recessed toe kick and carries the top rails flush with the sides', () => {
+    const { resolved } = check(build(templateById('base-cabinet')!, { toe_h: 120, height: 900 }))
+    const box = (id: string) => resolved.parts.find(part => part.id === id)!.box
+    expect(box('bottom').z).toBe(120)
+    expect(box('kick').z).toBe(0)
+    expect(box('kick').y).toBe(75)
+    for (const id of ['rail-front', 'rail-back']) expect(box(id).z + box(id).sz).toBe(900)
+  })
+
+  it('wall cabinet hangs its cleat under the top against the back', () => {
+    const { resolved } = check(build(templateById('wall-cabinet')!))
+    const box = (id: string) => resolved.parts.find(part => part.id === id)!.box
+    expect(box('cleat').z + box('cleat').sz).toBe(box('top').z)
+    expect(box('cleat').y + box('cleat').sy).toBe(box('back').y)
   })
 })

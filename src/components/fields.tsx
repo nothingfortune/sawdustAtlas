@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput, snapLengthMm } from '../domain/lengthUnits'
+import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput, snapLengthMm, tidyFloat } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 
 interface LengthInputProps {
@@ -35,7 +35,7 @@ export function LengthInput({ value, min = 0, max, step = 1, ariaLabel, title, c
       min={min}
       max={max}
       step={step}
-      value={value}
+      value={tidyFloat(value)}
       onChange={event => onChange(clamp(Number(event.target.value), min, max))}
     />
   }

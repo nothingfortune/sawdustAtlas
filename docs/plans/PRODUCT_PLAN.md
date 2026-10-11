@@ -26,6 +26,8 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 
 The immediate goal is a **friend beta**: a small group can install SawdustAtlas from Docker Hub, open the starter projects, make a simple board or shop edit, export a backup, and recover that backup without needing developer help. Larger modeling work remains important, but it should not outrank first-run clarity, data safety, tablet usability, printability, and trustworthy shop math for the next pass. Near-term scope should favor practical woodworking calculations over capture-heavy features such as room scanning or media annotation unless repeated user testing shows those are blocking adoption.
 
+The next strategic foundation is the shared instruction platform: one semantic build plan that tablet build mode, print, readiness, and build tracking all consume, proven on cutting boards before furniture. See the [instruction platform design spec](../superpowers/specs/2026-10-10-instruction-platform-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-instruction-platform-wave1.md). Furniture is the second producer of that plan: see the [furniture modeler design spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-furniture-modeler-wave1.md).
+
 ## Product Principles
 
 - **Accuracy before cleverness.** Never present approximate geometry or utilization as exact.

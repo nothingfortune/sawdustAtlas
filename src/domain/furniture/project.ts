@@ -14,7 +14,7 @@ import { BOX_FACES, JOINT_KINDS, PART_ORIENTATIONS } from './types'
 /** Widest solid board assumed on hand (about a nominal 6 inch board, surfaced). */
 export const DEFAULT_MAX_BOARD_WIDTH = 140
 
-const ROLES: readonly FurniturePartRole[] = [
+export const PART_ROLES: readonly FurniturePartRole[] = [
   'leg', 'apron', 'rail', 'stile', 'stretcher', 'top', 'side', 'bottom', 'shelf', 'back', 'divider', 'face-frame', 'door', 'drawer-front', 'cleat', 'kick', 'panel', 'hardware', 'other',
 ]
 const KINDS: readonly FurniturePartKind[] = ['solid', 'sheet', 'hardware']
@@ -68,7 +68,7 @@ function normalizePart(raw: Record<string, unknown>, options: NormalizeFurniture
     id: text(raw['id'], options.createId()),
     label: typeof raw['label'] === 'string' ? raw['label'] : '',
     name: text(raw['name'], 'Part'),
-    role: oneOf<FurniturePartRole>(raw['role'], ROLES, 'other'),
+    role: oneOf<FurniturePartRole>(raw['role'], PART_ROLES, 'other'),
     kind,
     length: dimExpr(raw['length'], 500, false),
     width: dimExpr(raw['width'], 100, false),

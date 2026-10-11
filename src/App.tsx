@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Armchair, Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
+import type { FurnitureProject } from './domain/furniture/types'
 import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
 import { GeometryCalculator } from './components/GeometryCalculator'
@@ -44,6 +45,8 @@ export default function App() {
   const [furnitureMode, setFurnitureMode] = useState<'gallery' | 'designer'>('gallery')
   // Part to select when the designer opens from a warning (WarningLocation.focusId).
   const [furnitureFocus, setFurnitureFocus] = useState<string | undefined>()
+  // Counts opens so the designer remounts (and re-selects focusId) on each one.
+  const [furnitureOpens, setFurnitureOpens] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
@@ -209,7 +212,7 @@ export default function App() {
     commitData(current => ({ ...current, furniture: [...current.furniture, project] }))
     openFurniture(project.id)
   }
-  const openFurniture = (id: string, focusId?: string) => { setActiveFurniture(id); setFurnitureFocus(focusId); setFurnitureMode('designer') }
+  const openFurniture = (id: string, focusId?: string) => { setActiveFurniture(id); setFurnitureFocus(focusId); setFurnitureOpens(count => count + 1); setFurnitureMode('designer') }
   const duplicateFurniture = (id: string) => {
     const source = data.furniture.find(p => p.id === id)
     if (!source) return
@@ -218,6 +221,10 @@ export default function App() {
     const copy = { ...structuredClone(source), id: createId(), name: `${source.name} copy`, updatedAt: new Date().toISOString() }
     commitData(current => ({ ...current, furniture: [...current.furniture, copy] }))
   }
+  const updateFurniture = (project: FurnitureProject) => commitData(current => ({
+    ...current,
+    furniture: current.furniture.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p),
+  }))
   const deleteFurniture = (id: string) => {
     const project = data.furniture.find(p => p.id === id)
     if (!project || !window.confirm(`Delete furniture "${project.name}"?`)) return
@@ -378,7 +385,7 @@ export default function App() {
           {view === 'furniture' && (() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
-              ? <FurnitureDesigner project={project} woods={data.woods} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onBack={() => setFurnitureMode('gallery')} />
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
               : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
           })()}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}

@@ -21,7 +21,7 @@ test.describe('furniture gallery', () => {
     const dialog = page.getByRole('dialog', { name: 'New furniture project' })
     await expect(dialog.getByRole('radio', { name: /Blank/ })).toBeChecked()
     await dialog.getByRole('button', { name: 'Create project' }).click()
-    await expect(page.getByRole('heading', { name: 'Untitled furniture' })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Project name' })).toHaveValue('Untitled furniture')
     await expect(page.locator('.breadcrumb strong')).toHaveText('Furniture')
   })
 
@@ -84,7 +84,7 @@ test.describe('furniture gallery', () => {
     await page.getByRole('button', { name: 'New project' }).click()
     await page.getByRole('dialog').getByRole('radio', { name: /Basic table/ }).check()
     await page.getByRole('dialog').getByRole('button', { name: 'Create project' }).click()
-    const name = await page.getByRole('heading', { level: 2 }).first().innerText()
+    const name = await page.getByRole('textbox', { name: 'Project name' }).inputValue()
     await page.getByRole('button', { name: /^Furniture$/ }).first().click()
 
     await page.getByRole('button', { name: `Duplicate ${name}` }).click()
@@ -142,6 +142,6 @@ test.describe('furniture gallery', () => {
     await page.goto('/')
     await page.locator('.warning-pill').click()
     await page.locator('.warning-row', { hasText: 'Broken shelf' }).first().click()
-    await expect(page.getByRole('heading', { name: 'Broken shelf' })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Project name' })).toHaveValue('Broken shelf')
   })
 })

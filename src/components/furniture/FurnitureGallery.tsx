@@ -1,18 +1,20 @@
 import { memo, useMemo, useState } from 'react'
 import { Armchair, Copy, Trash2, TriangleAlert } from 'lucide-react'
 import type { BuildAllowances, WoodSpecies } from '../../types'
+import { resolveFurniture } from '../../domain/furniture/geometry'
 import type { FurnitureProject } from '../../domain/furniture/types'
 import { formatDimensions } from '../../domain/lengthUnits'
 import { useUnitSystem } from '../unitSystem'
+import { FurnitureDrawing } from './FurnitureDrawing'
 import { NewFurnitureDialog } from './NewFurnitureDialog'
 import type { NewFurnitureRequest } from './NewFurnitureDialog'
-import { summarizeFurniture } from './summary'
+import { summarizeResolved } from './summary'
 import type { FurnitureSummary } from './summary'
 
 export type { NewFurnitureRequest }
 
-// One project card. Memoized on its project and the shared context so an edit to one
-// project does not re-resolve every other card.
+// One project card with an isometric thumbnail. Memoized on its project and the shared
+// context so an edit to one project does not re-resolve every other card.
 const FurnitureCard = memo(function FurnitureCard({ project, woods, allowances, onOpen, onDuplicate, onDelete }: {
   project: FurnitureProject
   woods: WoodSpecies[]
@@ -22,10 +24,14 @@ const FurnitureCard = memo(function FurnitureCard({ project, woods, allowances, 
   onDelete: (id: string) => void
 }) {
   const { lengthUnit } = useUnitSystem()
-  const summary = useMemo(() => summarizeFurniture(project, { woods, allowances }), [project, woods, allowances])
+  const resolved = useMemo(() => resolveFurniture(project, { woods, allowances }), [project, woods, allowances])
+  const summary = useMemo(() => summarizeResolved(resolved, { woods, allowances }), [resolved, woods, allowances])
   return <div className="gallery-card furniture-card">
     <button type="button" className="furniture-card-open" onClick={() => onOpen(project.id)}>
-      <div className="gallery-thumb-wrap furniture-thumb"><Armchair size={32} strokeWidth={1.2} aria-hidden="true" /></div>
+      {/* Decorative: the card's text already names and describes the project. */}
+      <div className="gallery-thumb-wrap furniture-thumb" aria-hidden="true">
+        {resolved.parts.length > 0 ? <FurnitureDrawing parts={resolved.parts} view="iso" showDimensions={false} /> : <Armchair size={32} strokeWidth={1.2} />}
+      </div>
       <span className="gallery-name">{project.name}</span>
       <span className="gallery-meta">{sizeText(summary, lengthUnit)}</span>
       <span className="gallery-meta">{summary.partCount} part{summary.partCount === 1 ? '' : 's'}</span>

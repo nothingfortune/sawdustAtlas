@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { boundsRadius, boxToThree, clipPlanes, fitPose, partsBounds, worldToThree } from '../src/components/furniture/sceneMapping'
+import { axisVector, boundsRadius, boxToThree, clipPlanes, closestLineParameter, fitPose, millimetersPerPixel, partsBounds, worldToThree } from '../src/components/furniture/sceneMapping'
 import { detectWebGL } from '../src/components/furniture/webgl'
 import { isoCamera } from '../src/domain/furniture/projection'
 import { BOOKCASE_BOXES, TABLE_BOXES, bookcaseResolvedParts, tableResolvedParts } from './fixtures/furniture'
@@ -100,5 +100,32 @@ describe('camera fit', () => {
     const radius = boundsRadius(bounds)
     expect(near).toBeLessThan(radius)
     expect(far).toBeGreaterThan(radius * 10)
+  })
+})
+
+describe('drag math', () => {
+  it('maps each world axis to a three unit vector', () => {
+    expect(axisVector('x').map(v => v || 0)).toEqual([1, 0, 0])
+    expect(axisVector('y').map(v => v || 0)).toEqual([0, 0, -1])
+    expect(axisVector('z').map(v => v || 0)).toEqual([0, 1, 0])
+  })
+
+  it('reads the distance along an axis line from the ray that passes nearest it', () => {
+    const line: [number, number, number] = [10, 0, 0]
+    const direction = axisVector('x')
+    // A ray straight down -z at x = 40 meets the x axis line 30 mm from the start point.
+    expect(closestLineParameter([40, 0, 100], [0, 0, -1], line, direction)).toBeCloseTo(30, 9)
+    // The same through a slanted ray, and in the negative direction.
+    expect(closestLineParameter([-5, 50, 50], [0, -1, -1], line, direction)).toBeCloseTo(-15, 9)
+  })
+
+  it('has no answer when the ray runs along the line', () => {
+    expect(closestLineParameter([0, 0, 0], [1, 0, 0], [5, 5, 0], axisVector('x'))).toBeNull()
+  })
+
+  it('converts pixels to millimeters at a distance', () => {
+    // Field of view 90 degrees: the view is 2 * distance tall.
+    expect(millimetersPerPixel(500, 90, 1000)).toBeCloseTo(1, 9)
+    expect(millimetersPerPixel(500, 90, 0)).toBeGreaterThan(0)
   })
 })

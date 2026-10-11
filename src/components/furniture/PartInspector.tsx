@@ -5,6 +5,7 @@ import { BOX_FACES, PART_ORIENTATIONS } from '../../domain/furniture/types'
 import type { Axis, BoxFace, DimExpr, FurnitureIssue, FurniturePart, FurniturePartKind, FurnitureProject, PartOrientation, ResolvedFurniture } from '../../domain/furniture/types'
 import type { WoodSpecies } from '../../types'
 import { DimInput } from './DimInput'
+import { PartRelationships } from './PartRelationships'
 import { FACE_LABELS, KIND_LABELS, ORIENTATION_CHOICES, roleLabel } from './partVocabulary'
 import { TextField } from './TextField'
 
@@ -14,13 +15,15 @@ const NO_EDIT = () => undefined
 
 // Every editable field of one part. Edits are whole-project replacements handed to
 // `onChange`, which the designer commits as one undoable change.
-export function PartInspector({ project, resolved, issues, part, woods, onChange }: {
+export function PartInspector({ project, resolved, issues, part, woods, onChange, onAnnounce }: {
   project: FurnitureProject
   resolved: ResolvedFurniture
   issues: FurnitureIssue[]
   part: FurniturePart
   woods: WoodSpecies[]
   onChange: (project: FurnitureProject) => void
+  /** Spoken confirmation for edits that change nothing visible in the inspector. */
+  onAnnounce?: (message: string) => void
 }) {
   const edit = (patch: Partial<FurniturePart>) => onChange({ ...project, parts: project.parts.map(candidate => candidate.id === part.id ? { ...candidate, ...patch } : candidate) })
   const scope = resolved.parameters
@@ -103,6 +106,8 @@ export function PartInspector({ project, resolved, issues, part, woods, onChange
         return <DimInput key={axis} label={`Position ${axis.toUpperCase()}`} value={part.position[axis]} scope={scope} onCommit={value => setPosition(axis, value)} />
       })}
     </div>
+
+    <PartRelationships project={project} resolved={resolved} partId={part.id} onChange={(next, summary) => { onChange(next); onAnnounce?.(summary) }} />
 
     <fieldset className="face-picks">
       <legend className="field-label">Visible faces</legend>

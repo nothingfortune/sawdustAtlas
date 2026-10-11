@@ -83,7 +83,7 @@ export function FurnitureDrawing({
       </pattern>
     </defs>
 
-    <g className="furniture-parts">
+    <g className="furniture-part-layer">
       {groups.map(({ partId, polygons }) => {
         const part = byId.get(partId)
         if (!part) return null

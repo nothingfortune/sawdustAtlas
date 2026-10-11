@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { BuildAllowances, WoodSpecies } from '../../types'
+import { pickPart } from '../../domain/furniture/arrange'
 import { addPart, duplicatePart, partTitle, removePart } from '../../domain/furniture/editing'
 import { resolveFurniture } from '../../domain/furniture/geometry'
 import type { FurniturePartKind, FurnitureProject } from '../../domain/furniture/types'
@@ -9,11 +10,13 @@ import { formatDimensions } from '../../domain/lengthUnits'
 import { createId } from '../../id'
 import { useUnitSystem } from '../unitSystem'
 import { deleteMessage } from './deleteMessage'
+import { DesignArea } from './DesignArea'
 import { ParametersPanel } from './ParametersPanel'
 import { PartInspector } from './PartInspector'
 import { PartsPanel } from './PartsPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { TextField } from './TextField'
+import { useArrange } from './useArrange'
 
 type LeftTab = 'parts' | 'parameters' | 'settings'
 const LEFT_TABS: readonly { id: LeftTab; label: string }[] = [
@@ -37,21 +40,24 @@ export function FurnitureDesigner({ project, woods, allowances, focusId, onChang
 }) {
   const { lengthUnit } = useUnitSystem()
   const [tab, setTab] = useState<LeftTab>('parts')
-  const [selection, setSelection] = useState(focusId)
+  // Part ids in click order; the last is the one the inspector shows.
+  const [selection, setSelection] = useState<string[]>(focusId ? [focusId] : [])
   // Announced to screen readers: add, duplicate, and delete move focus nowhere.
   const [status, setStatus] = useState('')
   const resolved = useMemo(() => resolveFurniture(project, { woods, allowances }), [project, woods, allowances])
   const issues = useMemo(() => validateFurniture(resolved, { woods, allowances }), [resolved, woods, allowances])
-  const selectedId = project.parts.some(part => part.id === selection) ? selection : undefined
+  const selectedIds = useMemo(() => selection.filter(id => project.parts.some(part => part.id === id)), [selection, project.parts])
+  const selectedId = selectedIds[selectedIds.length - 1]
   const selected = project.parts.find(part => part.id === selectedId)
   const errors = issues.filter(issue => issue.severity === 'error').length
   const size = resolved.bounds ? formatDimensions([resolved.bounds.sx, resolved.bounds.sy, resolved.bounds.sz], lengthUnit) : 'No size yet'
 
   const commit = (next: FurnitureProject) => { if (next !== project) onChange(next) }
+  const arrange = useArrange({ project, resolved, selection: selectedIds, onChange: commit, announce: setStatus })
   const add = (kind: FurniturePartKind) => {
     const result = addPart(project, resolved, kind, selectedId, { partId: createId(), sheetMaterialId: createId() }, woods[0]?.id ?? '')
     commit(result.project)
-    setSelection(result.partId)
+    setSelection([result.partId])
     setStatus(`Added ${partTitle(result.project, result.partId)}.`)
   }
   const duplicate = () => {
@@ -59,14 +65,14 @@ export function FurnitureDesigner({ project, woods, allowances, focusId, onChang
     const result = duplicatePart(project, resolved, selectedId, createId())
     if (!result) return
     commit(result.project)
-    setSelection(result.partId)
+    setSelection([result.partId])
     setStatus(`Duplicated as ${partTitle(result.project, result.partId)}.`)
   }
   const remove = () => {
     if (!selectedId || !window.confirm(deleteMessage(project, selectedId))) return
     const title = partTitle(project, selectedId)
     commit(removePart(project, selectedId))
-    setSelection(undefined)
+    setSelection([])
     setStatus(`Deleted ${title}.`)
   }
 
@@ -94,19 +100,16 @@ export function FurnitureDesigner({ project, woods, allowances, focusId, onChang
             }}>{entry.label}</button>)}
         </div>
         <div role="tabpanel" id={`furniture-panel-${tab}`} aria-labelledby={`furniture-tab-${tab}`} className="furniture-tabpanel">
-          {tab === 'parts' && <PartsPanel project={project} resolved={resolved} issues={issues} selectedId={selectedId} onSelect={setSelection} onAdd={add} onDuplicate={duplicate} onDelete={remove} />}
+          {tab === 'parts' && <PartsPanel project={project} resolved={resolved} issues={issues} selectedIds={selectedIds} onSelect={(id, additive) => setSelection(pickPart(selectedIds, id, additive))} onNudgeKey={arrange.onNudgeKey} onAdd={add} onDuplicate={duplicate} onDelete={remove} />}
           {tab === 'parameters' && <ParametersPanel project={project} resolved={resolved} issues={issues} onChange={commit} />}
           {tab === 'settings' && <SettingsPanel project={project} onChange={commit} />}
         </div>
       </aside>
-      <section className="furniture-center" aria-label="Design area">
-        <p><b>{selected ? `Selected: ${partTitle(project, selected.id)}` : 'No part selected'}</b></p>
-        <p>Overall size: {size}</p>
-        <p className="panel-hint">The 3D and drawing views open in this area. Everything is editable from the panels on either side.</p>
-      </section>
+      <DesignArea project={project} resolved={resolved} issues={issues} context={{ woods, allowances }} selection={selectedIds} arrange={arrange} size={size}
+        onSelect={setSelection} onChange={commit} onAnnounce={setStatus} />
       <aside className="furniture-right" aria-label="Inspector">
         {selected
-          ? <PartInspector key={selected.id} project={project} resolved={resolved} issues={issues} part={selected} woods={woods} onChange={commit} />
+          ? <PartInspector key={selected.id} project={project} resolved={resolved} issues={issues} part={selected} woods={woods} onChange={commit} onAnnounce={setStatus} />
           : <p className="furniture-empty">Select a part in the Parts list to edit it.</p>}
       </aside>
     </div>

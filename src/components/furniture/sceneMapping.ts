@@ -1,6 +1,6 @@
 import { isoCamera } from '../../domain/furniture/projection'
 import type { ExplodeOffsets } from '../../domain/furniture/projection'
-import type { Box, ResolvedPart } from '../../domain/furniture/types'
+import type { Axis, Box, ResolvedPart } from '../../domain/furniture/types'
 import type { CameraPose } from '../../domain/instructions/types'
 
 // World to three.js mapping for the 3D viewport. The domain is z-up (x left to right,
@@ -70,4 +70,28 @@ export function fitPose(bounds: Box, fovDeg: number, aspect: number): CameraPose
 export function clipPlanes(bounds: Box): { near: number; far: number } {
   const radius = boundsRadius(bounds)
   return { near: radius / 100, far: radius * 60 }
+}
+
+/** A world axis as a unit vector in three coordinates. */
+export function axisVector(axis: Axis): Vec3 {
+  return worldToThree(axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1])
+}
+
+/** Where along a line the line passes closest to a ray, as a distance in mm from
+ *  `linePoint` when `lineDir` is a unit vector; null when the ray runs parallel to the
+ *  line (looking straight along the axis), where no drag distance can be read. */
+export function closestLineParameter(rayOrigin: Vec3, rayDir: Vec3, linePoint: Vec3, lineDir: Vec3): number | null {
+  const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+  const toLine: Vec3 = [linePoint[0] - rayOrigin[0], linePoint[1] - rayOrigin[1], linePoint[2] - rayOrigin[2]]
+  const a = dot(lineDir, lineDir)
+  const b = dot(lineDir, rayDir)
+  const c = dot(rayDir, rayDir)
+  const denominator = a * c - b * b
+  if (Math.abs(denominator) < 1e-9 * a * c) return null
+  return (b * dot(rayDir, toLine) - c * dot(lineDir, toLine)) / denominator
+}
+
+/** How many millimeters one screen pixel spans at a distance from a perspective camera. */
+export function millimetersPerPixel(distance: number, fovDeg: number, viewportHeightPx: number): number {
+  return (2 * distance * Math.tan((fovDeg * Math.PI) / 360)) / Math.max(viewportHeightPx, 1)
 }

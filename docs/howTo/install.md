@@ -127,3 +127,11 @@ Your saved projects live in your browser, not in the package, so updating does n
 ## Something not working?
 
 Almost every first-time problem is the same one, and it has a simple fix. See **[Troubleshooting](troubleshooting.md)**.
+
+---
+
+## Static hosting (planned primary path)
+
+The planned primary way to run SawdustAtlas is as a plain static website on a host that serves it over HTTPS, with Docker kept as the secondary path described above. HTTPS matters because offline use and keeping the screen awake at the bench only work on a secure address. Nothing is deployed yet, and choosing the host account and domain is still open.
+
+The build is ready for such a host. Running `pnpm build` produces a `dist` folder, and `public/_headers` and `public/_redirects` are copied into it. They use the Cloudflare Pages format: `_headers` repeats the same security headers and content security policy that `nginx.conf` sets for the Docker image, and `_redirects` sends every unknown path to `index.html` so the app opens on any address. A unit test fails if `_headers` and `nginx.conf` ever drift apart, so change them together.

@@ -1,0 +1,3685 @@
+{
+  "version": 1,
+  "key": "composite:golden-composite",
+  "source": {
+    "kind": "composite",
+    "projectId": "golden-composite",
+    "projectName": "Golden composite board",
+    "designRevision": "2026-10-10T00:00:00.000Z"
+  },
+  "construction": "edge",
+  "units": "mm",
+  "finished": {
+    "length": 551,
+    "width": 90,
+    "thickness": 30
+  },
+  "phases": [
+    {
+      "key": "panel:pA/prepare",
+      "order": 1,
+      "title": "P1: Prepare stock"
+    },
+    {
+      "key": "panel:pA/rip",
+      "order": 2,
+      "title": "P1: Rip strips"
+    },
+    {
+      "key": "panel:pA/glue",
+      "order": 3,
+      "title": "P1: Glue-up"
+    },
+    {
+      "key": "wafers:pA",
+      "order": 4,
+      "title": "P1: Cut wafers"
+    },
+    {
+      "key": "panel:pB/prepare",
+      "order": 5,
+      "title": "P2: Prepare stock"
+    },
+    {
+      "key": "panel:pB/rip",
+      "order": 6,
+      "title": "P2: Rip strips"
+    },
+    {
+      "key": "panel:pB/glue",
+      "order": 7,
+      "title": "P2: Glue-up"
+    },
+    {
+      "key": "wafers:pB",
+      "order": 8,
+      "title": "P2: Cut wafers"
+    },
+    {
+      "key": "rows",
+      "order": 9,
+      "title": "Assemble rows"
+    },
+    {
+      "key": "final-glue",
+      "order": 10,
+      "title": "Final glue-up"
+    },
+    {
+      "key": "finish",
+      "order": 11,
+      "title": "Square and surface"
+    }
+  ],
+  "steps": [
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "panel:pA/stock:walnut|472|56.2|42.5|0",
+          "quantity": 2
+        },
+        {
+          "partKey": "panel:pA/stock:maple|472|28.2|42.5|0",
+          "quantity": 3
+        },
+        {
+          "partKey": "panel:pA/stock:cherry|472|41.2|42.5|0",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pA/stock:walnut|472|41.2|42.5|0",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Boards are free of checks and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/stock:walnut|472|56.2|42.5|0",
+          "panel:pA/stock:maple|472|28.2|42.5|0",
+          "panel:pA/stock:cherry|472|41.2|42.5|0",
+          "panel:pA/stock:walnut|472|41.2|42.5|0"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select stock",
+      "instruction": "Pull the rough boards for every species in the design and check each one for checks, wind, and loose knots.",
+      "key": "panel:pA/select-stock",
+      "phaseKey": "panel:pA/prepare",
+      "order": 1
+    },
+    {
+      "dependsOn": [
+        "panel:pA/select-stock"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/stock:walnut|472|56.2|42.5|0",
+          "quantity": 2,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/stock:maple|472|28.2|42.5|0",
+          "quantity": 3,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/stock:cherry|472|41.2|42.5|0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/stock:walnut|472|41.2|42.5|0",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/stock:walnut|472|56.2|42.5|0/milled",
+          "quantity": 2
+        },
+        {
+          "partKey": "panel:pA/stock:maple|472|28.2|42.5|0/milled",
+          "quantity": 3
+        },
+        {
+          "partKey": "panel:pA/stock:cherry|472|41.2|42.5|0/milled",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pA/stock:walnut|472|41.2|42.5|0/milled",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 39.5,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "reference-face",
+          "text": "Reference face is flat before planing",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cross-section",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/stock:walnut|472|56.2|42.5|0/milled",
+          "panel:pA/stock:maple|472|28.2|42.5|0/milled",
+          "panel:pA/stock:cherry|472|41.2|42.5|0/milled",
+          "panel:pA/stock:walnut|472|41.2|42.5|0/milled"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "mill",
+      "title": "Mill stock",
+      "instruction": "Joint one face and one edge, then plane every board to the same milled thickness.",
+      "batch": {
+        "count": 7,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 39.5,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pA/mill",
+      "phaseKey": "panel:pA/prepare",
+      "order": 2
+    },
+    {
+      "dependsOn": [
+        "panel:pA/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/stock:walnut|472|56.2|42.5|0/milled",
+          "quantity": 2,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/strip:e1",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pA/strip:e7",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pA/strip:e1"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pA/strip:e1",
+          "panel:pA/strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pA/rip-1",
+        "panel:pA/rip-7"
+      ],
+      "kind": "cut",
+      "title": "Rip Walnut strips",
+      "instruction": "Rip the Walnut strips (S1, S7) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 2,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 56.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pA/rip:walnut|50|0|56.2",
+      "phaseKey": "panel:pA/rip",
+      "order": 3
+    },
+    {
+      "dependsOn": [
+        "panel:pA/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/stock:maple|472|28.2|42.5|0/milled",
+          "quantity": 3,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/strip:e2",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pA/strip:e4",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pA/strip:e6",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 28.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 28.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pA/strip:e2"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pA/strip:e2",
+          "panel:pA/strip:e4",
+          "panel:pA/strip:e6"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pA/rip-2",
+        "panel:pA/rip-4",
+        "panel:pA/rip-6"
+      ],
+      "kind": "cut",
+      "title": "Rip Hard maple strips",
+      "instruction": "Rip the Hard maple strips (S2, S4, S6) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 3,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 28.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pA/rip:maple|25|0|28.2",
+      "phaseKey": "panel:pA/rip",
+      "order": 4
+    },
+    {
+      "dependsOn": [
+        "panel:pA/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/stock:cherry|472|41.2|42.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/strip:e3",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pA/strip:e3"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pA/strip:e3"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pA/rip-3"
+      ],
+      "kind": "cut",
+      "title": "Rip Cherry strips",
+      "instruction": "Rip the Cherry strips (S3) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 41.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pA/rip:cherry|38|0|41.2",
+      "phaseKey": "panel:pA/rip",
+      "order": 5
+    },
+    {
+      "dependsOn": [
+        "panel:pA/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/stock:walnut|472|41.2|42.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/strip:e5",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 41.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pA/strip:e5"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pA/strip:e5"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pA/rip-5"
+      ],
+      "kind": "cut",
+      "title": "Rip Walnut strips",
+      "instruction": "Rip the Walnut strips (S5) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 41.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pA/rip:walnut|38|0|41.2",
+      "phaseKey": "panel:pA/rip",
+      "order": 6
+    },
+    {
+      "dependsOn": [
+        "panel:pA/rip:walnut|50|0|56.2",
+        "panel:pA/rip:maple|25|0|28.2",
+        "panel:pA/rip:cherry|38|0|41.2",
+        "panel:pA/rip:walnut|38|0|41.2"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pA/strip:e1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e3",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e4",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e5",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e6",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e7",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "mark-e1",
+          "text": "Write S1 on the Walnut strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e2",
+          "text": "Write S2 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e3",
+          "text": "Write S3 on the Cherry strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e4",
+          "text": "Write S4 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e5",
+          "text": "Write S5 on the Walnut strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e6",
+          "text": "Write S6 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-e7",
+          "text": "Write S7 on the Walnut strip",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/strip:e1",
+          "panel:pA/strip:e2",
+          "panel:pA/strip:e3",
+          "panel:pA/strip:e4",
+          "panel:pA/strip:e5",
+          "panel:pA/strip:e6",
+          "panel:pA/strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "label",
+            "text": "Strip labels"
+          }
+        ]
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark the strips",
+      "instruction": "Write each strip label on its reference face so the design order survives handling.",
+      "key": "panel:pA/mark-strips",
+      "phaseKey": "panel:pA/rip",
+      "order": 7
+    },
+    {
+      "dependsOn": [
+        "panel:pA/mark-strips"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pA/strip:e1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e3",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e4",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e5",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e6",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pA/strip:e7",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "place-e1",
+          "text": "Position 1: S1",
+          "critical": false
+        },
+        {
+          "key": "place-e2",
+          "text": "Position 2: S2",
+          "critical": false
+        },
+        {
+          "key": "place-e3",
+          "text": "Position 3: S3",
+          "critical": false
+        },
+        {
+          "key": "place-e4",
+          "text": "Position 4: S4",
+          "critical": false
+        },
+        {
+          "key": "place-e5",
+          "text": "Position 5: S5",
+          "critical": false
+        },
+        {
+          "key": "place-e6",
+          "text": "Position 6: S6",
+          "critical": false
+        },
+        {
+          "key": "place-e7",
+          "text": "Position 7: S7",
+          "critical": false
+        },
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/strip:e1",
+          "panel:pA/strip:e2",
+          "panel:pA/strip:e3",
+          "panel:pA/strip:e4",
+          "panel:pA/strip:e5",
+          "panel:pA/strip:e6",
+          "panel:pA/strip:e7"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Arrange and dry fit",
+      "instruction": "Lay the strips out in design order with reference faces up, then dry clamp to check the joints.",
+      "key": "panel:pA/dry-fit",
+      "phaseKey": "panel:pA/glue",
+      "order": 8
+    },
+    {
+      "dependsOn": [
+        "panel:pA/dry-fit"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/strip:e1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e2",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e3",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e4",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e5",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e6",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pA/strip:e7",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pA/panel:golden-edge",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/panel:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp",
+      "instruction": "Spread glue on each joint, assemble the strips in order, and clamp evenly.",
+      "key": "panel:pA/glue-up",
+      "phaseKey": "panel:pA/glue",
+      "order": 9
+    },
+    {
+      "dependsOn": [
+        "panel:pA/glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pA/panel:golden-edge",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "panel:pA/panel:golden-edge"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the panel clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "panel:pA/glue-wait",
+      "phaseKey": "panel:pA/glue",
+      "order": 10
+    },
+    {
+      "dependsOn": [
+        "panel:pA/glue-wait"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pA/panel:golden-edge",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pA/panel:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "reference-face",
+            "text": "Reference triangle"
+          }
+        ]
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark the reference triangle on panel P1",
+      "instruction": "Draw a triangle across the panel face so every wafer keeps its order and orientation after cutting.",
+      "key": "wafers:pA/mark",
+      "phaseKey": "wafers:pA",
+      "order": 11
+    },
+    {
+      "dependsOn": [
+        "wafers:pA/mark"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pA/panel:golden-edge",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "wafer:pA:0",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pA:1",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pA:2",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pA:3",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pA:4",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pA:5",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "crosscut-sled",
+          "name": "Crosscut sled",
+          "category": "crosscut-sled"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Stop block distance",
+          "target": 40,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before",
+          "partKey": "panel:pA/panel:golden-edge"
+        },
+        {
+          "key": "source-length",
+          "label": "Panel length consumed by the cuts",
+          "target": 259.20000000000005,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "panel:pA/panel:golden-edge"
+        },
+        {
+          "key": "wafer-width",
+          "label": "Wafer width",
+          "target": 40,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "wafer:pA:0"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pA/panel:golden-edge"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Crosscut lines"
+          }
+        ]
+      },
+      "cutIds": [
+        "wafers:pA"
+      ],
+      "kind": "cut",
+      "title": "Crosscut wafers from panel P1",
+      "instruction": "Set the stop block from the setup values and crosscut the panel into wafers, one cut per wafer.",
+      "batch": {
+        "count": 6,
+        "unitLabel": "wafer"
+      },
+      "machineSetup": {
+        "tool": "crosscut-sled",
+        "settings": [
+          {
+            "label": "Stop block distance",
+            "value": 40,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Blade kerf",
+            "value": 3.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "wafers:pA/cut",
+      "phaseKey": "wafers:pA",
+      "order": 12
+    },
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "panel:pB/stock:walnut|312|56.2|34.5|0",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pB/stock:maple|312|53.2|34.5|0",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pB/stock:cherry|312|56.2|34.5|0",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Boards are free of checks and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/stock:walnut|312|56.2|34.5|0",
+          "panel:pB/stock:maple|312|53.2|34.5|0",
+          "panel:pB/stock:cherry|312|56.2|34.5|0"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select stock",
+      "instruction": "Pull the rough boards for every species in the design and check each one for checks, wind, and loose knots.",
+      "key": "panel:pB/select-stock",
+      "phaseKey": "panel:pB/prepare",
+      "order": 13
+    },
+    {
+      "dependsOn": [
+        "panel:pB/select-stock"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/stock:walnut|312|56.2|34.5|0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pB/stock:maple|312|53.2|34.5|0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pB/stock:cherry|312|56.2|34.5|0",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pB/stock:walnut|312|56.2|34.5|0/milled",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pB/stock:maple|312|53.2|34.5|0/milled",
+          "quantity": 1
+        },
+        {
+          "partKey": "panel:pB/stock:cherry|312|56.2|34.5|0/milled",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "jointer",
+          "name": "Jointer",
+          "category": "jointer"
+        },
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "thickness",
+          "label": "Milled thickness",
+          "target": 31.5,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "reference-face",
+          "text": "Reference face is flat before planing",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cross-section",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/stock:walnut|312|56.2|34.5|0/milled",
+          "panel:pB/stock:maple|312|53.2|34.5|0/milled",
+          "panel:pB/stock:cherry|312|56.2|34.5|0/milled"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "mill",
+      "title": "Mill stock",
+      "instruction": "Joint one face and one edge, then plane every board to the same milled thickness.",
+      "batch": {
+        "count": 3,
+        "unitLabel": "board"
+      },
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 31.5,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pB/mill",
+      "phaseKey": "panel:pB/prepare",
+      "order": 14
+    },
+    {
+      "dependsOn": [
+        "panel:pB/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/stock:walnut|312|56.2|34.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pB/strip:d1",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pB/strip:d1"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pB/strip:d1"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pB/rip-1"
+      ],
+      "kind": "cut",
+      "title": "Rip Walnut strips",
+      "instruction": "Rip the Walnut strips (S1) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 56.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pB/rip:walnut|50|0|56.2",
+      "phaseKey": "panel:pB/rip",
+      "order": 15
+    },
+    {
+      "dependsOn": [
+        "panel:pB/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/stock:maple|312|53.2|34.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pB/strip:d2",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 53.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 53.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pB/strip:d2"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pB/strip:d2"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pB/rip-2"
+      ],
+      "kind": "cut",
+      "title": "Rip Hard maple strips",
+      "instruction": "Rip the Hard maple strips (S2) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 53.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pB/rip:maple|50|0|53.2",
+      "phaseKey": "panel:pB/rip",
+      "order": 16
+    },
+    {
+      "dependsOn": [
+        "panel:pB/mill"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/stock:cherry|312|56.2|34.5|0/milled",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pB/strip:d3",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "fence",
+          "label": "Fence to blade",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "width",
+          "label": "Strip width",
+          "target": 56.2,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "panel:pB/strip:d3"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pB/strip:d3"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip line"
+          }
+        ]
+      },
+      "cutIds": [
+        "panel:pB/rip-3"
+      ],
+      "kind": "cut",
+      "title": "Rip Cherry strips",
+      "instruction": "Rip the Cherry strips (S3) at one fence setting, with the jointed edge against the fence.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "strip"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 56.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "panel:pB/rip:cherry|50|0|56.2",
+      "phaseKey": "panel:pB/rip",
+      "order": 17
+    },
+    {
+      "dependsOn": [
+        "panel:pB/rip:walnut|50|0|56.2",
+        "panel:pB/rip:maple|50|0|53.2",
+        "panel:pB/rip:cherry|50|0|56.2"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pB/strip:d1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pB/strip:d2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pB/strip:d3",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "mark-d1",
+          "text": "Write S1 on the Walnut strip",
+          "critical": false
+        },
+        {
+          "key": "mark-d2",
+          "text": "Write S2 on the Hard maple strip",
+          "critical": false
+        },
+        {
+          "key": "mark-d3",
+          "text": "Write S3 on the Cherry strip",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/strip:d1",
+          "panel:pB/strip:d2",
+          "panel:pB/strip:d3"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "label",
+            "text": "Strip labels"
+          }
+        ]
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark the strips",
+      "instruction": "Write each strip label on its reference face so the design order survives handling.",
+      "key": "panel:pB/mark-strips",
+      "phaseKey": "panel:pB/rip",
+      "order": 18
+    },
+    {
+      "dependsOn": [
+        "panel:pB/mark-strips"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pB/strip:d1",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pB/strip:d2",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "panel:pB/strip:d3",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "place-d1",
+          "text": "Position 1: S1",
+          "critical": false
+        },
+        {
+          "key": "place-d2",
+          "text": "Position 2: S2",
+          "critical": false
+        },
+        {
+          "key": "place-d3",
+          "text": "Position 3: S3",
+          "critical": false
+        },
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/strip:d1",
+          "panel:pB/strip:d2",
+          "panel:pB/strip:d3"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Arrange and dry fit",
+      "instruction": "Lay the strips out in design order with reference faces up, then dry clamp to check the joints.",
+      "key": "panel:pB/dry-fit",
+      "phaseKey": "panel:pB/glue",
+      "order": 19
+    },
+    {
+      "dependsOn": [
+        "panel:pB/dry-fit"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/strip:d1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pB/strip:d2",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "panel:pB/strip:d3",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "panel:pB/panel:golden-donor",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/panel:golden-donor"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp",
+      "instruction": "Spread glue on each joint, assemble the strips in order, and clamp evenly.",
+      "key": "panel:pB/glue-up",
+      "phaseKey": "panel:pB/glue",
+      "order": 20
+    },
+    {
+      "dependsOn": [
+        "panel:pB/glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pB/panel:golden-donor",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "panel:pB/panel:golden-donor"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the panel clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "panel:pB/glue-wait",
+      "phaseKey": "panel:pB/glue",
+      "order": 21
+    },
+    {
+      "dependsOn": [
+        "panel:pB/glue-wait"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "panel:pB/panel:golden-donor",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "panel:pB/panel:golden-donor"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "reference-face",
+            "text": "Reference triangle"
+          }
+        ]
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark the reference triangle on panel P2",
+      "instruction": "Draw a triangle across the panel face so every wafer keeps its order and orientation after cutting.",
+      "key": "wafers:pB/mark",
+      "phaseKey": "wafers:pB",
+      "order": 22
+    },
+    {
+      "dependsOn": [
+        "wafers:pB/mark"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "panel:pB/panel:golden-donor",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "wafer:pB:0",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pB:1",
+          "quantity": 1
+        },
+        {
+          "partKey": "wafer:pB:2",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "stop",
+          "label": "Fence to blade",
+          "target": 30,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before",
+          "partKey": "panel:pB/panel:golden-donor"
+        },
+        {
+          "key": "source-length",
+          "label": "Panel length consumed by the cuts",
+          "target": 99.60000000000001,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "panel:pB/panel:golden-donor"
+        },
+        {
+          "key": "wafer-width",
+          "label": "Wafer width",
+          "target": 30,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "wafer:pB:0"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "panel:pB/panel:golden-donor"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Rip lines"
+          }
+        ]
+      },
+      "cutIds": [
+        "wafers:pB"
+      ],
+      "kind": "cut",
+      "title": "Rip wafers from panel P2",
+      "instruction": "Set the fence from the setup values and rip the panel into wafers, one cut per wafer.",
+      "batch": {
+        "count": 3,
+        "unitLabel": "wafer"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Fence to blade",
+            "value": 30,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Blade kerf",
+            "value": 3.2,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "wafers:pB/cut",
+      "phaseKey": "wafers:pB",
+      "order": 23
+    },
+    {
+      "dependsOn": [
+        "wafers:pA/cut"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "wafer:pA:0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "wafer:pA:1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "wafer:pA:2",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "wafer:pA:3",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "row:row1/arranged",
+          "quantity": 1
+        }
+      ],
+      "tools": [],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "wafer-pA-0",
+          "text": "Position 1: wafer P1-1, no rotation",
+          "critical": false
+        },
+        {
+          "key": "wafer-pA-1",
+          "text": "Position 2: wafer P1-2, a half turn and flipped over",
+          "critical": false
+        },
+        {
+          "key": "wafer-pA-2",
+          "text": "Position 3: wafer P1-3, no rotation and flipped over",
+          "critical": false
+        },
+        {
+          "key": "wafer-pA-3",
+          "text": "Position 4: wafer P1-4, a half turn",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "row:row1/arranged"
+        ],
+        "ghostPartKeys": [
+          "wafer:pA:0",
+          "wafer:pA:1",
+          "wafer:pA:2",
+          "wafer:pA:3"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "arrange",
+      "title": "Arrange row 1",
+      "instruction": "Lay the wafers out left to right in the order below, applying each rotation and flip.",
+      "key": "row:row1/arrange",
+      "phaseKey": "rows",
+      "order": 24
+    },
+    {
+      "dependsOn": [
+        "row:row1/arrange"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "row:row1/arranged",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "row:row1",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "arrangement-ok",
+          "text": "The arrangement matches the list for this row",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "row:row1"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp row 1",
+      "instruction": "Spread glue on each joint, assemble the wafers in order, and clamp evenly.",
+      "key": "row:row1/glue-up",
+      "phaseKey": "rows",
+      "order": 25
+    },
+    {
+      "dependsOn": [
+        "row:row1/glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "row:row1",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "row:row1"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the work clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "row:row1/glue-wait",
+      "phaseKey": "rows",
+      "order": 26
+    },
+    {
+      "dependsOn": [
+        "wafers:pB/cut"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "wafer:pB:0",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "wafer:pB:1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "wafer:pB:2",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "row:row2/arranged",
+          "quantity": 1
+        }
+      ],
+      "tools": [],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "wafer-pB-0",
+          "text": "Position 1: wafer P2-1, a quarter turn",
+          "critical": false
+        },
+        {
+          "key": "wafer-pB-1",
+          "text": "Position 2: wafer P2-2, a quarter turn and flipped over",
+          "critical": false
+        },
+        {
+          "key": "wafer-pB-2",
+          "text": "Position 3: wafer P2-3, a three-quarter turn",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "row:row2/arranged"
+        ],
+        "ghostPartKeys": [
+          "wafer:pB:0",
+          "wafer:pB:1",
+          "wafer:pB:2"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "arrange",
+      "title": "Arrange row 2",
+      "instruction": "Lay the wafers out left to right in the order below, applying each rotation and flip.",
+      "key": "row:row2/arrange",
+      "phaseKey": "rows",
+      "order": 27
+    },
+    {
+      "dependsOn": [
+        "row:row2/arrange"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "row:row2/arranged",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "row:row2",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "arrangement-ok",
+          "text": "The arrangement matches the list for this row",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "row:row2"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp row 2",
+      "instruction": "Spread glue on each joint, assemble the wafers in order, and clamp evenly.",
+      "key": "row:row2/glue-up",
+      "phaseKey": "rows",
+      "order": 28
+    },
+    {
+      "dependsOn": [
+        "row:row2/glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "row:row2",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "row:row2"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the work clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "row:row2/glue-wait",
+      "phaseKey": "rows",
+      "order": 29
+    },
+    {
+      "dependsOn": [
+        "row:row1/glue-wait",
+        "row:row2/glue-wait"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "row:row1",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "row:row2",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-composite/glued",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "rows-in-order",
+          "text": "The rows are in design order",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "assembly-layout",
+        "state": "after",
+        "highlightPartKeys": [
+          "board:golden-composite/glued"
+        ],
+        "ghostPartKeys": [
+          "row:row1",
+          "row:row2"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue the rows together",
+      "instruction": "Stack the rows in design order, top to bottom, spread glue on each joint, and clamp against a flat reference.",
+      "key": "final-glue-up",
+      "phaseKey": "final-glue",
+      "order": 30
+    },
+    {
+      "dependsOn": [
+        "final-glue-up"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "board:golden-composite/glued",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "board:golden-composite/glued"
+        ],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the glue set",
+      "instruction": "Leave the work clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "final-glue-wait",
+      "phaseKey": "final-glue",
+      "order": 31
+    },
+    {
+      "dependsOn": [
+        "final-glue-wait"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "board:golden-composite/glued",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-composite/squared",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "length",
+          "label": "Finished length",
+          "target": 551,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-composite/squared"
+        },
+        {
+          "key": "width",
+          "label": "Finished width",
+          "target": 90,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-composite/squared"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "trim-lines",
+          "text": "The trim lines sit inside the glued board on every side",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "cut-diagram",
+        "state": "before",
+        "highlightPartKeys": [
+          "board:golden-composite/glued"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Squaring cuts"
+          }
+        ]
+      },
+      "cutIds": [
+        "trim:golden-composite"
+      ],
+      "kind": "cut",
+      "title": "Square the board",
+      "instruction": "Trim the ends and sides square, removing the overhang, to reach the finished length and width.",
+      "key": "square-board",
+      "phaseKey": "finish",
+      "order": 32
+    },
+    {
+      "dependsOn": [
+        "square-board"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "board:golden-composite/squared",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-composite/surfaced",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "planer",
+          "name": "Thickness planer",
+          "category": "planer"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and calipers",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "start-thickness",
+          "label": "Thickness before surfacing",
+          "target": 38,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": false,
+          "phase": "verify-before",
+          "partKey": "board:golden-composite/squared"
+        },
+        {
+          "key": "thickness",
+          "label": "Finished thickness",
+          "target": 30,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": false,
+          "phase": "achieve-after",
+          "partKey": "board:golden-composite/surfaced"
+        }
+      ],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "cross-section",
+        "state": "after",
+        "highlightPartKeys": [
+          "board:golden-composite/surfaced"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "surface",
+      "title": "Surface to thickness",
+      "instruction": "Flatten and smooth both faces down to the thickness of the thinnest wafer.",
+      "machineSetup": {
+        "tool": "planer",
+        "settings": [
+          {
+            "label": "Planer target thickness",
+            "value": 30,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "surface",
+      "phaseKey": "finish",
+      "order": 33
+    },
+    {
+      "dependsOn": [
+        "surface"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "board:golden-composite/surfaced",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "board:golden-composite",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "finish",
+          "name": "Finishing supplies",
+          "category": "finish"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "board-face",
+        "state": "after",
+        "highlightPartKeys": [
+          "board:golden-composite"
+        ],
+        "ghostPartKeys": [],
+        "annotations": []
+      },
+      "cutIds": [],
+      "kind": "finish",
+      "title": "Finish the board",
+      "instruction": "Sand through the grits and apply food-safe finish.",
+      "key": "finish",
+      "phaseKey": "finish",
+      "order": 34
+    }
+  ],
+  "parts": [
+    {
+      "key": "panel:pA/stock:walnut|472|56.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:walnut|472|56.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Walnut",
+      "name": "Walnut milled stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:maple|472|28.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:maple|472|28.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Hard maple",
+      "name": "Hard maple milled stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:cherry|472|41.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Cherry",
+      "name": "Cherry rough stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:cherry|472|41.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Cherry",
+      "name": "Cherry milled stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:walnut|472|41.2|42.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5
+      }
+    },
+    {
+      "key": "panel:pA/stock:walnut|472|41.2|42.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Walnut",
+      "name": "Walnut milled stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e1",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S1",
+      "name": "Walnut strip S1",
+      "speciesId": "walnut",
+      "sourceId": "e1",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e2",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S2",
+      "name": "Hard maple strip S2",
+      "speciesId": "maple",
+      "sourceId": "e2",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e3",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S3",
+      "name": "Cherry strip S3",
+      "speciesId": "cherry",
+      "sourceId": "e3",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e4",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S4",
+      "name": "Hard maple strip S4",
+      "speciesId": "maple",
+      "sourceId": "e4",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e5",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S5",
+      "name": "Walnut strip S5",
+      "speciesId": "walnut",
+      "sourceId": "e5",
+      "dimensions": {
+        "length": 472,
+        "width": 41.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e6",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S6",
+      "name": "Hard maple strip S6",
+      "speciesId": "maple",
+      "sourceId": "e6",
+      "dimensions": {
+        "length": 472,
+        "width": 28.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/strip:e7",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S7",
+      "name": "Walnut strip S7",
+      "speciesId": "walnut",
+      "sourceId": "e7",
+      "dimensions": {
+        "length": 472,
+        "width": 56.2,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "panel:pA/panel:golden-edge",
+      "kind": "panel",
+      "stage": "glued",
+      "label": "P1",
+      "name": "Glued panel P1",
+      "sourceId": "golden-edge",
+      "dimensions": {
+        "length": 472,
+        "width": 279.4,
+        "thickness": 39.5
+      }
+    },
+    {
+      "key": "wafer:pA:0",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-1",
+      "name": "Wafer P1-1",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "wafer:pA:1",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-2",
+      "name": "Wafer P1-2",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "wafer:pA:2",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-3",
+      "name": "Wafer P1-3",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "wafer:pA:3",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-4",
+      "name": "Wafer P1-4",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "wafer:pA:4",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-5",
+      "name": "Wafer P1-5",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "wafer:pA:5",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P1-6",
+      "name": "Wafer P1-6",
+      "sourceId": "pA",
+      "dimensions": {
+        "length": 40,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "panel:pB/stock:walnut|312|56.2|34.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Walnut",
+      "name": "Walnut rough stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 34.5
+      }
+    },
+    {
+      "key": "panel:pB/stock:walnut|312|56.2|34.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Walnut",
+      "name": "Walnut milled stock",
+      "speciesId": "walnut",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/stock:maple|312|53.2|34.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Hard maple",
+      "name": "Hard maple rough stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 312,
+        "width": 53.2,
+        "thickness": 34.5
+      }
+    },
+    {
+      "key": "panel:pB/stock:maple|312|53.2|34.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Hard maple",
+      "name": "Hard maple milled stock",
+      "speciesId": "maple",
+      "dimensions": {
+        "length": 312,
+        "width": 53.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/stock:cherry|312|56.2|34.5|0",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Cherry",
+      "name": "Cherry rough stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 34.5
+      }
+    },
+    {
+      "key": "panel:pB/stock:cherry|312|56.2|34.5|0/milled",
+      "kind": "stock",
+      "stage": "milled",
+      "label": "Cherry",
+      "name": "Cherry milled stock",
+      "speciesId": "cherry",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/strip:d1",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S1",
+      "name": "Walnut strip S1",
+      "speciesId": "walnut",
+      "sourceId": "d1",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/strip:d2",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S2",
+      "name": "Hard maple strip S2",
+      "speciesId": "maple",
+      "sourceId": "d2",
+      "dimensions": {
+        "length": 312,
+        "width": 53.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/strip:d3",
+      "kind": "strip",
+      "stage": "cut",
+      "label": "S3",
+      "name": "Cherry strip S3",
+      "speciesId": "cherry",
+      "sourceId": "d3",
+      "dimensions": {
+        "length": 312,
+        "width": 56.2,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "panel:pB/panel:golden-donor",
+      "kind": "panel",
+      "stage": "glued",
+      "label": "P2",
+      "name": "Glued panel P2",
+      "sourceId": "golden-donor",
+      "dimensions": {
+        "length": 312,
+        "width": 165.6,
+        "thickness": 31.5
+      }
+    },
+    {
+      "key": "wafer:pB:0",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P2-1",
+      "name": "Wafer P2-1",
+      "sourceId": "pB",
+      "dimensions": {
+        "length": 300,
+        "width": 30,
+        "thickness": 30
+      }
+    },
+    {
+      "key": "wafer:pB:1",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P2-2",
+      "name": "Wafer P2-2",
+      "sourceId": "pB",
+      "dimensions": {
+        "length": 300,
+        "width": 30,
+        "thickness": 30
+      }
+    },
+    {
+      "key": "wafer:pB:2",
+      "kind": "wafer",
+      "stage": "cut",
+      "label": "P2-3",
+      "name": "Wafer P2-3",
+      "sourceId": "pB",
+      "dimensions": {
+        "length": 300,
+        "width": 30,
+        "thickness": 30
+      }
+    },
+    {
+      "key": "row:row1/arranged",
+      "kind": "row",
+      "stage": "arranged",
+      "label": "R1",
+      "name": "Row 1 laid out",
+      "sourceId": "row1"
+    },
+    {
+      "key": "row:row1",
+      "kind": "row",
+      "stage": "glued",
+      "label": "R1",
+      "name": "Row 1",
+      "sourceId": "row1",
+      "dimensions": {
+        "length": 160,
+        "width": 251,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "row:row2/arranged",
+      "kind": "row",
+      "stage": "arranged",
+      "label": "R2",
+      "name": "Row 2 laid out",
+      "sourceId": "row2"
+    },
+    {
+      "key": "row:row2",
+      "kind": "row",
+      "stage": "glued",
+      "label": "R2",
+      "name": "Row 2",
+      "sourceId": "row2",
+      "dimensions": {
+        "length": 90,
+        "width": 300,
+        "thickness": 30
+      }
+    },
+    {
+      "key": "board:golden-composite/glued",
+      "kind": "board",
+      "stage": "glued",
+      "label": "B1",
+      "name": "Glued board",
+      "sourceId": "golden-composite",
+      "dimensions": {
+        "length": 551,
+        "width": 90,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "board:golden-composite/squared",
+      "kind": "board",
+      "stage": "cut",
+      "label": "B1",
+      "name": "Squared board",
+      "sourceId": "golden-composite",
+      "dimensions": {
+        "length": 551,
+        "width": 90,
+        "thickness": 38
+      }
+    },
+    {
+      "key": "board:golden-composite/surfaced",
+      "kind": "board",
+      "stage": "surfaced",
+      "label": "B1",
+      "name": "Surfaced board",
+      "sourceId": "golden-composite",
+      "dimensions": {
+        "length": 551,
+        "width": 90,
+        "thickness": 30
+      }
+    },
+    {
+      "key": "board:golden-composite",
+      "kind": "board",
+      "stage": "finished",
+      "label": "B1",
+      "name": "Finished board",
+      "sourceId": "golden-composite",
+      "dimensions": {
+        "length": 551,
+        "width": 90,
+        "thickness": 30
+      }
+    }
+  ],
+  "assemblies": [
+    {
+      "key": "assembly:panel:pA",
+      "label": "P1",
+      "name": "Panel P1",
+      "partKeys": [
+        "panel:pA/stock:walnut|472|56.2|42.5|0",
+        "panel:pA/stock:walnut|472|56.2|42.5|0/milled",
+        "panel:pA/stock:maple|472|28.2|42.5|0",
+        "panel:pA/stock:maple|472|28.2|42.5|0/milled",
+        "panel:pA/stock:cherry|472|41.2|42.5|0",
+        "panel:pA/stock:cherry|472|41.2|42.5|0/milled",
+        "panel:pA/stock:walnut|472|41.2|42.5|0",
+        "panel:pA/stock:walnut|472|41.2|42.5|0/milled",
+        "panel:pA/strip:e1",
+        "panel:pA/strip:e2",
+        "panel:pA/strip:e3",
+        "panel:pA/strip:e4",
+        "panel:pA/strip:e5",
+        "panel:pA/strip:e6",
+        "panel:pA/strip:e7",
+        "panel:pA/panel:golden-edge",
+        "wafer:pA:0",
+        "wafer:pA:1",
+        "wafer:pA:2",
+        "wafer:pA:3",
+        "wafer:pA:4",
+        "wafer:pA:5"
+      ],
+      "stepKeys": [
+        "panel:pA/select-stock",
+        "panel:pA/mill",
+        "panel:pA/rip:walnut|50|0|56.2",
+        "panel:pA/rip:maple|25|0|28.2",
+        "panel:pA/rip:cherry|38|0|41.2",
+        "panel:pA/rip:walnut|38|0|41.2",
+        "panel:pA/mark-strips",
+        "panel:pA/dry-fit",
+        "panel:pA/glue-up",
+        "panel:pA/glue-wait",
+        "wafers:pA/mark",
+        "wafers:pA/cut"
+      ],
+      "parentKey": "assembly:board"
+    },
+    {
+      "key": "assembly:panel:pB",
+      "label": "P2",
+      "name": "Panel P2",
+      "partKeys": [
+        "panel:pB/stock:walnut|312|56.2|34.5|0",
+        "panel:pB/stock:walnut|312|56.2|34.5|0/milled",
+        "panel:pB/stock:maple|312|53.2|34.5|0",
+        "panel:pB/stock:maple|312|53.2|34.5|0/milled",
+        "panel:pB/stock:cherry|312|56.2|34.5|0",
+        "panel:pB/stock:cherry|312|56.2|34.5|0/milled",
+        "panel:pB/strip:d1",
+        "panel:pB/strip:d2",
+        "panel:pB/strip:d3",
+        "panel:pB/panel:golden-donor",
+        "wafer:pB:0",
+        "wafer:pB:1",
+        "wafer:pB:2"
+      ],
+      "stepKeys": [
+        "panel:pB/select-stock",
+        "panel:pB/mill",
+        "panel:pB/rip:walnut|50|0|56.2",
+        "panel:pB/rip:maple|50|0|53.2",
+        "panel:pB/rip:cherry|50|0|56.2",
+        "panel:pB/mark-strips",
+        "panel:pB/dry-fit",
+        "panel:pB/glue-up",
+        "panel:pB/glue-wait",
+        "wafers:pB/mark",
+        "wafers:pB/cut"
+      ],
+      "parentKey": "assembly:board"
+    },
+    {
+      "key": "assembly:row:row1",
+      "label": "R1",
+      "name": "Row 1",
+      "partKeys": [
+        "wafer:pA:0",
+        "wafer:pA:1",
+        "wafer:pA:2",
+        "wafer:pA:3",
+        "row:row1/arranged",
+        "row:row1"
+      ],
+      "stepKeys": [
+        "row:row1/arrange",
+        "row:row1/glue-up",
+        "row:row1/glue-wait"
+      ],
+      "parentKey": "assembly:board"
+    },
+    {
+      "key": "assembly:row:row2",
+      "label": "R2",
+      "name": "Row 2",
+      "partKeys": [
+        "wafer:pB:0",
+        "wafer:pB:1",
+        "wafer:pB:2",
+        "row:row2/arranged",
+        "row:row2"
+      ],
+      "stepKeys": [
+        "row:row2/arrange",
+        "row:row2/glue-up",
+        "row:row2/glue-wait"
+      ],
+      "parentKey": "assembly:board"
+    },
+    {
+      "key": "assembly:board",
+      "label": "B1",
+      "name": "Finished board",
+      "partKeys": [
+        "board:golden-composite/glued",
+        "board:golden-composite/squared",
+        "board:golden-composite/surfaced",
+        "board:golden-composite"
+      ],
+      "stepKeys": [
+        "final-glue-up",
+        "final-glue-wait",
+        "square-board",
+        "surface",
+        "finish"
+      ]
+    }
+  ],
+  "requirements": {
+    "stock": [
+      {
+        "key": "panel:pA/walnut|472|56.2|42.5|0",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 2,
+        "length": 472,
+        "width": 56.2,
+        "thickness": 42.5,
+        "boardFeet": 0.9555063948273128,
+        "partKey": "panel:pA/stock:walnut|472|56.2|42.5|0"
+      },
+      {
+        "key": "panel:pA/maple|472|28.2|42.5|0",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 3,
+        "length": 472,
+        "width": 28.2,
+        "thickness": 42.5,
+        "boardFeet": 0.7191800800924436,
+        "partKey": "panel:pA/stock:maple|472|28.2|42.5|0"
+      },
+      {
+        "key": "panel:pA/cherry|472|41.2|42.5|0",
+        "speciesId": "cherry",
+        "speciesName": "Cherry",
+        "quantity": 1,
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5,
+        "boardFeet": 0.35023899881570547,
+        "partKey": "panel:pA/stock:cherry|472|41.2|42.5|0"
+      },
+      {
+        "key": "panel:pA/walnut|472|41.2|42.5|0",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 1,
+        "length": 472,
+        "width": 41.2,
+        "thickness": 42.5,
+        "boardFeet": 0.35023899881570547,
+        "partKey": "panel:pA/stock:walnut|472|41.2|42.5|0"
+      },
+      {
+        "key": "panel:pB/walnut|312|56.2|34.5|0",
+        "speciesId": "walnut",
+        "speciesName": "Walnut",
+        "quantity": 1,
+        "length": 312,
+        "width": 56.2,
+        "thickness": 34.5,
+        "boardFeet": 0.2563576977547656,
+        "partKey": "panel:pB/stock:walnut|312|56.2|34.5|0"
+      },
+      {
+        "key": "panel:pB/maple|312|53.2|34.5|0",
+        "speciesId": "maple",
+        "speciesName": "Hard maple",
+        "quantity": 1,
+        "length": 312,
+        "width": 53.2,
+        "thickness": 34.5,
+        "boardFeet": 0.2426731231415219,
+        "partKey": "panel:pB/stock:maple|312|53.2|34.5|0"
+      },
+      {
+        "key": "panel:pB/cherry|312|56.2|34.5|0",
+        "speciesId": "cherry",
+        "speciesName": "Cherry",
+        "quantity": 1,
+        "length": 312,
+        "width": 56.2,
+        "thickness": 34.5,
+        "boardFeet": 0.2563576977547656,
+        "partKey": "panel:pB/stock:cherry|312|56.2|34.5|0"
+      }
+    ],
+    "cuts": [
+      {
+        "id": "panel:pA/rip-1",
+        "label": "Rip strip 1",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-2",
+        "label": "Rip strip 2",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-3",
+        "label": "Rip strip 3",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-4",
+        "label": "Rip strip 4",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-5",
+        "label": "Rip strip 5",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-6",
+        "label": "Rip strip 6",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pA/rip-7",
+        "label": "Rip strip 7",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "wafers:pA",
+        "label": "P1 wafers (crosscut)",
+        "stage": "wafers",
+        "quantity": 6
+      },
+      {
+        "id": "panel:pB/rip-1",
+        "label": "Rip strip 1",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pB/rip-2",
+        "label": "Rip strip 2",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "panel:pB/rip-3",
+        "label": "Rip strip 3",
+        "stage": "rip",
+        "quantity": 1
+      },
+      {
+        "id": "wafers:pB",
+        "label": "P2 wafers (rip)",
+        "stage": "wafers",
+        "quantity": 3
+      },
+      {
+        "id": "trim:golden-composite",
+        "label": "Square the glued board",
+        "stage": "trim",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      {
+        "key": "measuring",
+        "name": "Tape measure and calipers",
+        "category": "measuring"
+      },
+      {
+        "key": "jointer",
+        "name": "Jointer",
+        "category": "jointer"
+      },
+      {
+        "key": "planer",
+        "name": "Thickness planer",
+        "category": "planer"
+      },
+      {
+        "key": "table-saw",
+        "name": "Table saw",
+        "category": "table-saw"
+      },
+      {
+        "key": "marking",
+        "name": "Pencil and marking knife",
+        "category": "marking"
+      },
+      {
+        "key": "clamps",
+        "name": "Bar clamps",
+        "category": "clamps"
+      },
+      {
+        "key": "glue",
+        "name": "Wood glue",
+        "category": "glue"
+      },
+      {
+        "key": "crosscut-sled",
+        "name": "Crosscut sled",
+        "category": "crosscut-sled"
+      },
+      {
+        "key": "finish",
+        "name": "Finishing supplies",
+        "category": "finish"
+      }
+    ],
+    "consumables": [
+      "Wood glue",
+      "Food-safe finish",
+      "Sandpaper"
+    ]
+  },
+  "warnings": [],
+  "revision": "r-0ca31abd4e0c8e"
+}

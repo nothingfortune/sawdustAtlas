@@ -10,10 +10,10 @@ import { defineConfig, devices } from '@playwright/test'
 // preset's `defaultBrowserType` unguarded, or the tablet project would try to launch
 // WebKit and fail in CI. Scoped to the specs that are actually about touch/pointer
 // interaction (tap-vs-drag disambiguation, drag state, the composite assembly desk,
-// the furniture views and 3D drag);
-// the rest (keyboard shortcuts, dialogs, layout text order, imports…) don't exercise
-// touch semantics and would just double the run for no signal.
-const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts', '**/boardWorkflow.spec.ts', '**/shopWorkflow.spec.ts', '**/furnitureViews.spec.ts']
+// the furniture views and 3D drag, the furniture session); the rest (keyboard
+// shortcuts, dialogs, layout text order, imports…) don't exercise touch semantics and
+// would just double the run for no signal.
+const tabletSpecs = ['**/board.spec.ts', '**/dragState.spec.ts', '**/composite.spec.ts', '**/boardWorkflow.spec.ts', '**/shopWorkflow.spec.ts', '**/furnitureViews.spec.ts', '**/furniture.spec.ts']
 
 // E2E_PORT lets several checkouts (git worktrees) run the suite side by side without
 // one run silently reusing another checkout's dev server. Defaults to Vite's 5173.

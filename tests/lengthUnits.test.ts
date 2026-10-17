@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { convertMetricText, formatDimensions, formatFieldLabel, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot } from '../src/domain/lengthUnits'
+import { convertMetricText, formatDimensions, formatFieldLabel, formatLength, formatLengthValue, inchesToMm, MM_PER_FOOT, parseLengthInput, snapLengthMm, snapMmToFoot, tidyFloat } from '../src/domain/lengthUnits'
 
 describe('snapMmToFoot', () => {
   it('rounds any grid spacing to the nearest whole foot', () => {
@@ -29,10 +29,14 @@ describe('snapLengthMm', () => {
   it('leaves metric values untouched', () => {
     expect(snapLengthMm(123.4, 'metric')).toBe(123.4)
   })
-  it('snaps imperial to the nearest half inch', () => {
-    expect(snapLengthMm(1.1 * IN, 'imperial')).toBeCloseTo(1.0 * IN, 5)
-    expect(snapLengthMm(1.3 * IN, 'imperial')).toBeCloseTo(1.5 * IN, 5)
-    expect(snapLengthMm(1.8 * IN, 'imperial')).toBeCloseTo(2.0 * IN, 5)
+  it('snaps imperial to the nearest sixteenth of an inch', () => {
+    expect(snapLengthMm(1.1 * IN, 'imperial')).toBeCloseTo(1.125 * IN, 5)
+    expect(snapLengthMm(1.3 * IN, 'imperial')).toBeCloseTo(1.3125 * IN, 5)
+    expect(snapLengthMm(1.5156 * IN, 'imperial')).toBeCloseTo(1.5 * IN, 5)
+  })
+  it('keeps 5/8 and 3/4 inch stock exact', () => {
+    expect(snapLengthMm(0.625 * IN, 'imperial')).toBeCloseTo(0.625 * IN, 9)
+    expect(snapLengthMm(1.75 * IN, 'imperial')).toBeCloseTo(1.75 * IN, 9)
   })
 })
 
@@ -146,5 +150,19 @@ describe('imperial round-trips (mm -> text -> mm) at exact 32nds', () => {
     const mm = inches * IN
     const back = parseLengthInput(formatLengthValue(mm, 'imperial'), 'imperial')
     expect(back).toBeCloseTo(mm, 6)
+  })
+})
+
+describe('tidyFloat', () => {
+  it('hides binary-float noise left by an imperial snap, e.g. 1 1/2 in', () => {
+    const snapped = snapLengthMm(inchesToMm(1.5), 'imperial')
+    expect(snapped).not.toBe(38.1)
+    expect(tidyFloat(snapped)).toBe(38.1)
+  })
+  it('leaves ordinary and non-finite values alone', () => {
+    expect(tidyFloat(450)).toBe(450)
+    expect(tidyFloat(0.1234567)).toBe(0.1234567)
+    expect(tidyFloat(-38.099999999999994)).toBe(-38.1)
+    expect(tidyFloat(NaN)).toBeNaN()
   })
 })

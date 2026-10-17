@@ -1,0 +1,2377 @@
+{
+  "version": 1,
+  "key": "furniture:bookcase",
+  "source": {
+    "kind": "furniture",
+    "projectId": "bookcase",
+    "projectName": "Bookcase",
+    "designRevision": "2026-10-10T00:00:00.000Z"
+  },
+  "units": "mm",
+  "finished": {
+    "length": 800,
+    "width": 300,
+    "thickness": 1800
+  },
+  "phases": [
+    {
+      "key": "stock",
+      "order": 1,
+      "title": "Select stock"
+    },
+    {
+      "key": "cut",
+      "order": 2,
+      "title": "Cut to size"
+    },
+    {
+      "key": "mark",
+      "order": 3,
+      "title": "Mark parts"
+    },
+    {
+      "key": "joinery",
+      "order": 4,
+      "title": "Cut the joinery"
+    },
+    {
+      "key": "dry-fit",
+      "order": 5,
+      "title": "Dry fit"
+    },
+    {
+      "key": "sand",
+      "order": 6,
+      "title": "Sand before glue-up"
+    },
+    {
+      "key": "assembly",
+      "order": 7,
+      "title": "Assembly"
+    },
+    {
+      "key": "finish",
+      "order": 8,
+      "title": "Finish"
+    }
+  ],
+  "steps": [
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:sheet:birch-ply-18",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut",
+          "part:side-l/cut",
+          "part:side-r/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Birch plywood 18",
+      "instruction": "Pull the sheets for these parts and check each one for flatness, edge damage, and the face you want showing.",
+      "key": "select:sheet:birch-ply-18",
+      "phaseKey": "stock",
+      "order": 1
+    },
+    {
+      "dependsOn": [],
+      "irreversible": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "partKey": "stock:sheet:birch-ply-6",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "defects",
+          "text": "Stock is free of checks, wind, and loose knots",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "select-stock",
+      "title": "Select Birch plywood 6",
+      "instruction": "Pull the sheets for these parts and check each one for flatness, edge damage, and the face you want showing.",
+      "key": "select:sheet:birch-ply-6",
+      "phaseKey": "stock",
+      "order": 2
+    },
+    {
+      "dependsOn": [
+        "select:sheet:birch-ply-18"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:sheet:birch-ply-18",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:bottom/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-1/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-2/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-3/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-l/cut",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-r/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "track-saw",
+          "name": "Track saw",
+          "category": "track-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "sheet:birch-ply-18:776x294x18:length",
+          "label": "Bottom, Top, Shelf length",
+          "target": 776,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:bottom/cut"
+        },
+        {
+          "key": "sheet:birch-ply-18:776x294x18:width",
+          "label": "Bottom, Top, Shelf width",
+          "target": 294,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:bottom/cut"
+        },
+        {
+          "key": "sheet:birch-ply-18:1800x300x18:length",
+          "label": "Side length",
+          "target": 1800,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:side-l/cut"
+        },
+        {
+          "key": "sheet:birch-ply-18:1800x300x18:width",
+          "label": "Side width",
+          "target": 300,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:side-l/cut"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "layout",
+          "text": "The layout fits the sheet and every part keeps its good face up",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut",
+          "part:side-l/cut",
+          "part:side-r/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Sheet cut lines"
+          }
+        ],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:sheet:birch-ply-18:776x294x18:sheet",
+        "cut:sheet:birch-ply-18:1800x300x18:sheet"
+      ],
+      "kind": "cut",
+      "title": "Break down the Birch plywood 18",
+      "instruction": "Break the sheets down into the listed parts with the face grain running along each part length unless the design says otherwise.",
+      "batch": {
+        "count": 7,
+        "unitLabel": "part"
+      },
+      "key": "sheet-cut:birch-ply-18",
+      "phaseKey": "cut",
+      "order": 3
+    },
+    {
+      "dependsOn": [
+        "select:sheet:birch-ply-6"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "stock:sheet:birch-ply-6",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:back/cut",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "track-saw",
+          "name": "Track saw",
+          "category": "track-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "sheet:birch-ply-6:1800x776x6:length",
+          "label": "Back length",
+          "target": 1800,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:back/cut"
+        },
+        {
+          "key": "sheet:birch-ply-6:1800x776x6:width",
+          "label": "Back width",
+          "target": 776,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "part:back/cut"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "layout",
+          "text": "The layout fits the sheet and every part keeps its good face up",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "cut-line",
+            "text": "Sheet cut lines"
+          }
+        ],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [
+        "cut:sheet:birch-ply-6:1800x776x6:sheet"
+      ],
+      "kind": "cut",
+      "title": "Break down the Birch plywood 6",
+      "instruction": "Break the sheets down into the listed parts with the face grain running along each part length unless the design says otherwise.",
+      "batch": {
+        "count": 1,
+        "unitLabel": "part"
+      },
+      "key": "sheet-cut:birch-ply-6",
+      "phaseKey": "cut",
+      "order": 4
+    },
+    {
+      "dependsOn": [
+        "sheet-cut:birch-ply-18",
+        "sheet-cut:birch-ply-6"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:bottom/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-1/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-2/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-3/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:side-l/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:side-r/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:back/cut",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "marking",
+          "name": "Pencil and marking knife",
+          "category": "marking"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "mark:bottom",
+          "text": "Write B1 on the Bottom; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:top",
+          "text": "Write T1 on the Top; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:shelf-1",
+          "text": "Write H1 on the Lower shelf; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:shelf-2",
+          "text": "Write H2 on the Middle shelf; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:shelf-3",
+          "text": "Write H3 on the Upper shelf; keep the front face clean",
+          "critical": false
+        },
+        {
+          "key": "mark:side-l",
+          "text": "Write S1 on the Left side; keep the left, front faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:side-r",
+          "text": "Write S2 on the Right side; keep the right, front faces clean",
+          "critical": false
+        },
+        {
+          "key": "mark:back",
+          "text": "Write K1 on the Back",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut",
+          "part:side-l/cut",
+          "part:side-r/cut",
+          "part:back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [
+          {
+            "kind": "label",
+            "text": "Part marks"
+          },
+          {
+            "kind": "reference-face",
+            "text": "Reference faces"
+          }
+        ],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "mark",
+      "title": "Mark every part",
+      "instruction": "Write each part mark on its reference face, and note which faces show on the finished piece so the best faces end up there.",
+      "key": "mark:parts",
+      "phaseKey": "mark",
+      "order": 5
+    },
+    {
+      "dependsOn": [
+        "mark:parts"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:side-l/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:side-r/cut",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:side-l/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-r/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "table-saw",
+          "name": "Table saw",
+          "category": "table-saw"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Dado width",
+          "target": 18,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Dado depth",
+          "target": 6,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:dado-bottom-l:side-l:dado",
+          "text": "Cut dados on the Left side (dado-bottom-l)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-bottom-r:side-r:dado",
+          "text": "Cut dados on the Right side (dado-bottom-r)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-top-l:side-l:dado",
+          "text": "Cut dados on the Left side (dado-top-l)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-top-r:side-r:dado",
+          "text": "Cut dados on the Right side (dado-top-r)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-1-l:side-l:dado",
+          "text": "Cut dados on the Left side (dado-shelf-1-l)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-1-r:side-r:dado",
+          "text": "Cut dados on the Right side (dado-shelf-1-r)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-2-l:side-l:dado",
+          "text": "Cut dados on the Left side (dado-shelf-2-l)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-2-r:side-r:dado",
+          "text": "Cut dados on the Right side (dado-shelf-2-r)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-3-l:side-l:dado",
+          "text": "Cut dados on the Left side (dado-shelf-3-l)",
+          "critical": false
+        },
+        {
+          "key": "op:dado-shelf-3-r:side-r:dado",
+          "text": "Cut dados on the Right side (dado-shelf-3-r)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:side-l/cut",
+          "part:side-r/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "machine-joinery",
+      "title": "Cut the dados",
+      "instruction": "Set up the table saw from the setup values. Test the setup on scrap and check the fit, then cut each marked part.",
+      "batch": {
+        "count": 10,
+        "unitLabel": "dado"
+      },
+      "machineSetup": {
+        "tool": "table-saw",
+        "settings": [
+          {
+            "label": "Dado width",
+            "value": 18,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Dado depth",
+            "value": 6,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+      "phaseKey": "joinery",
+      "order": 6
+    },
+    {
+      "dependsOn": [
+        "joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:side-l/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:side-r/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "router-table",
+          "name": "Router table",
+          "category": "router-table"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Rabbet width",
+          "target": 6,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Rabbet depth",
+          "target": 6,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:rabbet-back-l:side-l:rabbet",
+          "text": "Cut rabbets on the Left side (rabbet-back-l)",
+          "critical": false
+        },
+        {
+          "key": "op:rabbet-back-r:side-r:rabbet",
+          "text": "Cut rabbets on the Right side (rabbet-back-r)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:side-l/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+          "part:side-r/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "machine-joinery",
+      "title": "Cut the rabbets",
+      "instruction": "Set up the router table from the setup values. Test the setup on scrap and check the fit, then cut each marked part.",
+      "batch": {
+        "count": 2,
+        "unitLabel": "rabbet"
+      },
+      "machineSetup": {
+        "tool": "router-table",
+        "settings": [
+          {
+            "label": "Rabbet width",
+            "value": 6,
+            "unit": "mm",
+            "source": "design"
+          },
+          {
+            "label": "Rabbet depth",
+            "value": 6,
+            "unit": "mm",
+            "source": "design"
+          }
+        ]
+      },
+      "key": "joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+      "phaseKey": "joinery",
+      "order": 7
+    },
+    {
+      "dependsOn": [
+        "joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:back/cut",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "drill",
+          "name": "Drill",
+          "category": "drill"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "setting-1",
+          "label": "Screw diameter",
+          "target": 4,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        },
+        {
+          "key": "setting-2",
+          "label": "Pilot hole diameter",
+          "target": 2.8,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 0.25,
+            "plus": 0.25
+          },
+          "critical": true,
+          "phase": "verify-before"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "test-cut",
+          "text": "A test cut on scrap fits the mating part",
+          "critical": true
+        },
+        {
+          "key": "op:screw-back-bottom:back:pilot-holes",
+          "text": "Drill pilot holes on the Back (screw-back-bottom)",
+          "critical": false
+        },
+        {
+          "key": "op:screw-back-top:back:pilot-holes",
+          "text": "Drill pilot holes on the Back (screw-back-top)",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:back/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "drill",
+      "title": "Drill the pilot holes",
+      "instruction": "Set up the drill from the setup values. Test the setup on scrap and check the fit, then drill each marked part.",
+      "batch": {
+        "count": 8,
+        "unitLabel": "hole"
+      },
+      "machineSetup": {
+        "tool": "drill",
+        "settings": [
+          {
+            "label": "Screw diameter",
+            "value": 4,
+            "unit": "mm",
+            "source": "assumption"
+          },
+          {
+            "label": "Pilot hole diameter",
+            "value": 2.8,
+            "unit": "mm",
+            "source": "assumption"
+          }
+        ]
+      },
+      "key": "joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+      "phaseKey": "joinery",
+      "order": 8
+    },
+    {
+      "dependsOn": [
+        "joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:bottom/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-1/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-2/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-3/cut",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the carcass",
+      "instruction": "Fit the parts together without glue, check that every joint closes and the unit is square, then take it apart and keep the parts in order.",
+      "key": "dry-fit:sub-carcass",
+      "phaseKey": "dry-fit",
+      "order": 9
+    },
+    {
+      "dependsOn": [
+        "joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+        "dry-fit:sub-carcass"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:bottom/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-1/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-2/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:shelf-3/cut",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": false
+        },
+        {
+          "partKey": "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joints-close",
+          "text": "Every joint closes with no gap",
+          "critical": true
+        },
+        {
+          "key": "square",
+          "text": "The unit sits square and flat",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut",
+          "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "dry-fit",
+      "title": "Dry fit the whole piece",
+      "instruction": "Fit every assembly and loose part together without glue to confirm the whole piece goes together, then take it apart.",
+      "key": "dry-fit:final",
+      "phaseKey": "dry-fit",
+      "order": 10
+    },
+    {
+      "dependsOn": [
+        "dry-fit:sub-carcass",
+        "dry-fit:final"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:bottom/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:top/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-1/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-2/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-3/cut",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "part:bottom/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:top/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-1/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-2/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:shelf-3/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-l/sand:parts",
+          "quantity": 1
+        },
+        {
+          "partKey": "part:side-r/sand:parts",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "sander",
+          "name": "Sanding supplies",
+          "category": "sander"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "protect-joints",
+          "text": "Joint surfaces and tenon cheeks stay unsanded so the fits stay tight",
+          "critical": true
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "before",
+        "highlightPartKeys": [
+          "part:bottom/cut",
+          "part:top/cut",
+          "part:shelf-1/cut",
+          "part:shelf-2/cut",
+          "part:shelf-3/cut",
+          "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+          "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "surface",
+      "title": "Sand the inside faces",
+      "instruction": "Sand the faces that will be hard to reach once the parts are glued, working through the grits and keeping paper off the joint surfaces.",
+      "batch": {
+        "count": 7,
+        "unitLabel": "part"
+      },
+      "key": "sand:parts",
+      "phaseKey": "sand",
+      "order": 11
+    },
+    {
+      "dependsOn": [
+        "sand:parts"
+      ],
+      "irreversible": true,
+      "inputs": [
+        {
+          "partKey": "part:side-l/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:side-r/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:bottom/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:top/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-1/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-2/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "part:shelf-3/sand:parts",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:sub-carcass",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        },
+        {
+          "key": "glue",
+          "name": "Wood glue",
+          "category": "glue"
+        },
+        {
+          "key": "measuring",
+          "name": "Tape measure and square",
+          "category": "measuring"
+        }
+      ],
+      "measurements": [
+        {
+          "key": "diagonal-1",
+          "label": "First diagonal",
+          "target": 1969.771560359221,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-carcass"
+        },
+        {
+          "key": "diagonal-2",
+          "label": "Second diagonal",
+          "target": 1969.771560359221,
+          "unit": "mm",
+          "tolerance": {
+            "minus": 1,
+            "plus": 1
+          },
+          "critical": true,
+          "phase": "achieve-after",
+          "partKey": "assembly:sub-carcass"
+        }
+      ],
+      "checklist": [
+        {
+          "key": "dry-fit-ok",
+          "text": "The dry fit closed cleanly",
+          "critical": true
+        },
+        {
+          "key": "joint:dado-bottom-l",
+          "text": "Close the dado joint: Bottom to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-bottom-r",
+          "text": "Close the dado joint: Bottom to Right side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-top-l",
+          "text": "Close the dado joint: Top to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-top-r",
+          "text": "Close the dado joint: Top to Right side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-1-l",
+          "text": "Close the dado joint: Lower shelf to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-1-r",
+          "text": "Close the dado joint: Lower shelf to Right side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-2-l",
+          "text": "Close the dado joint: Middle shelf to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-2-r",
+          "text": "Close the dado joint: Middle shelf to Right side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-3-l",
+          "text": "Close the dado joint: Upper shelf to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:dado-shelf-3-r",
+          "text": "Close the dado joint: Upper shelf to Right side",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:side-l/sand:parts",
+          "part:side-r/sand:parts",
+          "part:bottom/sand:parts",
+          "part:top/sand:parts",
+          "part:shelf-1/sand:parts",
+          "part:shelf-2/sand:parts",
+          "part:shelf-3/sand:parts"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "glue-clamp",
+      "title": "Glue and clamp the carcass",
+      "instruction": "Spread glue on the joints, bring the parts together in the dry-fit order, and clamp evenly, checking the unit stays square.",
+      "key": "glue:sub-carcass",
+      "phaseKey": "assembly",
+      "order": 12
+    },
+    {
+      "dependsOn": [
+        "glue:sub-carcass"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:sub-carcass",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:sub-carcass"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the carcass glue set",
+      "instruction": "Leave the assembly clamped until the glue has set.",
+      "wait": {
+        "minimumMinutes": 45,
+        "reason": "Glue clamp time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 45,
+        "kind": "cure"
+      },
+      "key": "cure:sub-carcass",
+      "phaseKey": "assembly",
+      "order": 13
+    },
+    {
+      "dependsOn": [
+        "sand:parts",
+        "cure:sub-carcass"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+          "quantity": 1,
+          "consumed": true
+        },
+        {
+          "partKey": "assembly:sub-carcass",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:final",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "screwdriver",
+          "name": "Screwdriver",
+          "category": "screwdriver"
+        },
+        {
+          "key": "clamps",
+          "name": "Bar clamps",
+          "category": "clamps"
+        }
+      ],
+      "measurements": [],
+      "checklist": [
+        {
+          "key": "joint:rabbet-back-l",
+          "text": "Close the rabbet joint: Back to Left side",
+          "critical": false
+        },
+        {
+          "key": "joint:rabbet-back-r",
+          "text": "Close the rabbet joint: Back to Right side",
+          "critical": false
+        },
+        {
+          "key": "joint:screw-back-bottom",
+          "text": "Close the screw joint: Back to Bottom",
+          "critical": false
+        },
+        {
+          "key": "joint:screw-back-top",
+          "text": "Close the screw joint: Back to Top",
+          "critical": false
+        }
+      ],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption"
+        ],
+        "ghostPartKeys": [
+          "assembly:sub-carcass"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "assemble",
+      "title": "Assemble the whole piece",
+      "instruction": "Bring the parts together in the dry-fit order and fasten them without glue.",
+      "key": "assemble:final",
+      "phaseKey": "assembly",
+      "order": 14
+    },
+    {
+      "dependsOn": [
+        "assemble:final"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:final",
+          "quantity": 1,
+          "consumed": true
+        }
+      ],
+      "outputs": [
+        {
+          "partKey": "assembly:final/finished",
+          "quantity": 1
+        }
+      ],
+      "tools": [
+        {
+          "key": "sander",
+          "name": "Sanding supplies",
+          "category": "sander"
+        },
+        {
+          "key": "finish",
+          "name": "Finishing supplies",
+          "category": "finish"
+        }
+      ],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [
+          "assembly:final/finished"
+        ],
+        "ghostPartKeys": [],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "finish",
+      "title": "Apply the finish",
+      "instruction": "Do the final sanding through the grits, remove the dust, and apply the finish in thin coats.",
+      "key": "finish:apply",
+      "phaseKey": "finish",
+      "order": 15
+    },
+    {
+      "dependsOn": [
+        "finish:apply"
+      ],
+      "irreversible": false,
+      "inputs": [
+        {
+          "partKey": "assembly:final/finished",
+          "quantity": 1,
+          "consumed": false
+        }
+      ],
+      "outputs": [],
+      "tools": [],
+      "measurements": [],
+      "checklist": [],
+      "warnings": [],
+      "visual": {
+        "view": "scene-3d",
+        "state": "after",
+        "highlightPartKeys": [],
+        "ghostPartKeys": [
+          "assembly:final/finished"
+        ],
+        "annotations": [],
+        "camera": {
+          "position": [
+            2125.5433926737396,
+            -1575.5433926737398,
+            2625.5433926737396
+          ],
+          "target": [
+            400,
+            150,
+            900
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "cutIds": [],
+      "kind": "wait",
+      "title": "Let the finish dry",
+      "instruction": "Leave the piece undisturbed until the finish has dried hard enough to handle.",
+      "wait": {
+        "minimumMinutes": 240,
+        "reason": "Finish drying time",
+        "source": "assumption"
+      },
+      "duration": {
+        "minutes": 240,
+        "kind": "cure"
+      },
+      "key": "finish:dry",
+      "phaseKey": "finish",
+      "order": 16
+    }
+  ],
+  "parts": [
+    {
+      "key": "stock:sheet:birch-ply-18",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Birch plywood 18 mm",
+      "name": "Birch plywood 18 mm rough stock",
+      "speciesId": "birch-ply-18",
+      "dimensions": {
+        "length": 2440,
+        "width": 1220,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "stock:sheet:birch-ply-6",
+      "kind": "stock",
+      "stage": "rough",
+      "label": "Birch plywood 6 mm",
+      "name": "Birch plywood 6 mm rough stock",
+      "speciesId": "birch-ply-6",
+      "dimensions": {
+        "length": 2440,
+        "width": 1220,
+        "thickness": 6
+      }
+    },
+    {
+      "key": "part:bottom/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "B1",
+      "name": "Bottom",
+      "sourceId": "bottom",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:top/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "T1",
+      "name": "Top",
+      "sourceId": "top",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-1/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "H1",
+      "name": "Lower shelf",
+      "sourceId": "shelf-1",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-2/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "H2",
+      "name": "Middle shelf",
+      "sourceId": "shelf-2",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-3/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "H3",
+      "name": "Upper shelf",
+      "sourceId": "shelf-3",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-l/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "S1",
+      "name": "Left side",
+      "sourceId": "side-l",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-r/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "S2",
+      "name": "Right side",
+      "sourceId": "side-r",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:back/cut",
+      "kind": "part",
+      "stage": "cut",
+      "label": "K1",
+      "name": "Back",
+      "sourceId": "back",
+      "dimensions": {
+        "length": 1800,
+        "width": 776,
+        "thickness": 6
+      }
+    },
+    {
+      "key": "part:side-l/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "S1",
+      "name": "Left side",
+      "sourceId": "side-l",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-r/joinery:dado|table-saw|Dado width=18mm:design|Dado depth=6mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "S2",
+      "name": "Right side",
+      "sourceId": "side-r",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-l/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "S1",
+      "name": "Left side",
+      "sourceId": "side-l",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-r/joinery:rabbet|router-table|Rabbet width=6mm:design|Rabbet depth=6mm:design",
+      "kind": "part",
+      "stage": "machined",
+      "label": "S2",
+      "name": "Right side",
+      "sourceId": "side-r",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+      "kind": "part",
+      "stage": "machined",
+      "label": "K1",
+      "name": "Back",
+      "sourceId": "back",
+      "dimensions": {
+        "length": 1800,
+        "width": 776,
+        "thickness": 6
+      }
+    },
+    {
+      "key": "part:bottom/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "B1",
+      "name": "Bottom",
+      "sourceId": "bottom",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:top/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "T1",
+      "name": "Top",
+      "sourceId": "top",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-1/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "H1",
+      "name": "Lower shelf",
+      "sourceId": "shelf-1",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-2/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "H2",
+      "name": "Middle shelf",
+      "sourceId": "shelf-2",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:shelf-3/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "H3",
+      "name": "Upper shelf",
+      "sourceId": "shelf-3",
+      "dimensions": {
+        "length": 776,
+        "width": 294,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-l/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "S1",
+      "name": "Left side",
+      "sourceId": "side-l",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "part:side-r/sand:parts",
+      "kind": "part",
+      "stage": "surfaced",
+      "label": "S2",
+      "name": "Right side",
+      "sourceId": "side-r",
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": 18
+      }
+    },
+    {
+      "key": "assembly:sub-carcass",
+      "kind": "assembly",
+      "stage": "glued",
+      "label": "C",
+      "name": "Carcass",
+      "sourceId": "sub-carcass",
+      "dimensions": {
+        "length": 800,
+        "width": 300,
+        "thickness": 1800
+      }
+    },
+    {
+      "key": "assembly:final",
+      "kind": "assembly",
+      "stage": "assembled",
+      "label": "Final",
+      "name": "Bookcase",
+      "dimensions": {
+        "length": 800,
+        "width": 300,
+        "thickness": 1800
+      }
+    },
+    {
+      "key": "assembly:final/finished",
+      "kind": "assembly",
+      "stage": "finished",
+      "label": "Final",
+      "name": "Bookcase",
+      "dimensions": {
+        "length": 800,
+        "width": 300,
+        "thickness": 1800
+      }
+    }
+  ],
+  "assemblies": [
+    {
+      "key": "assembly:sub-carcass",
+      "label": "C",
+      "name": "Carcass",
+      "partKeys": [
+        "part:side-l/sand:parts",
+        "part:side-r/sand:parts",
+        "part:bottom/sand:parts",
+        "part:top/sand:parts",
+        "part:shelf-1/sand:parts",
+        "part:shelf-2/sand:parts",
+        "part:shelf-3/sand:parts",
+        "assembly:sub-carcass"
+      ],
+      "stepKeys": [
+        "glue:sub-carcass",
+        "cure:sub-carcass"
+      ],
+      "parentKey": "assembly:final"
+    },
+    {
+      "key": "assembly:final",
+      "label": "Final",
+      "name": "Bookcase",
+      "partKeys": [
+        "part:back/joinery:pilot-holes|drill|Screw diameter=4mm:assumption|Pilot hole diameter=2.8mm:assumption",
+        "assembly:sub-carcass",
+        "assembly:final"
+      ],
+      "stepKeys": [
+        "assemble:final"
+      ]
+    },
+    {
+      "key": "assembly:finished",
+      "label": "Finished",
+      "name": "Bookcase",
+      "partKeys": [
+        "assembly:final/finished"
+      ],
+      "stepKeys": [
+        "finish:apply",
+        "finish:dry"
+      ]
+    }
+  ],
+  "requirements": {
+    "stock": [
+      {
+        "key": "sheet:birch-ply-18",
+        "speciesId": "birch-ply-18",
+        "speciesName": "Birch plywood 18 mm",
+        "quantity": 1,
+        "length": 2440,
+        "width": 1220,
+        "thickness": 18,
+        "boardFeet": 0,
+        "partKey": "stock:sheet:birch-ply-18"
+      },
+      {
+        "key": "sheet:birch-ply-6",
+        "speciesId": "birch-ply-6",
+        "speciesName": "Birch plywood 6 mm",
+        "quantity": 1,
+        "length": 2440,
+        "width": 1220,
+        "thickness": 6,
+        "boardFeet": 0,
+        "partKey": "stock:sheet:birch-ply-6"
+      }
+    ],
+    "cuts": [
+      {
+        "id": "cut:sheet:birch-ply-18:776x294x18:sheet",
+        "label": "Bottom, Top, Shelf break down",
+        "stage": "sheet",
+        "quantity": 5
+      },
+      {
+        "id": "cut:sheet:birch-ply-18:1800x300x18:sheet",
+        "label": "Side break down",
+        "stage": "sheet",
+        "quantity": 2
+      },
+      {
+        "id": "cut:sheet:birch-ply-6:1800x776x6:sheet",
+        "label": "Back break down",
+        "stage": "sheet",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      {
+        "key": "measuring",
+        "name": "Tape measure and square",
+        "category": "measuring"
+      },
+      {
+        "key": "track-saw",
+        "name": "Track saw",
+        "category": "track-saw"
+      },
+      {
+        "key": "marking",
+        "name": "Pencil and marking knife",
+        "category": "marking"
+      },
+      {
+        "key": "table-saw",
+        "name": "Table saw",
+        "category": "table-saw"
+      },
+      {
+        "key": "router-table",
+        "name": "Router table",
+        "category": "router-table"
+      },
+      {
+        "key": "drill",
+        "name": "Drill",
+        "category": "drill"
+      },
+      {
+        "key": "clamps",
+        "name": "Bar clamps",
+        "category": "clamps"
+      },
+      {
+        "key": "sander",
+        "name": "Sanding supplies",
+        "category": "sander"
+      },
+      {
+        "key": "glue",
+        "name": "Wood glue",
+        "category": "glue"
+      },
+      {
+        "key": "screwdriver",
+        "name": "Screwdriver",
+        "category": "screwdriver"
+      },
+      {
+        "key": "finish",
+        "name": "Finishing supplies",
+        "category": "finish"
+      }
+    ],
+    "consumables": [
+      "Wood glue",
+      "Sandpaper",
+      "Finish",
+      "Screw (8)"
+    ]
+  },
+  "warnings": [],
+  "revision": "r-1c0941c0dc78a7"
+}

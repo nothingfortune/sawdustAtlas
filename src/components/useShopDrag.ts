@@ -110,9 +110,9 @@ export function useShopDrag({
       if (!current || !drawStartRef.current) return
       setDraftZone(zoneFromPoints(drawStartRef.current, current))
     }
-    const up = () => {
+    const finish = (commit: boolean) => {
       const nextDraft = draftZoneRef.current
-      if (project && nextDraft && nextDraft.width >= 120 && nextDraft.depth >= 120) {
+      if (commit && project && nextDraft && nextDraft.width >= 120 && nextDraft.depth >= 120) {
         const created = fitZoneToRoom({ ...nextDraft, id: createId(), name: `${DRAW_ZONE_LABEL} ${project.blockedZones.length + 1}` }, project)
         update({ blockedZones: [...project.blockedZones, created] })
         setSelected(`zone:${created.id}`)
@@ -122,11 +122,14 @@ export function useShopDrag({
       setDraftZone(null)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
+      window.removeEventListener('pointercancel', cancel)
     }
+    // A cancelled gesture (interrupted touch, the device taking the pointer) discards the draft.
+    const up = () => finish(true)
+    const cancel = () => finish(false)
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    window.addEventListener('pointercancel', cancel)
   }
 
   const pinchPointers = useRef(new Map<number, { x: number; y: number }>())

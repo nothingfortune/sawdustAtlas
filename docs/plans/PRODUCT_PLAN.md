@@ -26,6 +26,8 @@ Priorities are `Now`, `Next`, `Later`, and `Research`.
 
 The immediate goal is a **friend beta**: a small group can install SawdustAtlas from Docker Hub, open the starter projects, make a simple board or shop edit, export a backup, and recover that backup without needing developer help. Larger modeling work remains important, but it should not outrank first-run clarity, data safety, tablet usability, printability, and trustworthy shop math for the next pass. Near-term scope should favor practical woodworking calculations over capture-heavy features such as room scanning or media annotation unless repeated user testing shows those are blocking adoption.
 
+The next strategic foundation is the shared instruction platform: one semantic build plan that tablet build mode, print, readiness, and build tracking all consume, proven on cutting boards before furniture. See the [instruction platform design spec](../superpowers/specs/2026-10-10-instruction-platform-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-instruction-platform-wave1.md). Furniture is the second producer of that plan: see the [furniture modeler design spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-furniture-modeler-wave1.md).
+
 ## Product Principles
 
 - **Accuracy before cleverness.** Never present approximate geometry or utilization as exact.
@@ -57,7 +59,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
 | 🟢 | PLAT-004 | Schema versioning and migrations | Complete | Now | Named migration registry (`migrate()` + `MIGRATIONS`), import validation that never silently discards fields, and robustness fixtures covering wrong-type lists, null nested blocks, and malformed records so a gnarly backup is repaired rather than lost. |
-| ⚪ | PLAT-005 | Undo and redo | Planned | Next | Geometry and editor actions can be undone/redone across both designers; autosave stores the resulting state. |
+| 🟢 | PLAT-005 | Undo and redo | Complete | Now | Every workspace edit goes through `commitData` onto a pure undo/redo stack (`src/history.ts`); header Undo/Redo buttons and Ctrl/Cmd+Z; imports and project merges are undoable. |
 | ⚪ | PLAT-006 | Project duplicate, rename, archive, delete | Planned | Next | Destructive actions require confirmation; archived projects remain recoverable. |
 | ⚪ | PLAT-007 | Search, tags, and recent projects | Planned | Later | Projects can be filtered by name, type, wood species, and tags. |
 | 🟡 | PLAT-008 | Accessible keyboard operation | Partial | Now | Navigation is labeled; all canvas operations need keyboard equivalents and visible focus states. |
@@ -93,7 +95,7 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 | 🔵 | BOARD-019 | CNC/toolpath export | Research | Research | Export only after geometry, tool diameter, origin, and safety semantics are defined. |
 | 🔵 | BOARD-020 | Reusable wafer workflow | Research | Research | Decide whether user-created wafers/source panels should be independent recipes, references to other board projects, or an alternate direct-slice workflow. This should converge with `BOARD-008`. |
 | 🔵 | BOARD-021 | Direct slice creation | Research | Research | Explore an alternate entry point where users create slices directly, including custom cut angles and shapes, then generate the final preview and build plan from those slices. |
-| ⚪ | BOARD-022 | Interactive build instructions | Planned | Later | Provide step-by-step instructions derived from the current design, cuts, wood choices, allowances, and warnings; printable output remains covered by `BOARD-014` and bench/tablet execution by `UX-008`. |
+| 🟡 | BOARD-022 | Interactive build instructions | Partial | Next | Wave 1 shipped the shared `InstructionPlan` and a read-only build-steps preview for boards and composites (and furniture build steps). Still to come: the tablet step runner and Bench Sheet / Step Manual print products (instruction platform wave 2). Original scope: provide step-by-step instructions derived from the current design, cuts, wood choices, allowances, and warnings; printable output remains covered by `BOARD-014` and bench/tablet execution by `UX-008`. |
 _`BOARD-023/024/025` (rip & stock list, angle & setup, bench setup card) and `BOARD-026`
 (geometry calculator + compound-angle solver) shipped — see [COMPLETED.md](COMPLETED.md).
 The geometry tool's reusable-in-board-designer embedding and a true-3D model remain as
@@ -125,7 +127,7 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| 🟡 | DATA-004 | Installable PWA shell | Partial | Next | Manifest, icon, and cache worker exist; verify installation and offline behavior under trusted HTTPS. |
+| 🟡 | DATA-004 | Installable PWA shell | Partial | Next | Manifest, icon, and a service worker that precaches every built asset exist; the production-build offline smoke (`test:e2e:prod`) passes. Still to verify: installation on a real device under trusted HTTPS. |
 | ⚪ | DATA-005 | Shared LAN persistence | Planned | Next | Computer and tablet read/write one versioned project store with backups and atomic writes. |
 | ⚪ | DATA-006 | Conflict handling | Planned | Next | Detect concurrent edits; never silently overwrite another device's newer project revision. |
 | ⚪ | DATA-007 | Private HTTPS | Parking Lot | Next | Support a trusted local certificate or Tailscale Serve without public internet exposure. |
@@ -141,9 +143,9 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | 🟡 | UX-003 | Portrait fallback | Partial | Later | Panel drawers exist; verify that portrait layouts keep canvas operations accessible. |
 | 🟢 | UX-004 | Onboarding and sample projects | Complete | Now | Starter projects preloaded + linked from Home, and a first-run `WelcomeDialog` covering units, browser-local saving, backups, kerf, and allowances. |
 | 🟡 | UX-005 | Autosave and sync status | Partial | Now | Browser-local saved state and export affordance exist; add pending, failed, offline, synced, and conflict states. |
-| ⚪ | UX-006 | Error and warning center | Planned | Now | Geometry, clearance, stock, migration, and sync issues link directly to corrective inputs. |
+| 🟢 | UX-006 | Error and warning center | Complete | Now | App-wide list (`workspaceWarnings.ts`) of geometry, clearance, composite, furniture, and import issues; each row links to the input that fixes it. Sync issues arrive with shared persistence. |
 | ⚪ | UX-007 | Command history | Planned | Later | Show meaningful actions that support undo/redo and troubleshooting. |
-| ⚪ | UX-008 | Tablet build mode | Planned | Later | Provide a bench-friendly, touch-first execution view with step checklist, current cut or setup, large dimensions, warnings, labels, and project progress. |
+| ⚪ | UX-008 | Tablet build mode | Planned | Next | Provide a bench-friendly, touch-first execution view with step checklist, current cut or setup, large dimensions, warnings, labels, and project progress. |
 
 ## Accuracy and Validation Requirements
 
@@ -174,11 +176,11 @@ The following are release requirements for any feature that reports dimensions, 
 - Public Docker Hub install path. _Done._
 - Starter workshop and cutting-board projects visible from Home. _Done._
 - Browser-local save state and top-level export affordance. _Done._
-- Schema version stamped into exports. _Partial: named migration steps still needed._
+- Schema version stamped into exports. _Done: named migrations and import validation (`PLAT-004`)._
 - Real-device tablet landscape smoke test.
 - Backup export/import restore smoke test across two browsers.
-- First-run copy for local-only data ownership, backup expectations, units, kerf, and allowances.
-- Basic warning hub for import, geometry, and storage problems.
+- First-run copy for local-only data ownership, backup expectations, units, kerf, and allowances. _Done (`UX-004`)._
+- Basic warning hub for import, geometry, and storage problems. _Done (`UX-006`)._
 
 Exit criteria: a non-developer friend can install from Docker Hub, open the app, understand that data is browser-local, edit a starter project, export a backup, restore it, and report issues without losing work.
 
@@ -223,7 +225,7 @@ Exit criteria: computer and tablet safely edit the same projects, survive restar
 
 ### M7: Additional Woodworking Designers - Later
 
-- General project parts and assemblies.
+- General project parts and assemblies. _Started: the furniture modeler wave 1 (parametric parts, six templates, joinery, cut list, build steps, drawings, 3D) is on `develop`. Next waves (project packages for furniture, Design/Plan/Build modes, Bench Sheet and Step Manual, instruction authoring) are in the [furniture spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md)._
 - Furniture/jig/cabinet workflows using the shared cut planner.
 - Evaluate 3D and CNC only after 2D geometry and cut semantics are proven.
 
@@ -278,6 +280,7 @@ These came from direct user feedback on 2026-06-25. All were addressed on 2026-0
 
 ## Near-Term Ordered Backlog
 
+0. Instruction platform wave 2 and furniture wave 2: the tablet step runner with Design/Plan/Build modes, Bench Sheet and Step Manual print products, and furniture project packages. Open product decisions (imperial entry snapping, price basis, composite printing, golden-plan hand-check, RB1–RB4) are tracked in `TODO.md`.
 1. Friend-beta smoke test: Docker Hub install, starter shop, starter board, tablet landscape, export backup, import backup in a second browser.
 2. ✅ `PLAT-004`: named migration steps + import validation + robustness fixtures — done.
 3. `PLAT-008` (keyboard pass for slice/wafer/shop-object operation) remains; ✅ `UX-002` touch pass done.

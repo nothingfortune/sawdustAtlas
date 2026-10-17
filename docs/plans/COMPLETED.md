@@ -46,7 +46,7 @@ Split out of the product plan: 2026-06-28.
 | DATA-002 | LAN-accessible development server | `pnpm dev:lan` binds to the private network and documents firewall constraints. |
 | DATA-003 | Docker appliance configuration | Public Docker Hub image, compose build, health check, restart policy, local and LAN responses, PWA endpoints, updates, and recovery are verified and documented. |
 
-## Recently shipped (post-2026-06-25, not yet folded into feature IDs)
+## Recently shipped (post-2026-06-25, not folded into feature IDs)
 
 Work merged to `develop` after the last plan revision. These should be reconciled into
 the feature inventory / milestones on the next plan pass.
@@ -61,5 +61,9 @@ the feature inventory / milestones on the next plan pass.
 | Persistence | Schema bumped to v2 with a v1→v2 migration (running-bond offsets stored as cell fractions). Note: a structured/named migration framework is still pending — see `PLAT-004`. | #31 |
 | Board math & setup (`BOARD-023/024/025`) | Rip & stock list (rough rip widths + per-species board feet), angle & setup card, and a concise bench-setup card — all reusing the board-generation domain math. | #49, #51, #52 |
 | Geometry calculator (`BOARD-026`) | Standalone "Geometry" module: free-form points/members canvas with distance, length+bearing, inside/outside angles, intersection, drag, and visualized readouts; rectangle/diagonal bisection; and a general two-tilt compound-angle calculator (miter/bevel/true length). | #54, #55, #57, #58, #59 |
+| Instruction platform wave 1 | The shared `InstructionPlan` contract, validator, dependency graph, readiness and lifecycle, build-run state (progress, resume, actuals), and generators for edge-grain, end-grain, and composite boards, checked against golden plans. UI: a read-only build-steps preview in the board designer. See the [design spec](../superpowers/specs/2026-10-10-instruction-platform-design.md). | #96–#121 |
+| Platform fixes for the bench | Per-project export/import packages, a limited-bench-mode notice when HTTPS or the service worker is missing, bundled fonts, static-host headers, and a service worker that precaches every built asset. | #96–#121, #152 |
+| Furniture modeler (wave 1) | Parametric parts and expressions, relationships, joinery with reported allowances, validation, six templates, parts list, cut list, build steps, orthographic/isometric/exploded drawings, a 3D viewport, and a gallery, loaded on demand. See the [design spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md). | #123, #134–#151, #153 |
+| Test coverage | 1445 unit tests, 172 Playwright tests across the desktop and tablet projects, and a production-build offline smoke. | #117–#121 |
 | Friend-beta milestone (M1) | Named schema migrations + import validation (`PLAT-004`); app-wide warning center (`UX-006`); first-run welcome guidance (`UX-004`); visible-focus + overlay focus-trap/Escape (`PLAT-008` slice 1). | #35, #36, #37, #38 |
 | UX & legibility | App-wide 12px type-scale floor; collapsed-sidebar icon centering + glyph-jump fix; top-left→home; room-size-first; clearer strip arrangement (de-clumped Randomize, "By width"); wood "available at" vendor field. | #39–#48 |

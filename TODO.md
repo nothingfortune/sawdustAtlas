@@ -3,6 +3,43 @@
 Prioritized from a four-track review (domain, UI/state, infra/CI, docs/DX).
 Severity: **P0** fix now · **P1** soon · **P2** when convenient.
 
+## User testing on develop (2026-10-10)
+
+Found by using the merged instruction platform wave 1 in the Docker build as a first-time user, at desktop widths, in imperial, offline, and through print.
+
+Fixed:
+
+- [x] A first-time visitor saw "My workshop: 2 objects overlap a blocked floor zone." on the sample data, and the single-object message read "1 object overlap" (#124).
+- [x] Imperial tolerances in the build steps preview read "± 0 in" because they snapped like lengths (#125).
+- [x] Four controls' accessible names omitted their visible label (brand, Preston's Button, Make composite, Tap to enlarge), so voice control could not reach them (WCAG 2.5.3). An e2e guard now scans every screen (#126).
+- [x] The steps preview listed each fence setting twice and repeated "Walnut, Hard maple, Walnut…"; its label keys caused the React duplicate-key warnings in dev (#127).
+- [x] An empty composite quoted $188.00 for a 0 × 0 × 0 board (#128).
+- [x] In imperial at laptop widths the designer toolbar clipped the finished size and the top bar wrapped its labels (#129).
+- [x] `pnpm container` and the post-merge hook did nothing from WSL, the build badge read "unknown · build 0", and a second checkout collided with the first one's container (#130).
+- [x] In imperial the composite cut plan stayed metric ("25mm wide, 3.2mm kerf"), and an empty assembly row's hint spilled out of its 28 px box (#132).
+- [x] The merged fence-check line used the body font for its tolerance (#133).
+
+Needs a decision:
+
+- [x] **Imperial entry snapped to the nearest 1/2 inch**, so a 5/8 or 3/4 inch strip could not be entered. `snapLengthMm` now snaps to 1/16 inch. Finer (1/32) is possible if the inputs prove wide enough.
+- [ ] **Price uses rough board feet; the buy list uses purchased board feet.** For the sample board the material estimate prices 2.86 bf while the build sheet's buy list totals 4.38 bf of whole boards. Decide which one the material cost should follow (ties into RB2, the pricing split).
+- [ ] **Composites have no print path.** The board designer prints a build sheet; the composite designer has no Print button and the print stylesheet does not cover it. The wave 2 Bench Sheet (instruction platform spec) is the planned home for printing every project type.
+- [ ] **Golden plans need a hand-check against a real build** (edge grain, end grain, composite, and the furniture table and bookcase in `tests/__golden__/`) before strategy Phase 2 exits.
+
+Furniture modeler, tested in the Docker build before its stack merged (2026-10-11):
+
+- [x] Merging develop into the stack split the gallery's `@media (pointer: coarse)` block, so develop's header-fit and connection-notice styles only applied on touch screens. Caught by the e2e suite and fixed in the gallery PR (#146).
+- [x] Every parameter card's Value field had the same accessible name; each card is now a named group (#147).
+- [x] A cut-list line of identical parts quoted its first part's joints ("Tenon into the front left leg" on the back apron's line); grouped lines now count by joint kind ("+30 mm length for each of 2 tenons") (#150).
+- [x] The furniture section loaded with the app; it now loads on demand, taking the main bundle from 631 kB to 498 kB (#153).
+
+Watch:
+
+- [ ] The main bundle grew from 417 kB to 450 kB with the 2026-10-10 dependency updates (React 19.3, lucide-react 1.52), then to 498 kB with the furniture domain code the warning center needs. Worth a bundle visualizer pass before the friend beta.
+- [ ] The 3D viewport logs `THREE.Clock: This module has been deprecated` once. It comes from @react-three/fiber 9.8 on three 0.186 and is harmless; it should go away when fiber moves to `THREE.Timer`.
+- [ ] In imperial at 1440 px the furniture cut list is wider than its panel and scrolls sideways. Acceptable for now; a column picker or a stacked layout would fit it.
+- [ ] `a11y.spec.ts` "Escape closes the import summary dialog" failed once under a full parallel run and passed 15/15 on repeat. CI retries once; worth a look if it recurs.
+
 ## P0 — security & CI enforcement
 
 - [x] **Fix Docker Scout on PRs/develop** — DONE by replacement: both Scout steps removed;

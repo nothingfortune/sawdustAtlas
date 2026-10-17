@@ -1,4 +1,5 @@
-import { memo } from 'react'
+import { memo, useRef } from 'react'
+import { Upload } from 'lucide-react'
 import type { BoardProject, CompositeBoard, WoodSpecies } from '../types'
 import { WoodPatterns } from './board/WoodPatterns'
 import { LongGrainFace } from './board/LongGrainFace'
@@ -27,17 +28,23 @@ const BoardThumb = memo(function BoardThumb({ board, woods }: { board: BoardProj
   )
 })
 
-export function BoardGallery({ boards, composites, woods, onOpenBoard, onOpenComposite, onCreateBoard }: {
+export function BoardGallery({ boards, composites, woods, onOpenBoard, onOpenComposite, onCreateBoard, onImportProject }: {
   boards: BoardProject[]
   composites: CompositeBoard[]
   woods: WoodSpecies[]
   onOpenBoard: (id: string) => void
   onOpenComposite: (id: string) => void
   onCreateBoard: () => void
+  onImportProject: (file: File | undefined) => void
 }) {
+  const fileRef = useRef<HTMLInputElement>(null)
   const { lengthUnit } = useUnitSystem()
   return (
     <div className="board-gallery">
+      <div className="gallery-actions">
+        <button className="button secondary" onClick={() => fileRef.current?.click()}><Upload size={15} />Import project</button>
+        <input ref={fileRef} type="file" accept="application/json,.json" hidden aria-label="Project file" onChange={e => { onImportProject(e.target.files?.[0]); e.currentTarget.value = '' }} />
+      </div>
       <div className="gallery-grid">
         <button className="gallery-card gallery-new" onClick={onCreateBoard}>
           <span className="gallery-plus">＋</span>

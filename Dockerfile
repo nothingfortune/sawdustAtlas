@@ -4,7 +4,7 @@
 # platform. Only the nginx runtime stage below is built per target arch.
 # Pinned to the same major as CI/.nvmrc (Node 24) so the shipped bundle is built
 # by the exact toolchain CI tests.
-FROM --platform=$BUILDPLATFORM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS build
+FROM --platform=$BUILDPLATFORM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 
 WORKDIR /app
 # node:24-alpine still bundles Corepack, just disabled by default.
@@ -27,7 +27,7 @@ ENV BUILD_ENV=$BUILD_ENV BUILD_NUMBER=$BUILD_NUMBER BUILD_SHA=$BUILD_SHA BUILD_B
 RUN pnpm build
 
 # Unprivileged variant: runs as UID 101 (nginx), listens on 8080 instead of 80.
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:592b23aa79a6e6c08ba4b20f1fff700e1328895705966722608e115d62e52d39
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:26b0bf6fbf07297983cb341998d79c831508787de26627dd2a112321b9c3a4af
 
 # The base image already switches to USER 101; apk needs root to write the
 # package db, so switch back, patch, then drop privileges again below.

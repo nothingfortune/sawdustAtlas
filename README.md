@@ -1,6 +1,6 @@
 # SawdustAtlas
 
-A local-first design workspace for woodworking. The first two tools are a scaled workshop planner and an edge- and end-grain cutting board designer.
+A local-first design workspace for woodworking. Its tools are a scaled workshop planner, an edge- and end-grain cutting board designer (including multi-panel composites), and a parametric furniture modeler.
 
 ---
 
@@ -76,7 +76,9 @@ pnpm dev
 
 `pnpm container` builds and (re)starts the Docker preview at **http://localhost:8080**,
 stamping the in-app build badge with the current git branch / build number / commit
-(e.g. `develop · build 169 · e31445b · container`).
+(e.g. `develop · build 169 · e31445b · container`). It uses `docker`, or `docker.exe` from
+WSL when only Docker Desktop's Windows CLI is available, and every checkout or worktree
+shares the one `sawdust-atlas` container.
 
 `pnpm install` runs a `prepare` step that points `core.hooksPath` at the committed
 `.githooks/`, so a fresh clone is set up automatically — no per-machine steps. From then
@@ -95,8 +97,12 @@ on a `git pull`/`git merge` that lands on `develop` rebuilds the preview in the 
 - Generated rough-stock list, machine cuts, saw-pass counts, and ordered build sequence
 - A standalone geometry calculator, including a compound-angle mode, for working out cuts outside a specific board
 - Pricing settings that turn material use, labor, and consumables into a per-board cost and price estimate
+- Ordered build steps for boards and composites, derived from the design, with setup tolerances and a printable build sheet
+- A furniture modeler: start from a template (table, desk, workbench, bookcase, base cabinet, wall cabinet), drive parts from named parameters, join them with reported joinery allowances, and read the parts list, cut list, build steps, drawings, and a 3D view
+- An app-wide warning center that links each problem to the input that fixes it, plus undo and redo for every edit
+- Per-project export and import files, for moving one board or composite between devices without replacing the rest of your workspace
 - Browser autosave plus JSON import and export
-- Installable, offline-capable PWA (web app manifest plus a service worker that caches the app shell)
+- Installable, offline-capable PWA (web app manifest plus a service worker that precaches every built asset, including bundled fonts and the lazily loaded furniture section)
 - Domain models separated from the UI so additional woodworking designers and storage adapters can be added cleanly
 
 ## Accuracy policy

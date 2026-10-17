@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { panelPieces, placedFootprint, croppedLayout, deskLayout, assembledSize, materialBySpecies, stockBySpecies, compositeCutPlan, boardFaceSize, maxWafers } from '../src/domain/compositeBoard'
 import { CUBIC_MM_PER_BOARD_FOOT } from '../src/domain/units'
+import { convertMetricText } from '../src/domain/lengthUnits'
 import type { BoardProject, CompositeBoard, CompositePanel, AssemblyCell } from '../src/types'
 
 const board = (over: Partial<BoardProject> = {}): BoardProject => ({
@@ -255,5 +256,15 @@ describe('math verification (hand-computed)', () => {
       const ghost = composite({ panels: [], rows: [{ id: 'r1', wafers: [w(0)] }] })
       expect(assembledSize(ghost, [board()])).toEqual({ lengthMm: 0, widthMm: 0, thicknessMm: 0 })
     })
+  })
+})
+
+describe('compositeCutPlan prose', () => {
+  // Every dimension carries its own unit so imperial display can convert each one
+  // (convertMetricText only rewrites numbers followed by "mm").
+  it('gives the trimmed size two separately unit-tagged numbers', () => {
+    const text = compositeCutPlan(composite(), [board()]).stages.flatMap(stage => stage.steps).join(' ')
+    expect(text).toMatch(/trim to \d+mm × \d+mm\./)
+    expect(convertMetricText(text, 'imperial')).not.toMatch(/\dmm/)
   })
 })

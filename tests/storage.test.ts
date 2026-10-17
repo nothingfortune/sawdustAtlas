@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, loadSketch, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData, saveSketch } from '../src/storage'
+import { CURRENT_SCHEMA_VERSION, clearPreImportSnapshot, hasOnboarded, importData, loadData, loadPreImportSnapshot, loadSketch, markOnboarded, normalizeData, normalizePricing, savePreImportSnapshot, saveData, saveSketch } from '../src/storage'
 import { DEFAULT_ALLOWANCES } from '../src/domain/boardAllowances'
 import { boardThickness } from '../src/domain/compositeBoard'
 import type { AtlasData } from '../src/types'
@@ -22,7 +22,7 @@ describe('importData (PLAT-004)', () => {
     const result = importData({ schemaVersion: 2, shops: [{ id: 's' }], boards: [{ id: 'b' }, { id: 'b2' }], composites: [] })
     expect(result.ok).toBe(true)
     expect(result.counts).toMatchObject({ shops: 1, boards: 2, composites: 0 })
-    expect(result.data?.schemaVersion).toBe(2)
+    expect(result.data?.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
   })
 
   it('warns about unrecognized top-level and record fields instead of dropping them silently', () => {
@@ -68,7 +68,7 @@ class MemoryStorage {
 describe('workspace storage migration', () => {
   it('stamps normalized data with the current schema version', () => {
     const legacy = { shops: [], boards: [] } as unknown as AtlasData
-    expect(normalizeData(legacy).schemaVersion).toBe(2)
+    expect(normalizeData(legacy).schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
   })
 
   it('migrates legacy millimeter row offsets to cell fractions (schema 1 -> 2)', () => {
@@ -143,7 +143,7 @@ describe('workspace storage migration', () => {
 
   it('returns only the known AtlasData keys, dropping imported junk (SEC5)', () => {
     const data = { shops: [], boards: [], hacked: 'x', extra: { a: 1 } } as unknown as AtlasData
-    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'pricing', 'schemaVersion', 'shops', 'woods'])
+    expect(Object.keys(normalizeData(data)).sort()).toEqual(['allowances', 'boards', 'composites', 'furniture', 'pricing', 'schemaVersion', 'shops', 'woods'])
   })
 
   it('preserves negative trailing angles through a normalize round-trip (C1)', () => {
@@ -364,7 +364,7 @@ describe('saveData / loadData persistence', () => {
 
   it('falls back to starter data when the stored JSON is not an object or is malformed (TEST3)', () => {
     localStorage.setItem('sawdust-atlas:v1', '"a plain string"')
-    expect(loadData().schemaVersion).toBe(2)
+    expect(loadData().schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     localStorage.setItem('sawdust-atlas:v1', '{ not valid json')
     expect(loadData().woods.length).toBeGreaterThan(0)
   })
@@ -404,7 +404,7 @@ describe('corrupt payload recovery (2.4)', () => {
       throw new DOMException('quota exceeded', 'QuotaExceededError')
     })
     expect(() => loadData()).not.toThrow()
-    expect(loadData().schemaVersion).toBe(2)
+    expect(loadData().schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
   })
 })
 

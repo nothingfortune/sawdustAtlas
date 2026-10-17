@@ -21,7 +21,7 @@ Fixed:
 
 Needs a decision:
 
-- [ ] **Imperial entry snaps to the nearest 1/2 inch** (Preston's Button, `snapLengthMm`, deliberate). A 5/8 or 3/4 inch strip cannot be entered in imperial: 1 5/8 becomes 1 1/2. Woodworkers who think in inches will hit this on most boards. Options: snap to 1/16 or 1/32 (inputs may need to be wider), or snap only the display and keep the entered value.
+- [x] **Imperial entry snapped to the nearest 1/2 inch**, so a 5/8 or 3/4 inch strip could not be entered. `snapLengthMm` now snaps to 1/16 inch. Finer (1/32) is possible if the inputs prove wide enough.
 - [ ] **Price uses rough board feet; the buy list uses purchased board feet.** For the sample board the material estimate prices 2.86 bf while the build sheet's buy list totals 4.38 bf of whole boards. Decide which one the material cost should follow (ties into RB2, the pricing split).
 - [ ] **Composites have no print path.** The board designer prints a build sheet; the composite designer has no Print button and the print stylesheet does not cover it. The wave 2 Bench Sheet (instruction platform spec) is the planned home for printing every project type.
 - [ ] **Golden plans need a hand-check against a real build** (edge grain, end grain, composite, and the furniture table and bookcase in `tests/__golden__/`) before strategy Phase 2 exits.

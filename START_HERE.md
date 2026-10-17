@@ -77,7 +77,7 @@ Select **Geometry** in the left menu for a standalone calculator you can use for
 
 ## Undo, Warnings, and Units
 
-Every edit can be undone and redone with the **Undo** and **Redo** buttons in the top bar. The warning list shows everything that needs attention; choosing a row takes you to the input that fixes it. **Preston's Button** switches displayed measurements between millimeters and inches. Stored values stay metric, and imperial entry snaps to the nearest half inch.
+Every edit can be undone and redone with the **Undo** and **Redo** buttons in the top bar. The warning list shows everything that needs attention; choosing a row takes you to the input that fixes it. **Preston's Button** switches displayed measurements between millimeters and inches. Stored values stay metric, and imperial entry snaps to the nearest sixteenth of an inch.
 
 ## Back Up Your Work
 

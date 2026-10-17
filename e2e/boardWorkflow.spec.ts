@@ -183,8 +183,11 @@ test.describe('board design workflow', () => {
     await expect(width).toHaveValue('2 1/2')
     await expect(finishedSize(page)).toContainText('2 1/2')
 
-    // Imperial commits snap to the nearest 1/2" (Preston's button): 1 5/8 lands on 1 1/2.
+    // Imperial commits snap to the nearest 1/16" (Preston's button): 1 5/8 is kept, 1 33/64 lands on 1 1/2.
     await width.fill('1 5/8')
+    await width.press('Enter')
+    await expect(width).toHaveValue('1 5/8')
+    await width.fill('1 33/64')
     await width.press('Enter')
     await expect(width).toHaveValue('1 1/2')
 

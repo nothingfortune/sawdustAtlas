@@ -20,6 +20,8 @@ does not yet use semantic version numbers, so entries are grouped by date instea
 
 ### Changed
 
+- Imperial entry (Preston's Button) now snaps to the nearest 1/16 inch instead of 1/2 inch, so 5/8 and 3/4 inch stock can be entered exactly.
+
 - The container now runs as an unprivileged nginx user and listens on port 8080 instead of 80.
   Any `docker run ... -p 8080:80 ...` command becomes `-p 8080:8080` — see the
   [Install guide](docs/howTo/install.md) for the current command.

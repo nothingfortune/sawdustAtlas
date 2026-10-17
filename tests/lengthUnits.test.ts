@@ -29,10 +29,14 @@ describe('snapLengthMm', () => {
   it('leaves metric values untouched', () => {
     expect(snapLengthMm(123.4, 'metric')).toBe(123.4)
   })
-  it('snaps imperial to the nearest half inch', () => {
-    expect(snapLengthMm(1.1 * IN, 'imperial')).toBeCloseTo(1.0 * IN, 5)
-    expect(snapLengthMm(1.3 * IN, 'imperial')).toBeCloseTo(1.5 * IN, 5)
-    expect(snapLengthMm(1.8 * IN, 'imperial')).toBeCloseTo(2.0 * IN, 5)
+  it('snaps imperial to the nearest sixteenth of an inch', () => {
+    expect(snapLengthMm(1.1 * IN, 'imperial')).toBeCloseTo(1.125 * IN, 5)
+    expect(snapLengthMm(1.3 * IN, 'imperial')).toBeCloseTo(1.3125 * IN, 5)
+    expect(snapLengthMm(1.5156 * IN, 'imperial')).toBeCloseTo(1.5 * IN, 5)
+  })
+  it('keeps 5/8 and 3/4 inch stock exact', () => {
+    expect(snapLengthMm(0.625 * IN, 'imperial')).toBeCloseTo(0.625 * IN, 9)
+    expect(snapLengthMm(1.75 * IN, 'imperial')).toBeCloseTo(1.75 * IN, 9)
   })
 })
 

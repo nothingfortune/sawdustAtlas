@@ -25,6 +25,8 @@ From the repository root:
 docker compose up -d --build
 ```
 
+`pnpm container` does the same and also stamps the in-app build badge with your branch and commit. From WSL it uses Docker Desktop's `docker.exe` when there is no native `docker`.
+
 This builds the image from your local source and serves it at **http://localhost:8080** (the `compose.yaml` maps `8080:8080` for you). Use this instead of the published image when you want to run your own changes.
 
 ## LAN and tablet access during development
@@ -56,3 +58,5 @@ pnpm test:e2e
 ```
 
 This runs both a desktop `chromium` project and a touch-capable `tablet` project (see `playwright.config.ts`).
+
+To check the production build works offline (service worker), run `pnpm test:e2e:prod`; it builds, serves with `vite preview`, and drives the app with the network cut. CI gates unit-test coverage on the logic layer with `pnpm test:coverage`.

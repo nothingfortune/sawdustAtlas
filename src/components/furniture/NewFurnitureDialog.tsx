@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { TemplateParameter } from '../../domain/furniture/types'
 import { FURNITURE_TEMPLATES } from '../../domain/furniture/templates'
-import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput } from '../../domain/lengthUnits'
+import { formatFieldLabel, formatLengthValue, lengthUnitLabel, parseLengthInput, snapLengthMm } from '../../domain/lengthUnits'
 import type { LengthUnit } from '../../domain/lengthUnits'
 import { useModalDialog } from '../useModalDialog'
 import { useUnitSystem } from '../unitSystem'
@@ -81,7 +81,9 @@ function ParameterField({ parameter, lengthUnit, value, error, onValue }: {
   const errorId = `furniture-param-${parameter.name}-error`
   const parse = (raw: string): number | null => {
     if (isCount) return /^\s*\d+\s*$/.test(raw) ? Number(raw) : null
-    return raw.trim() ? parseLengthInput(raw, lengthUnit) : null
+    if (!raw.trim()) return null
+    const entered = parseLengthInput(raw, lengthUnit)
+    return entered === null ? null : snapLengthMm(entered, lengthUnit)
   }
   return <label className="field">
     <span>{isCount ? parameter.label : formatFieldLabel(parameter.label, lengthUnit)}</span>

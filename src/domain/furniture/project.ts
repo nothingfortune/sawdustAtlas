@@ -35,6 +35,20 @@ export function emptyFurnitureProject(id: string, name: string, updatedAt: strin
   return { id, name, parameters: [], parts: [], relationships: [], joints: [], subassemblies: [], sheetMaterials: [], maxBoardWidth: DEFAULT_MAX_BOARD_WIDTH, updatedAt }
 }
 
+/**
+ * Templates name default species (walnut, maple, ...) that a workspace may not have, for
+ * example after importing a custom wood library. Points every solid part whose species is
+ * missing at the first available one so a new project starts free of material errors. With
+ * no woods at all the project is returned unchanged and validation reports the gap.
+ */
+export function remapMissingSpecies(project: FurnitureProject, availableIds: readonly string[]): FurnitureProject {
+  const [fallback] = availableIds
+  if (fallback === undefined) return project
+  const available = new Set(availableIds)
+  if (project.parts.every(part => part.speciesId === undefined || available.has(part.speciesId))) return project
+  return { ...project, parts: project.parts.map(part => part.speciesId === undefined || available.has(part.speciesId) ? part : { ...part, speciesId: fallback }) }
+}
+
 export function normalizeFurnitureProject(raw: unknown, options: NormalizeFurnitureOptions): FurnitureProject | null {
   if (!isRecord(raw)) return null
   const project: FurnitureProject = {

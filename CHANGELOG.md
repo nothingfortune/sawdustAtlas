@@ -37,6 +37,9 @@ does not yet use semantic version numbers, so entries are grouped by date instea
 - Composite board thickness and price calculations now use the correct wafer and crosscut math.
 - The offline app cache (service worker) no longer traps the app on a stale version; reloads
   while offline are more reliable.
+- Furniture length fields and template parameters now snap to 1/16 inch in imperial, like every other length input, so the stored size matches what is shown.
+- New furniture from a template uses a wood that exists in your library when the template's default species (walnut, maple, cherry, white oak) is missing.
+- Cancelling a no-go-zone drag in the workshop planner (an interrupted touch) now discards the zone instead of creating it.
 - The starter workshop no longer warns about overlapping blocked zones on first load, and warning counts read correctly for a single object.
 - Imperial tolerances in build steps no longer round to "± 0 in".
 - Controls whose accessible name left out their visible label (brand, Preston's Button, Make composite, Tap to enlarge) now include it, so voice control can reach them.

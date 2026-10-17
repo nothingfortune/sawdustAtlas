@@ -19,6 +19,10 @@ Each substantial feature gets a committed design spec and an implementation plan
 - **[superpowers/specs/](superpowers/specs/)** — design docs (`YYYY-MM-DD-<topic>-design.md`).
 - **[superpowers/plans/](superpowers/plans/)** — the matching implementation plans.
 
+## Status and history
+- **[../TODO.md](../TODO.md)** — open findings and decisions from reviews and user testing.
+- **[../CHANGELOG.md](../CHANGELOG.md)** — what changed, by date.
+
 ## Other
 - **[reviews/REMEDIATION.md](reviews/REMEDIATION.md)** — code-review remediation log.
 - **[END_GRAIN_PATTERN_RESEARCH.md](END_GRAIN_PATTERN_RESEARCH.md)** — end-grain pattern research notes.

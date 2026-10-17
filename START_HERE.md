@@ -1,6 +1,6 @@
 # Start Here
 
-SawdustAtlas helps you plan a workshop and design cutting boards. You use it in a web browser, but your projects stay on your device unless you export a backup.
+SawdustAtlas helps you plan a workshop and design cutting boards and furniture. You use it in a web browser, but your projects stay on your device unless you export a backup.
 
 ## Open SawdustAtlas
 
@@ -18,6 +18,7 @@ From the Home page, choose one of these:
 
 - **Lay out a workshop** to place machines, benches, storage, doors, and work clearances.
 - **Design a cutting board** to choose woods, dimensions, strip layouts, and end-grain patterns.
+- **Design furniture** to start from a template and shape it with parameters.
 
 Your changes save automatically in the browser. The **Saved in this browser** message at the top confirms this.
 
@@ -30,12 +31,24 @@ Your changes save automatically in the browser. The **Saved in this browser** me
 5. Add wood strips and adjust their widths.
 6. For an end-grain board, choose a pattern or adjust individual slices.
 7. Review the finished size, rough stock, material estimate, waste, and build plan.
+8. Use **Print build sheet** to take the plan to the bench. The build steps list each setup with its tolerance, so you can check a fence or stop before cutting.
 
 Pattern buttons create an editable starting point. You can still change every strip afterward.
 
 ### Combine Boards into a Composite
 
 Some pieces — a large table top or a cutting board built from several panels — are bigger than one board can hold. Open a finished board and choose **Make composite** to start joining panels into one larger piece. Every panel in a composite shares the same construction (edge grain or end grain).
+
+### Design Furniture
+
+1. Select **Furniture** in the left menu.
+2. Select **New project**, then choose a template: table, desk, workbench, bookcase, base cabinet, or wall cabinet.
+3. Open the **Parameters** tab and change the named values (overall width, depth, height, and so on). Parts that depend on a parameter follow it.
+4. Select a part to edit its size, position, wood, and grain direction, or add your own parts and group them in the **Assemblies** tab.
+5. Add joints between parts in the **Joints** tab. Joinery adds the extra length a tenon or similar joint needs to the cut list; it never changes the size you modeled.
+6. Check the warnings, then open the **Cut list** and **Build steps** tabs at the bottom, or print them. The design area switches between drawings and a 3D view; the 3D view needs WebGL, and the drawings work without it.
+
+Furniture saves in the browser and is included in **Export backup**, like every other project.
 
 ### Add Your Own Wood
 
@@ -62,11 +75,17 @@ A wood cannot be deleted while a cutting board is using it. Remove or change tho
 
 Select **Geometry** in the left menu for a standalone calculator you can use for any cut, not just one already in a board — including a **Compound angle** mode for angled legs and other compound cuts.
 
+## Undo, Warnings, and Units
+
+Every edit can be undone and redone with the **Undo** and **Redo** buttons in the top bar. The warning list shows everything that needs attention; choosing a row takes you to the input that fixes it. **Preston's Button** switches displayed measurements between millimeters and inches. Stored values stay metric, and imperial entry snaps to the nearest half inch.
+
 ## Back Up Your Work
 
 Projects are stored separately in each browser. A project made on a tablet will not automatically appear on the computer.
 
-Use **Export backup** regularly. It downloads one backup file containing your workshops, cutting boards, and custom woods.
+Use **Export backup** regularly. It downloads one backup file containing your workshops, cutting boards, furniture, and custom woods.
+
+To move just one board or composite, open it and choose **Export project**. On the other device, open **Cutting boards** and choose **Import project**. The file adds the project (and any woods it needs) without replacing anything already there, and Undo removes it again.
 
 To restore or move your projects:
 

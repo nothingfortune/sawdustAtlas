@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SawdustAtlas is a local-first, offline-capable PWA for woodworking design. Two tools: a scaled
-**workshop floor planner** and an **edge/end-grain cutting board designer** (with multi-panel
-**composite** boards). React 19 + TypeScript + Vite SPA; all data lives in the browser's
+SawdustAtlas is a local-first, offline-capable PWA for woodworking design. Three tools: a scaled
+**workshop floor planner**, an **edge/end-grain cutting board designer** (with multi-panel
+**composite** boards), and a parametric **furniture modeler**. Boards, composites, and furniture all
+emit one shared **instruction plan** (ordered build steps). React 19 + TypeScript + Vite SPA; all data lives in the browser's
 localStorage. No backend.
 
 ## Commands
@@ -44,8 +45,9 @@ docker compose up -d --build
 
 CI (`.github/workflows/ci.yml`) has four jobs. `Validate` runs typecheck → lint → `test:coverage` →
 build. `E2E` runs the Playwright suite (desktop `chromium` project plus a touch-capable `tablet`
-project) against a dev server it boots itself. Coverage is gated only on the pure logic layer
-(`src/domain/**`, `storage.ts`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
+project) against a dev server it boots itself, then the production-build offline smoke
+(`test:e2e:prod`). Coverage is gated only on the pure logic layer
+(`src/domain/**`, `storage.ts`, `projectPackage.ts`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
 statements 88 — keep these green when touching domain code. `Docker verify` (PRs and pushes to
 `develop`) needs `Validate` and `E2E`, builds the image, smoke-tests it, and runs a gating Trivy
 scan (fails the build on fixable CRITICAL/HIGH vulnerabilities, uploads SARIF to code scanning).
@@ -75,8 +77,14 @@ be full or blocked in privacy modes). `src/storage.ts` owns load/save/import/exp
 initial load, JSON import, and even export — runs through `normalizeData` in `storage.ts`. It
 coerces untrusted/legacy shapes into valid current-schema objects and performs migrations (e.g.
 `drumSanding` allowance → `routerTable`; legacy composite `{rows, cols, cells}` grid → `rows[]`;
-legacy inline-strip composite panels → real `BoardProject`s appended to the boards list). When you
-add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` if the shape changes.
+legacy inline-strip composite panels → real `BoardProject`s appended to the boards list). Schema
+migrations are named, ordered steps in `src/domain/migrations.ts` (`LATEST_SCHEMA_VERSION`, re-exported
+as `CURRENT_SCHEMA_VERSION`); `normalizeData` runs them first, then coerces to the typed model. When you
+add or rename a field, update `normalizeData` and, if the shape changes, add a new migration step
+(never edit old ones).
+
+`src/projectPackage.ts` exports and imports a single board or composite as a package file. Reads reuse
+`normalizeData`, and merges go through `commitData` so Undo removes an import.
 
 ### Domain conventions (important, easy to get wrong)
 
@@ -114,11 +122,25 @@ add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` 
   y up; the UI flips y for SVG).
 - `compoundAngle.ts` — `solveCompoundAngle`: two perpendicular-view tilts → resultant tilt plus
   miter/bevel saw settings.
+- `boardStock.ts`, `boardAngle.ts`, `boardBench.ts` — rip and stock list, angle and setup numbers, and the
+  bench-setup card, all reusing the board-generation math.
 - `shopGeometry.ts`, `shopObjects.ts` — workshop layout geometry and item normalization.
+- `migrations.ts` — named schema migration registry (see above).
+- `workspaceWarnings.ts` — the app-wide warning center's collector; every domain's issues (shop, board,
+  composite, furniture) funnel through it, each carrying a location that links to the fixing input.
+- `benchCapabilities.ts` — what the browser offers at the bench (HTTPS, service worker, wake lock) and a
+  plain-language description of what is missing.
+- `instructions/` — the shared `InstructionPlan` contract (`types.ts`), validation, dependency graph,
+  revision hash, readiness, lifecycle, default tolerances, and one generator per domain
+  (`boardInstructions.ts`, `compositeInstructions.ts`, `furnitureInstructions.ts`). Generators label any
+  value not derived from the design as an assumption. Golden plans live in `tests/__golden__/`.
+- `buildRuns/` — pure build-run state over a frozen plan: progress, resume, and recorded actuals with
+  verify-first flags. Not yet wired to a UI (the tablet step runner is instruction platform wave 2).
 - `lengthUnits.ts` — metric/imperial conversion (the UI "Preston's Button" toggles display units;
   storage stays metric).
 - `furniture/` — furniture modeler domain: `types.ts` (contracts), `project.ts` (defaults and the
-  normalizer storage runs). World axes are x left→right, y front→back, z up; a part's position is
+  normalizer storage runs), `expressions.ts` (parameters), `geometry.ts`, `relationships.ts`, `joinery.ts`,
+  `validation.ts`, `partsList.ts`, `projection.ts` (drawings), and `templates/` (six starting points). World axes are x left→right, y front→back, z up; a part's position is
   its min corner. Relationships move parts and never resize them; joinery adds reported cut
   allowances and never rewrites the modeled size. See the furniture spec in `docs/superpowers/specs`.
 
@@ -131,7 +153,8 @@ add or rename a field, update `normalizeData` and bump `CURRENT_SCHEMA_VERSION` 
   drag vs tap, SVG layout). Drives a real Chromium against a dev server it starts itself. A second
   `tablet` project (`playwright.config.ts`) re-runs the touch/pointer-sensitive specs in a
   touch-capable, iPad-landscape-shaped context — both projects force `browserName: 'chromium'`
-  since CI only installs that browser.
+  since CI only installs that browser. `e2e/prod/` (`playwright.prod.config.ts`) builds, serves via
+  `vite preview`, and checks the service worker keeps the app working offline.
 
 ## TypeScript setup
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_MAX_BOARD_WIDTH, emptyFurnitureProject, normalizeFurnitureProject } from '../src/domain/furniture/project'
+import { DEFAULT_MAX_BOARD_WIDTH, emptyFurnitureProject, normalizeFurnitureProject, remapMissingSpecies } from '../src/domain/furniture/project'
 import type { Box, FurniturePart, FurnitureProject, PartOrientation } from '../src/domain/furniture/types'
 import { normalizeData } from '../src/storage'
 import {
@@ -189,5 +189,27 @@ describe('normalizeData furniture', () => {
 
   it('gives older data an empty furniture list', () => {
     expect(normalizeData({ schemaVersion: 2, shops: [], boards: [] }).furniture).toEqual([])
+  })
+})
+
+describe('remapMissingSpecies', () => {
+  const project = tableProject()
+  const species = (p: FurnitureProject) => [...new Set(p.parts.map(part => part.speciesId))]
+
+  it('returns the project untouched when every species exists', () => {
+    const ids = species(project).filter((id): id is string => id !== undefined)
+    expect(remapMissingSpecies(project, ids)).toBe(project)
+  })
+  it('points parts with a missing species at the first available wood', () => {
+    const remapped = remapMissingSpecies(project, ['ash', 'elm'])
+    expect(species(remapped)).toEqual(['ash'])
+  })
+  it('keeps species that still exist', () => {
+    const [keep] = species(project)
+    const remapped = remapMissingSpecies(project, ['ash', ...(keep ? [keep] : [])])
+    expect(species(remapped)).toContain(keep)
+  })
+  it('leaves the project for validation to report when there are no woods', () => {
+    expect(remapMissingSpecies(project, [])).toBe(project)
   })
 })

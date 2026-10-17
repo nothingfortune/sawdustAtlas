@@ -26,7 +26,7 @@ import { MillingAllowances } from './components/MillingAllowances'
 import { PricingSettings } from './components/PricingSettings'
 import { UnitSystemProvider } from './components/unitSystem'
 import type { NewFurnitureRequest } from './components/furniture/FurnitureGallery'
-import { emptyFurnitureProject } from './domain/furniture/project'
+import { emptyFurnitureProject, remapMissingSpecies } from './domain/furniture/project'
 import { templateById } from './domain/furniture/templates'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
@@ -218,7 +218,7 @@ export default function App() {
   const createFurniture = ({ templateId, values }: NewFurnitureRequest) => {
     const now = new Date().toISOString()
     const template = templateId ? templateById(templateId) : undefined
-    const project = template ? template.create(values, createId(), now) : emptyFurnitureProject(createId(), 'Untitled furniture', now)
+    const project = template ? remapMissingSpecies(template.create(values, createId(), now), data.woods.map(wood => wood.id)) : emptyFurnitureProject(createId(), 'Untitled furniture', now)
     commitData(current => ({ ...current, furniture: [...current.furniture, project] }))
     openFurniture(project.id)
   }

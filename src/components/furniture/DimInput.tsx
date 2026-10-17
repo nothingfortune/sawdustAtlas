@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import { evaluateDim } from '../../domain/furniture/expressions'
 import type { DimExpr } from '../../domain/furniture/types'
-import { formatLengthValue, lengthUnitLabel, parseLengthInput } from '../../domain/lengthUnits'
+import { formatLengthValue, lengthUnitLabel, parseLengthInput, snapLengthMm } from '../../domain/lengthUnits'
 import { useUnitSystem } from '../unitSystem'
 
 interface DimInputProps {
@@ -53,7 +53,8 @@ export function DimInput({ label, value, scope, positive = false, allowExpressio
       if (source !== value) onCommit(source)
       return true
     }
-    const parsed = text ? parseLengthInput(text, lengthUnit) : null
+    const entered = text ? parseLengthInput(text, lengthUnit) : null
+    const parsed = entered === null ? null : snapLengthMm(entered, lengthUnit)
     if (parsed === null) return reject(`Enter a length in ${unit}, or start with = for an expression.`)
     if (positive && parsed <= 0) return reject('This must be greater than zero.')
     if (parsed !== value) onCommit(parsed)

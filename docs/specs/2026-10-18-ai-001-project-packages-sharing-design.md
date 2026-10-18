@@ -137,20 +137,27 @@ Then add `kinds/furniture.ts`, whose payload is `{ type: 'furniture'; furniture:
 - **Merge.** Part, parameter, relationship, and joint ids are scoped to their project, so only the
   project id can clash. A clash imports a copy with a fresh id and the "(imported)" suffix.
   Allowances follow the local shop-wide setup, as they do for boards.
-- **`packageVersion` stays 1.** An older app reading a furniture package already fails cleanly
-  with "The project package holds an unknown kind of project."
+- **`packageVersion` stays 1.** Adding a project type is not an envelope change: an older app
+  reading a furniture package already fails cleanly with "The project package holds an unknown
+  kind of project."
 - **UI.** The furniture designer gets the same "Export project" action as the board designer.
   File import already lives in one place and accepts the new type; its success message names the
   imported furniture project.
 - File names, previews, and messages come from each kind's `describe`, so no caller special-cases
   furniture.
 
-### 2. Newer-schema refusal
+### 2. Version refusal
 
-The envelope reader (one shared check, not one per kind) refuses any package whose `schemaVersion`
-is newer than `LATEST_SCHEMA_VERSION`, for every project type, with: "This project was made with a newer version
-of SawdustAtlas. Update this app to open it." Nothing is merged. This also covers share links,
-which use the same read path.
+The envelope reader runs two shared checks, before any kind is looked up, for every project type:
+
+1. **`packageVersion`** newer than `SUPPORTED_PACKAGE_VERSION` (1). A future envelope or payload
+   change can bump `packageVersion` without a workspace schema change, and an older reader must not
+   normalize a v2 payload as v1. A missing or non-integer `packageVersion` is treated as 1, matching
+   files exported before the field was checked.
+2. **`schemaVersion`** newer than `LATEST_SCHEMA_VERSION`.
+
+Either gives: "This project was made with a newer version of SawdustAtlas. Update this app to open
+it." Nothing is merged. This also covers share links, which use the same read path.
 
 This is deliberately stricter than full-backup import, which imports a newer backup with a warning
 that unknown fields were ignored. A backup restore is the user's own data and can be undone with
@@ -165,7 +172,8 @@ Pure modules in `src/packages/link/`:
   `CompressionStream('deflate-raw')`, encoded as base64url.
 - `link.ts`: `encodeLink(intent, value, baseUrl)` returns `<baseUrl>#<intent>=v1.<payload>` using
   the current codec; `decodeFragment(hash)` returns `{ intent, value }` or a plain-language error
-  (no intent, unknown codec version, bad base64url, failed decompression, or invalid JSON).
+  (no intent, unknown codec version, too large, bad base64url, failed decompression, or invalid
+  JSON).
   `baseUrl` is the app's origin plus its base path. A decoded `share` value goes to
   `readProjectPackage` exactly like a parsed file.
 
@@ -181,8 +189,20 @@ read through `ShareContext`, so a limit changes in one place and tests can pass 
 | `maxLinkLength` | 8,000 characters | Conservative ceiling for messaging apps and email clients that truncate long URLs. |
 | `maxQrLinkLength` | 2,900 characters | Fits a single QR code at the lowest error-correction level (version 40-L holds 2,953 bytes). |
 
-Over `maxLinkLength`, the link target reports itself unavailable and the dialog explains that the project is too big for a link and offers
-only the file.
+Over `maxLinkLength`, the link target reports itself unavailable and the dialog explains that the
+project is too big for a link and offers only the file.
+
+**Incoming limits.** A fragment or file can come from anyone, so input is bounded before and during
+decoding, in the same `SHARE_CONFIG`:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| `maxIncomingFragmentLength` | 16,000 characters | Twice the outbound limit, so a later version that raises `maxLinkLength` does not instantly break older readers. Checked before base64url decoding. |
+| `maxDecodedBytes` | 1 MB | A large furniture project is tens of KB of JSON. `decodeFragment` reads the `DecompressionStream` incrementally and cancels it as soon as output passes this cap, so a highly compressible payload cannot exhaust memory. |
+| `maxPackageFileBytes` | 5 MB | Package file import checks `file.size` before reading or parsing. |
+
+Exceeding any limit gives "This share link or file is too large to be a SawdustAtlas project." and
+nothing is parsed or merged.
 
 ### 4. Share dialog
 
@@ -229,8 +249,9 @@ already exist.
 | --- | --- |
 | Truncated, corrupted, or tampered link | "This share link is damaged or incomplete. Ask for the file instead." Nothing changes. |
 | Valid JSON that is not a package | The existing "not a SawdustAtlas project package" error. |
-| Package from a newer schema | Refused (section 2). |
+| Package from a newer schema or package version | Refused (section 2). |
 | Unknown project type | The existing "unknown kind of project" error. |
+| Oversized fragment, file, or decompressed payload | Refused before parsing (incoming limits, section 3). |
 | Unknown link codec version | "This link needs a newer version of SawdustAtlas." |
 | Unknown link intent | Ignored; the fragment is cleared. |
 | Id clash with local work | Imported as an "(imported)" copy; the summary says so. |
@@ -289,12 +310,16 @@ src/packages/
   (proves the refactor).
 - Furniture specifics: parts, parameters, relationships, joints, subassemblies, and sheet materials
   survive a round trip; a package's species survive import with no fallback substitution.
-- Newer-schema packages are refused for every kind.
+- Newer-schema and newer-`packageVersion` packages are refused for every kind, before any kind
+  code runs; a missing `packageVersion` reads as 1.
 - Link round trip for each kind, including non-ASCII names.
 - Decode errors: no intent, unknown codec version, bad base64url, truncated payload, valid
   compression of non-JSON.
-- Link and QR availability at, just under, and just over both `SHARE_CONFIG` limits, using a test
-  config.
+- Link and QR availability at, just under, and just over both outbound `SHARE_CONFIG` limits, using
+  a test config.
+- Incoming limits: a fragment over `maxIncomingFragmentLength` is refused without decoding; a small
+  payload that decompresses past `maxDecodedBytes` is cancelled mid-stream and refused; a file over
+  `maxPackageFileBytes` is refused without reading.
 
 **E2E (Playwright, desktop and tablet projects):**
 

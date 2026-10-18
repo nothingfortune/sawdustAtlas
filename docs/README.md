@@ -11,6 +11,7 @@ How the docs are organized.
 - **[plans/PRODUCT_PLAN.md](plans/PRODUCT_PLAN.md)** — the live roadmap: feature inventory,
   milestones, backlog, and the user-reported issues log.
 - **[plans/COMPLETED.md](plans/COMPLETED.md)** — what's already shipped.
+- **[plans/AI_ASSISTANT_ROADMAP.md](plans/AI_ASSISTANT_ROADMAP.md)** — index for the AI design assistant sub-projects.
 - **[plans/completedPlans/](plans/completedPlans/)** — historical design/plan docs that
   predate the spec/plan workflow below (composite assembly + brick-pattern notes).
 
@@ -18,6 +19,7 @@ How the docs are organized.
 Each substantial feature gets a committed design spec and an implementation plan:
 - **[superpowers/specs/](superpowers/specs/)** — design docs (`YYYY-MM-DD-<topic>-design.md`).
 - **[superpowers/plans/](superpowers/plans/)** — the matching implementation plans.
+- New specs go in **[specs/](specs/)** and new plans in **[plans/](plans/)**; existing files under `superpowers/` stay where they are.
 
 ## Status and history
 - **[../TODO.md](../TODO.md)** — open findings and decisions from reviews and user testing.

@@ -179,10 +179,10 @@ Three PRs to `develop`, in this order, each green on its own and revertible on i
 
 ## Testing
 
-- `tests/normalize/*.test.ts`: each domain normalizer on valid, legacy, and malformed input, and
+- `tests/normalize*.test.ts` (flat, like the existing `tests/furniture*.test.ts`): each domain normalizer on valid, legacy, and malformed input, and
   each coercer's sign and NaN behavior. Existing `storage.test.ts` keeps passing as the end-to-end
   check of `normalizeData`.
-- `tests/workspace/*.test.ts`: every action, including that `updateAllowances` writes through to
+- `tests/workspace*.test.ts`: every action, including that `updateAllowances` writes through to
   every board, `duplicateFurniture` keeps internal ids, `createPanelBoard` inherits construction,
   `deleteWood` blockers, and `updatedAt` stamping from the context.
 - `tests/boardEditing.test.ts`: strip edits and `updateEndGrain` clamping when the slice count

@@ -92,7 +92,7 @@ export default defineConfig(({ command }) => {
       coverage: {
         provider: 'v8',
         reporter: ['text-summary', 'json-summary'],
-        include: ['src/domain/**', 'src/storage.ts', 'src/projectPackage.ts', 'src/data.ts', 'src/id.ts'],
+        include: ['src/domain/**', 'src/normalize/**', 'src/storage.ts', 'src/projectPackage.ts', 'src/data.ts', 'src/id.ts'],
         // Floor on the pure logic layer the test suite actually exercises. UI
         // components are not unit-tested yet (tracked separately); this gate guards
         // the geometry/persistence code where regressions are most costly.

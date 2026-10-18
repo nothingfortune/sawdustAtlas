@@ -28,6 +28,8 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 
 The next strategic foundation is the shared instruction platform: one semantic build plan that tablet build mode, print, readiness, and build tracking all consume, proven on cutting boards before furniture. See the [instruction platform design spec](../superpowers/specs/2026-10-10-instruction-platform-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-instruction-platform-wave1.md). Furniture is the second producer of that plan: see the [furniture modeler design spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-furniture-modeler-wave1.md).
 
+The AI design assistant (Claude drafting and editing boards, composites, and furniture, plus importing designs found online as templates) is tracked as six ordered sub-projects, starting with a foundation refactor, in the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md).
+
 ## Product Principles
 
 - **Accuracy before cleverness.** Never present approximate geometry or utilization as exact.
@@ -133,6 +135,19 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | ⚪ | DATA-007 | Private HTTPS | Parking Lot | Next | Support a trusted local certificate or Tailscale Serve without public internet exposure. |
 | ⚪ | DATA-008 | Automated backups | Planned | Next | Configurable scheduled snapshots with retention and tested restore. |
 | 🔵 | DATA-009 | Optional authentication | Research | Research | Decide whether trusted-LAN access is sufficient before adding account complexity. |
+
+### AI Design Assistant
+
+Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md).
+
+|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
+| --- | --- | --- | --- | --- | --- |
+| ⚪ | AI-000 | Foundation refactor | Planned | Now | Workspace changes are pure domain actions, navigation is one reducer, and normalizers are split per domain; no behavior change, all tests green. |
+| ⚪ | AI-001 | Project packages and sharing | Planned | Next | Board, composite, and furniture each export and import as one package through `normalizeData`, with a defined backend-free share path. |
+| ⚪ | AI-002 | Design operations layer | Planned | Next | Pure, schema-described operations for boards, composites, and furniture; each returns the new project plus validation issues; the UI uses the same operations. |
+| ⚪ | AI-003 | MCP server | Planned | Later | An MCP client can open a package, draft or edit a design through AI-002 tools, validate it, and save a package the app imports. |
+| ⚪ | AI-004 | In-app assistant | Planned | Later | Chat panel calls the Claude API with a user-provided key; AI changes are reviewable, accept/reject, undoable; the app is unchanged without a key or offline. |
+| ⚪ | AI-005 | User templates and design import | Planned | Later | Save any design as a template stored as data (with migration); the AI can build a design from an online source and save it as a template with the source recorded. |
 
 ### Tablet, UX, and Accessibility
 

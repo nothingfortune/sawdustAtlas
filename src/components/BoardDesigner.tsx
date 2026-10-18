@@ -1,7 +1,7 @@
 import { ArrowUpNarrowWide, ChevronDown, Copy, Download, Eye, FlipHorizontal2, Layers3, Plus, Printer, RotateCcw, Scissors, Shuffle, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { StripList } from './StripList'
-import { applySliceOrder, clampTransforms, readSliceStates } from '../domain/boardSlices'
+import { applySliceOrder, readSliceStates } from '../domain/boardSlices'
 import { buildEndGrainTemplate, calculateEndGrainMetrics, calculateWoodUsage } from '../domain/boardGeometry'
 import { calculateBuildDimensions } from '../domain/boardAllowances'
 import { generateCuttingBoardPlan } from '../domain/boardCutPlan'
@@ -10,6 +10,7 @@ import { isSquareAngle } from '../domain/units'
 import { useContainerWidth } from './useContainerWidth'
 import type { BoardProject, BoardStrip, EndGrainSettings, PricingSettings, WoodSpecies } from '../types'
 import { createId } from '../id'
+import * as edit from '../domain/boardEditing'
 import { NumberField as Field } from './fields'
 import { alternateStrips, applyBoardPattern, BOARD_PATTERNS, gradientStrips, shuffleStripsAvoidingAdjacent } from '../domain/boardPatterns'
 import type { BoardPatternId } from '../domain/boardPatterns'
@@ -89,16 +90,9 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
   }, [project, woods, pendingPattern])
   if (!project) return <div className="empty-page"><h2>No cutting board designs yet</h2><button className="button" onClick={onCreate}><Plus/>Create one</button></div>
 
-  const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
-  // Apply an end-grain settings patch, then clamp the per-slice transform arrays to
-  // the resulting slice count so a count that shrank (e.g. thicker slices) can't keep
-  // stale transforms that would resurrect if the count later grew back.
-  const updateEnd = (patch: Partial<EndGrainSettings>) => {
-    const nextSettings = { ...project.endGrain, ...patch }
-    const count = calculateEndGrainMetrics({ ...project, endGrain: nextSettings }).sliceCount
-    update({ endGrain: { ...nextSettings, ...clampTransforms(nextSettings, count) } })
-  }
-  const updateStrip = (id: string, patch: Partial<BoardStrip>) => update({ strips: project.strips.map(strip => strip.id === id ? { ...strip, ...patch } : strip) })
+  const update = (patch: Partial<BoardProject>) => onChange({ ...project, ...patch })
+  const updateEnd = (patch: Partial<EndGrainSettings>) => onChange(edit.updateEndGrain(project, patch))
+  const updateStrip = (id: string, patch: Partial<BoardStrip>) => onChange(edit.updateStrip(project, id, patch))
   const { end, sliceStates, build, template, cutPlan, woodUsage, stock, bench, angleRows, width, boardFeet, finishedSize, estimatedCost, price } = derived!
 
   // One shared px-per-mm so every preview is true-to-scale and comparable.
@@ -109,12 +103,13 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
   // the user is driving the zoom directly (the studio pop-out's pinch path).
   const { pxPerMm } = resolveScale(governingLength, Math.max(260, canvasWidth - 56), lengthUnit === 'imperial' ? { snapUnitMm: MM_PER_INCH / 2 } : {})
 
-  const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => update({ strips: [...project.strips, { id: createId(), speciesId, width: 38, trailingAngle: 0 }] })
-  const duplicatePattern = () => update({ strips: [...project.strips, ...project.strips.map(strip => ({ ...strip, id: createId() }))] })
-  const mirrorPattern = () => update({ strips: [...project.strips, ...[...project.strips].reverse().map(strip => ({ ...strip, id: createId() }))] })
-  const reverseStrips = () => update({ strips: [...project.strips].reverse() })
-  const reorderStrips = (orderedIds: string[]) => update({ strips: orderedIds.map(id => project.strips.find(strip => strip.id === id)).filter((strip): strip is BoardStrip => !!strip) })
-  const deleteStrip = (id: string) => update({ strips: project.strips.filter(strip => strip.id !== id) })
+  const ids = { createId }
+  const addStrip = (speciesId = woods[0]?.id ?? 'walnut') => onChange(edit.addStrip(project, speciesId, ids))
+  const duplicatePattern = () => onChange(edit.duplicatePattern(project, ids))
+  const mirrorPattern = () => onChange(edit.mirrorPattern(project, ids))
+  const reverseStrips = () => onChange(edit.reverseStrips(project))
+  const reorderStrips = (orderedIds: string[]) => onChange(edit.reorderStrips(project, orderedIds))
+  const deleteStrip = (id: string) => onChange(edit.deleteStrip(project, id))
 
   const alternateArrangement = () => update({ strips: alternateStrips(project.strips) })
   const gradientArrangement = () => update({ strips: gradientStrips(project.strips) })
@@ -122,25 +117,9 @@ export function BoardDesigner({ projects, project, woods, pricing, onSelect, onC
   // remount and drop focus). Avoids seating two of the same species side by side.
   const randomizeArrangement = () => update({ strips: shuffleStripsAvoidingAdjacent(project.strips) })
   const applyPattern = (pattern: BoardPatternId) => { update(applyBoardPattern(pattern, project, woods, end.sliceCount, createId)); setPendingPattern(null) }
-  const setRowPattern = (pattern: 'same' | 'rotate' | 'flip' | 'invert') => {
-    const flips = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowFlips[index] ?? false)
-    const rotations = Array.from({ length: end.sliceCount }, (_, index) => project.endGrain.rowRotations[index] ?? false)
-    updateEnd({
-      rowFlips: flips.map((flipped, index) => pattern === 'flip' ? index % 2 === 1 : pattern === 'invert' ? !flipped : false),
-      rowRotations: rotations.map((rotated, index) => pattern === 'rotate' ? index % 2 === 1 : pattern === 'invert' ? !rotated : false),
-      rowOffsets: [],
-    })
-  }
+  const setRowPattern = (pattern: edit.RowPattern) => onChange(edit.setRowPattern(project, pattern))
   const reorderSlices = (order: number[]) => updateEnd(applySliceOrder(project.endGrain, end.sliceCount, order))
-  const cycleRow = (index: number) => {
-    const flips = Array.from({ length: end.sliceCount }, (_, row) => project.endGrain.rowFlips[row] ?? false)
-    const rotations = Array.from({ length: end.sliceCount }, (_, row) => project.endGrain.rowRotations[row] ?? false)
-    const state = (rotations[index] ? 1 : 0) + (flips[index] ? 2 : 0)
-    const next = (state + 1) % 4
-    rotations[index] = next === 1 || next === 3
-    flips[index] = next === 2 || next === 3
-    updateEnd({ rowFlips: flips, rowRotations: rotations })
-  }
+  const cycleRow = (index: number) => onChange(edit.cycleSliceRow(project, index))
 
   return <div className="board-layout">
     <div className="designer-toolbar">

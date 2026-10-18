@@ -62,7 +62,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
   const blockedConflicts = project ? getBlockedZoneConflicts(project) : []
   const selectedItemConflicts = item ? blockedConflicts.find(conflict => conflict.item.id === item.id)?.zones ?? [] : []
 
-  const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch, updatedAt: new Date().toISOString() })
+  const update = (patch: Partial<ShopProject>) => project && onChange({ ...project, ...patch })
   const updateItem = (id: string, patch: Partial<ShopItem>) => project && update({ items: project.items.map(candidate => candidate.id === id ? { ...candidate, ...patch } : candidate) })
   const updateZone = (id: string, patch: Partial<ShopBlockedZone>) => project && update({
     blockedZones: project.blockedZones.map(candidate => candidate.id === id ? fitZoneToRoom({ ...candidate, ...patch }, project) : candidate),

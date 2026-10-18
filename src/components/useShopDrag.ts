@@ -84,7 +84,7 @@ export function useShopDrag({
     setSelected(`item:${target.id}`)
     beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
       const proj = projectRef.current
-      if (proj) onChange({ ...proj, items: proj.items.map(candidate => candidate.id === target.id ? { ...candidate, x, y } : candidate), updatedAt: new Date().toISOString() })
+      if (proj) onChange({ ...proj, items: proj.items.map(candidate => candidate.id === target.id ? { ...candidate, x, y } : candidate) })
     })
   }
 
@@ -92,7 +92,7 @@ export function useShopDrag({
     setSelected(`zone:${target.id}`)
     beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
       const proj = projectRef.current
-      if (proj) onChange({ ...proj, blockedZones: proj.blockedZones.map(candidate => candidate.id === target.id ? fitZoneToRoom({ ...candidate, x, y }, proj) : candidate), updatedAt: new Date().toISOString() })
+      if (proj) onChange({ ...proj, blockedZones: proj.blockedZones.map(candidate => candidate.id === target.id ? fitZoneToRoom({ ...candidate, x, y }, proj) : candidate) })
     })
   }
 

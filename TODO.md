@@ -144,3 +144,8 @@ Watch:
       (Docker Hub) are the same publisher.
 - [x] Mention the E2E job in CLAUDE.md/README CI descriptions; add typecheck/e2e to the PR
       template checklist; fix START_HERE "Saved locally" → "Saved in this browser".
+
+## AI-000 follow-ups
+
+- [ ] `woodDeleteBlocker` (and the old `deleteWood`) checks only board strips, not furniture parts, so a wood used only by furniture can be deleted; the next load then remaps those parts to the fallback species.
+- [ ] Navigation history: if a popstate restores a state equal to the current one, no mirrored field changes, so the `skip` flag stays set and the next real navigation skips its `pushState`.

@@ -6,7 +6,6 @@ import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProj
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
 import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
-import { DEFAULT_END_GRAIN, DEFAULT_KERF_MM } from './data'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
 import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './projectPackage'
@@ -26,8 +25,13 @@ import { MillingAllowances } from './components/MillingAllowances'
 import { PricingSettings } from './components/PricingSettings'
 import { UnitSystemProvider } from './components/unitSystem'
 import type { NewFurnitureRequest } from './components/furniture/FurnitureGallery'
-import { emptyFurnitureProject, remapMissingSpecies } from './domain/furniture/project'
-import { templateById } from './domain/furniture/templates'
+import { createBoard as createBoardAction, createPanelBoard, deleteBoard as deleteBoardAction, updateBoard as updateBoardAction } from './domain/workspace/boards'
+import { makeComposite as makeCompositeAction, updateComposite as updateCompositeAction } from './domain/workspace/composites'
+import { createFurniture as createFurnitureAction, deleteFurniture as deleteFurnitureAction, duplicateFurniture as duplicateFurnitureAction, updateFurniture as updateFurnitureAction } from './domain/workspace/furniture'
+import { createShop as createShopAction, deleteShop as deleteShopAction, updateShop as updateShopAction } from './domain/workspace/shops'
+import { addWood as addWoodAction, deleteWood as deleteWoodAction, updateWood as updateWoodAction, woodDeleteBlocker } from './domain/workspace/woods'
+import { updateAllowances as updateAllowancesAction, updatePricing as updatePricingAction } from './domain/workspace/settings'
+import type { Created, WorkspaceContext } from './domain/workspace/context'
 import { createId } from './id'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
@@ -156,116 +160,73 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
-  const updateShop = (project: ShopProject) => commitData(current => ({ ...current, shops: current.shops.map(p => p.id === project.id ? project : p) }))
-  const updateBoard = (project: BoardProject) => commitData(current => ({ ...current, boards: current.boards.map(p => p.id === project.id ? project : p) }))
-  const addWood = () => {
-    const wood: WoodSpecies = { id: createId(), name: 'Custom wood', color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 8 }
-    commitData(current => ({ ...current, woods: [...current.woods, wood] }))
+  // The domain never reads the clock or random ids; this is where they come from.
+  const ctx = (): WorkspaceContext => ({ createId, now: new Date().toISOString() })
+  // Creating actions report what they made so the caller can open it.
+  const commitCreated = (result: Created | null): string | undefined => {
+    if (!result) return undefined
+    commitData(() => result.data)
+    return result.id
   }
-  const updateWood = (id: string, patch: Partial<WoodSpecies>) => commitData(current => ({
-    ...current,
-    woods: current.woods.map(wood => wood.id === id ? { ...wood, ...patch, id: wood.id } : wood),
-  }))
-  // Milling allowances are shop-wide: update the global setup and write it
-  // through to every board so each design's plan reflects the same machines.
-  const updateAllowances = (patch: Partial<BuildAllowances>) => commitData(current => {
-    const allowances = { ...current.allowances, ...patch }
-    return { ...current, allowances, boards: current.boards.map(board => ({ ...board, allowances })) }
-  })
-  // Pricing is shop-wide: update the single global block. Unlike allowances it is
-  // read at compute time, so there is no write-through to individual boards.
-  const updatePricing = (patch: Partial<AtlasData['pricing']>) => commitData(current => ({
-    ...current,
-    pricing: { ...current.pricing, ...patch },
-  }))
+
+  const updateShop = (project: ShopProject) => commitData(current => updateShopAction(current, project, ctx()))
+  const updateBoard = (project: BoardProject) => commitData(current => updateBoardAction(current, project, ctx()))
+  const addWood = () => { commitCreated(addWoodAction(dataRef.current, ctx())) }
+  const updateWood = (id: string, patch: Partial<WoodSpecies>) => commitData(current => updateWoodAction(current, id, patch))
+  const updateAllowances = (patch: Partial<BuildAllowances>) => commitData(current => updateAllowancesAction(current, patch))
+  const updatePricing = (patch: Partial<AtlasData['pricing']>) => commitData(current => updatePricingAction(current, patch))
   const deleteWood = (id: string) => {
     const wood = data.woods.find(candidate => candidate.id === id)
     if (!wood) return
-    if (data.boards.some(board => board.strips.some(strip => strip.speciesId === id))) { window.alert(`${wood.name} is used by a cutting board and cannot be deleted.`); return }
-    if (data.woods.length === 1) { window.alert('Keep at least one wood in the library.'); return }
-    if (window.confirm(`Delete ${wood.name} from the wood library?`)) commitData(current => ({ ...current, woods: current.woods.filter(candidate => candidate.id !== id) }))
+    const blocker = woodDeleteBlocker(data, id)
+    if (blocker === 'in-use') { window.alert(`${wood.name} is used by a cutting board and cannot be deleted.`); return }
+    if (blocker === 'last-wood') { window.alert('Keep at least one wood in the library.'); return }
+    if (window.confirm(`Delete ${wood.name} from the wood library?`)) commitData(current => deleteWoodAction(current, id))
   }
-
   const deleteShop = (id: string) => {
     const project = data.shops.find(p => p.id === id)
     if (!project || !window.confirm(`Delete workshop "${project.name}"?`)) return
     const remaining = data.shops.filter(p => p.id !== id)
-    commitData(current => ({ ...current, shops: current.shops.filter(p => p.id !== id) }))
+    commitData(current => deleteShopAction(current, id))
     if (activeShop === id) setActiveShop(remaining[0]?.id ?? '')
   }
   const deleteBoard = (id: string) => {
     const project = data.boards.find(p => p.id === id)
     if (!project || !window.confirm(`Delete board "${project.name}"?`)) return
     const remaining = data.boards.filter(p => p.id !== id)
-    commitData(current => ({ ...current, boards: current.boards.filter(p => p.id !== id) }))
+    commitData(current => deleteBoardAction(current, id))
     if (activeBoard === id) setActiveBoard(remaining[0]?.id ?? '')
   }
-
   const createShop = () => {
-    const project: ShopProject = { id: createId(), name: 'Untitled workshop', width: 6000, depth: 6000, gridSize: 300, blockedZones: [], items: [], updatedAt: new Date().toISOString() }
-    commitData(current => ({ ...current, shops: [...current.shops, project] })); setActiveShop(project.id); setView('shop')
+    const id = commitCreated(createShopAction(dataRef.current, ctx()))
+    if (id) { setActiveShop(id); setView('shop') }
   }
   const createBoard = () => {
-    const project: BoardProject = {
-      id: createId(), name: 'Untitled cutting board', length: 450, thickness: 38, construction: 'end', strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { ...DEFAULT_END_GRAIN, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
-      allowances: { ...data.allowances },
-    }
-    commitData(current => ({ ...current, boards: [...current.boards, project] })); setActiveBoard(project.id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board')
+    const id = commitCreated(createBoardAction(dataRef.current, ctx()))
+    if (id) { setActiveBoard(id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board') }
   }
-  // Furniture handlers. The designer's updatedAt and new ids come from here, never from
-  // the domain, which stays free of the clock and random ids.
-  const createFurniture = ({ templateId, values }: NewFurnitureRequest) => {
-    const now = new Date().toISOString()
-    const template = templateId ? templateById(templateId) : undefined
-    const project = template ? remapMissingSpecies(template.create(values, createId(), now), data.woods.map(wood => wood.id)) : emptyFurnitureProject(createId(), 'Untitled furniture', now)
-    commitData(current => ({ ...current, furniture: [...current.furniture, project] }))
-    openFurniture(project.id)
+  const createFurniture = (request: NewFurnitureRequest) => {
+    const id = commitCreated(createFurnitureAction(dataRef.current, request, ctx()))
+    if (id) openFurniture(id)
   }
   const openFurniture = (id: string, focusId?: string) => { setActiveFurniture(id); setFurnitureFocus(focusId); setFurnitureOpens(count => count + 1); setFurnitureMode('designer') }
-  const duplicateFurniture = (id: string) => {
-    const source = data.furniture.find(p => p.id === id)
-    if (!source) return
-    // Part, joint, and relationship ids only need to be unique within a project, so a
-    // copy keeps them and every internal reference stays valid.
-    const copy = { ...structuredClone(source), id: createId(), name: `${source.name} copy`, updatedAt: new Date().toISOString() }
-    commitData(current => ({ ...current, furniture: [...current.furniture, copy] }))
-  }
-  const updateFurniture = (project: FurnitureProject) => commitData(current => ({
-    ...current,
-    furniture: current.furniture.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p),
-  }))
+  const duplicateFurniture = (id: string) => { commitCreated(duplicateFurnitureAction(dataRef.current, id, ctx())) }
+  const updateFurniture = (project: FurnitureProject) => commitData(current => updateFurnitureAction(current, project, ctx()))
   const deleteFurniture = (id: string) => {
     const project = data.furniture.find(p => p.id === id)
     if (!project || !window.confirm(`Delete furniture "${project.name}"?`)) return
-    commitData(current => ({ ...current, furniture: current.furniture.filter(p => p.id !== id) }))
+    commitData(current => deleteFurnitureAction(current, id))
     if (activeFurniture === id) { setActiveFurniture(''); setFurnitureMode('gallery') }
   }
   // Composite handlers (composites live inside the Cutting Boards module).
-  const updateComposite = (project: CompositeBoard) => commitData(current => ({ ...current, composites: current.composites.map(p => p.id === project.id ? { ...project, updatedAt: new Date().toISOString() } : p) }))
+  const updateComposite = (project: CompositeBoard) => commitData(current => updateCompositeAction(current, project, ctx()))
   const openBoard = (id: string) => { setActiveBoard(id); setBoardBackTo('gallery'); setBoardsMode('board') }
   const openComposite = (id: string) => { setActiveComposite(id); setBoardsMode('composite') }
   const editPanelBoard = (boardId: string) => { setActiveBoard(boardId); setBoardBackTo('composite'); setBoardsMode('board') }
-  // A composite is one construction throughout, so an inline panel board inherits
-  // the composite's grain — never the opposite, which the parts bag forbids.
-  const createBoardForPanel = (construction: 'edge' | 'end'): string => {
-    const project: BoardProject = {
-      id: createId(), name: 'Untitled panel', length: 450, thickness: 38, construction, strips: [], updatedAt: new Date().toISOString(),
-      endGrain: { ...DEFAULT_END_GRAIN, rowFlips: [], rowRotations: [], rowOffsets: [], rowOrder: [] },
-      allowances: { ...data.allowances },
-    }
-    commitData(current => ({ ...current, boards: [...current.boards, project] }))
-    return project.id
-  }
+  const createBoardForPanel = (construction: 'edge' | 'end'): string => commitCreated(createPanelBoard(dataRef.current, construction, ctx())) ?? ''
   const makeComposite = (board: BoardProject) => {
-    const composite: CompositeBoard = {
-      id: createId(), name: `${board.name} composite`,
-      construction: board.construction,
-      panels: [{ id: createId(), boardId: board.id, cut: { axis: 'x', stripWidthMm: 25, kerfMm: DEFAULT_KERF_MM, count: 4 } }],
-      rows: [{ id: createId(), wafers: [] }], updatedAt: new Date().toISOString(),
-    }
-    commitData(current => ({ ...current, composites: [...current.composites, composite] }))
-    setActiveComposite(composite.id); setBoardsMode('composite')
+    const id = commitCreated(makeCompositeAction(dataRef.current, board.id, ctx()))
+    if (id) { setActiveComposite(id); setBoardsMode('composite') }
   }
 
   async function importFile(file?: File) {

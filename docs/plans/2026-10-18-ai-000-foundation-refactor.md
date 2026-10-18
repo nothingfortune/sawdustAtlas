@@ -21,6 +21,7 @@
 - Comments: one line stating why. Code moved verbatim keeps its existing comments.
 - Use `import type` for type-only imports.
 - PRs target `develop`. No attribution footers in commits or PR bodies.
+- One-time prerequisite before the first e2e run: `pnpm exec playwright install --with-deps chromium`.
 - Test files stay flat in `tests/`, named after the module (`normalizeBoards.test.ts`, `workspaceBoards.test.ts`), matching the repo's existing `furnitureEditing.test.ts` style.
 
 ## Review Focus
@@ -403,7 +404,7 @@ Expected: FAIL, module not found.
 
 ```ts
 import type { BoardProject, BoardStrip, BuildAllowances, EndGrainSettings } from '../types'
-import { finiteNumber, isRecord, signedFinite, stringValue } from './coerce'
+import { finiteNumber, isRecord, records, signedFinite, stringValue } from './coerce'
 import type { NormalizeContext } from './context'
 
 export function normalizeStrip(raw: Record<string, unknown>, fallbackSpeciesId: string, ctx: NormalizeContext): BoardStrip {
@@ -432,7 +433,7 @@ export function normalizeBoard(raw: Record<string, unknown>, options: { allowanc
 }
 ```
 
-Add `records` to the coerce import. Then move `normalizeEndGrain` verbatim from `storage.ts:319-332`, exported.
+Then move `normalizeEndGrain` verbatim from `storage.ts:319-332`, exported.
 
 Note the evaluation order: strips are normalized before the board id, exactly as in `normalizeData` today (`storage.ts:63-79`), so ids issue in the same order.
 
@@ -1295,8 +1296,8 @@ git commit -m "feat(domain): board strip and end-grain edit operations"
 
 - [ ] **Step 1: Confirm every board and shop edit already stamps `updatedAt`**
 
-Run: `grep -n "onChange(" src/components/BoardDesigner.tsx src/components/ShopPlanner.tsx src/components/useShopDrag.ts`
-Expected: only `BoardDesigner.tsx:92` (`update`), `ShopPlanner.tsx:65` (`update`), and `useShopDrag.ts:87` and `:95`, each passing `updatedAt: new Date().toISOString()`. If any other `onChange(` call skips the stamp, stop: moving the stamp into the action would change behavior for that path. Record it in `TODO.md` under "AI-000" and keep that component stamp in place.
+Run: `grep -rn "updatedAt: new Date" src/components` and `grep -rn "onChange(" src/components/BoardDesigner.tsx src/components/ShopPlanner.tsx src/components/useShopDrag.ts src/components/board src/components/shop`
+Expected: the stamps are exactly `BoardDesigner.tsx:92` (`update`), `ShopPlanner.tsx:65` (`update`), and `useShopDrag.ts:87` and `:95`, and every board or shop `onChange(` path goes through one of them. If any board or shop `onChange(` call skips the stamp, stop: moving the stamp into the action would change behavior for that path. Record it in `TODO.md` under "AI-000" and keep that component stamp in place.
 
 - [ ] **Step 2: Replace the `App.tsx` handlers**
 
@@ -1425,10 +1426,19 @@ Keep `alternateArrangement`, `gradientArrangement`, `randomizeArrangement`, and 
 Run: `pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm test:e2e && pnpm test:e2e:prod`
 Expected: PASS. A failing existing unit or e2e test means a behavior change: fix the wiring, never the test.
 
-- [ ] **Step 6: Commit, push, and open PR 2**
+- [ ] **Step 6: Log latent bugs found during the refactor**
+
+These keep today's behavior in this PR and are fixed separately. Add to `TODO.md`, under a new `## AI-000 follow-ups` heading:
+
+```markdown
+- [ ] `woodDeleteBlocker` (and the old `deleteWood`) checks only board strips, not furniture parts, so a wood used only by furniture can be deleted; the next load then remaps those parts to the fallback species.
+- [ ] Navigation history: if a popstate restores a state equal to the current one, no mirrored field changes, so the `skip` flag stays set and the next real navigation skips its `pushState`.
+```
+
+- [ ] **Step 7: Commit, push, and open PR 2**
 
 ```bash
-git add src/App.tsx src/components/BoardDesigner.tsx src/components/ShopPlanner.tsx src/components/useShopDrag.ts
+git add src/App.tsx src/components/BoardDesigner.tsx src/components/ShopPlanner.tsx src/components/useShopDrag.ts TODO.md
 git commit -m "refactor(app): route workspace and board edits through domain actions"
 git push -u origin refactor/ai-000-workspace-actions
 gh pr create --base develop --title "refactor: AI-000 PR 2, pure workspace actions and board edits" --body "Implements PR 2 of docs/plans/2026-10-18-ai-000-foundation-refactor.md: every workspace change in App.tsx and the board strip and end-grain edits in BoardDesigner.tsx become pure, tested domain functions (src/domain/workspace/, src/domain/boardEditing.ts). The UI calls them through commitData. updatedAt is stamped in the update actions instead of the components. No behavior change."

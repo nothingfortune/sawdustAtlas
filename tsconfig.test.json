@@ -6,5 +6,5 @@
     "jsx": "react-jsx",
     "types": ["vite/client", "vitest/globals", "node"]
   },
-  "include": ["tests", "src/domain", "src/normalize", "src/types.ts", "src/storage.ts", "src/data.ts", "src/id.ts", "src/history.ts", "src/components/usePinchPan.ts", "src/components/sliceDrag.ts", "src/components/instructions/planFormat.ts", "src/components/furniture/drawingLayout.ts", "src/components/furniture/cutListFormat.ts", "src/components/furniture/webgl.ts", "src/components/furniture/sceneMapping.ts", "src/projectPackage.ts"]
+  "include": ["tests", "src/domain", "src/normalize", "src/navigation.ts", "src/types.ts", "src/storage.ts", "src/data.ts", "src/id.ts", "src/history.ts", "src/components/usePinchPan.ts", "src/components/sliceDrag.ts", "src/components/instructions/planFormat.ts", "src/components/furniture/drawingLayout.ts", "src/components/furniture/cutListFormat.ts", "src/components/furniture/webgl.ts", "src/components/furniture/sceneMapping.ts", "src/projectPackage.ts"]
 }

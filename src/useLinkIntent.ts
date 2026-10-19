@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { LINK_DAMAGED_ERROR } from './packages/link/errors'
 import { LINK_INTENTS } from './packages/link/intents'
 import { routeFragment } from './packages/link/router'
 import type { FragmentRoute } from './packages/link/router'
@@ -24,6 +25,9 @@ export function useLinkIntent(onRoute: (route: LinkRoute) => void): void {
       void routeFragment(hash, LINK_INTENTS, SHARE_CONFIG).then(route => {
         if (route.kind !== 'none') clearFragment()
         if (!cancelled && (route.kind === 'open' || route.kind === 'error')) handler.current(route)
+      }).catch(() => {
+        clearFragment()
+        if (!cancelled) handler.current({ kind: 'error', error: LINK_DAMAGED_ERROR })
       })
     }
     handle()

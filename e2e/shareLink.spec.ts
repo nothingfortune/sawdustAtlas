@@ -61,6 +61,24 @@ test.describe('share link', () => {
     await expect(page.locator('.board-intro h2')).toHaveText('Walnut & maple daily board (imported)')
   })
 
+  test('a first-time visitor sees only the share preview, then the welcome', async ({ page, browser }) => {
+    const link = await boardLink(page)
+    const visitor = await browser.newContext()
+    const fresh = await visitor.newPage()
+    await fresh.goto(link)
+    const dialog = fresh.getByRole('dialog', { name: 'Import shared project' })
+    await expect(dialog).toBeVisible()
+    await expect(fresh.getByRole('dialog')).toHaveCount(1)
+    await fresh.keyboard.press('Escape')
+    await expect(fresh.getByRole('dialog', { name: 'Welcome to SawdustAtlas' })).toBeVisible()
+    await expect(fresh.getByRole('dialog')).toHaveCount(1)
+    await fresh.goto(link)
+    await fresh.getByRole('dialog', { name: 'Import shared project' }).getByRole('button', { name: 'Import' }).click()
+    await expect(fresh.locator('.board-intro h2')).toContainText('Walnut & maple daily board')
+    await expect(fresh.getByRole('dialog', { name: 'Welcome to SawdustAtlas' })).toBeVisible()
+    await visitor.close()
+  })
+
   test('cancel imports nothing', async ({ page }) => {
     const link = await boardLink(page)
     await page.goto('about:blank')

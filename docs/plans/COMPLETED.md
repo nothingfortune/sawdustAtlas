@@ -51,6 +51,7 @@ Split out of the product plan: 2026-06-28.
 | ID | Feature | Delivered |
 | --- | --- | --- |
 | AI-000 | Foundation refactor | Workspace changes are pure domain actions in `src/domain/workspace/` and `boardEditing.ts`, screen state is one navigation reducer (`src/navigation.ts`), and normalizers are split per domain in `src/normalize/`; no behavior change, all tests green. (#170, #171) |
+| AI-001 | Project packages and sharing | Board, composite, and furniture each export and import as one package through a `PACKAGE_KINDS` registry, refusing files from a newer app. A Share dialog offers the file, a `#share=v1.` link, and a QR code; opening a link previews the project and imports it through `commitData` so Undo removes it. (#175, #176, #177) |
 
 ## Recently shipped (post-2026-06-25, not folded into feature IDs)
 

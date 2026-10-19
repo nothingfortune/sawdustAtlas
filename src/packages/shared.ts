@@ -5,7 +5,7 @@ import { normalizeBoard } from '../normalize/boards'
 import { records } from '../normalize/coerce'
 import { normalizeComposite } from '../normalize/composites'
 import { normalizeAllowances } from '../normalize/settings'
-import { normalizeWoodLibrary, placeholderWoods } from '../normalize/woods'
+import { normalizeWoodLibrary, placeholderWoodsFor } from '../normalize/woods'
 import type { BoardProject, BuildAllowances, CompositeBoard, WoodSpecies } from '../types'
 import type { ReadContext } from './kind'
 
@@ -15,6 +15,8 @@ export const IMPORTED_SUFFIX = ' (imported)'
 export function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
+
+export const plural = (count: number, word: string): string => `${count} ${word}${count === 1 ? '' : 's'}`
 
 export function fail(error: string): { ok: false; error: string } {
   return { ok: false, error }
@@ -48,7 +50,10 @@ export function normalizeIncoming(raw: IncomingRaw, ctx: ReadContext): IncomingP
   const furniture = records(migrated['furniture'])
     .map(project => normalizeFurnitureProject(project, { createId: ctx.createId, now: ctx.now, fallbackSpeciesId }))
     .filter((project): project is FurnitureProject => project !== null)
-  return { boards: [...boards, ...migratedBoards], composites, furniture, woods: [...library, ...placeholderWoods(rawBoards, library, ctx)] }
+  const stripSpecies = rawBoards.flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? '')))
+  // A part naming a species the package does not carry gets a placeholder, so the id is never lost.
+  const partSpecies = records(migrated['furniture']).flatMap(project => records(project['parts']).map(part => typeof part['speciesId'] === 'string' ? part['speciesId'] : ''))
+  return { boards: [...boards, ...migratedBoards], composites, furniture, woods: [...library, ...placeholderWoodsFor([...stripSpecies, ...partSpecies], library, ctx)] }
 }
 
 export function woodsUsedBy(woods: readonly WoodSpecies[], used: ReadonlySet<string>): WoodSpecies[] {

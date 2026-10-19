@@ -147,5 +147,6 @@ Watch:
 
 ## AI-000 follow-ups
 
+- [ ] A full backup whose furniture names a species missing from its wood library gets no placeholder wood (packages do, via `placeholderWoodsFor`); `normalizeData` should add part species to its placeholder pass.
 - [ ] `woodDeleteBlocker` (and the old `deleteWood`) checks only board strips, not furniture parts, so a wood used only by furniture can be deleted; the next load then remaps those parts to the fallback species.
 - [ ] Navigation history: if a popstate restores a state equal to the current one, no mirrored field changes, so the `skip` flag stays set and the next real navigation skips its `pushState`.

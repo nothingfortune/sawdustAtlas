@@ -1,6 +1,6 @@
 import type { BoardProject } from '../../types'
 import type { PackageKind } from '../kind'
-import { IMPORTED_SUFFIX, fail, isPlainRecord, normalizeIncoming } from '../shared'
+import { IMPORTED_SUFFIX, fail, isPlainRecord, normalizeIncoming, plural } from '../shared'
 
 export interface BoardPayload {
   type: 'board'
@@ -10,8 +10,6 @@ export interface BoardPayload {
 export function boardWoodIds(boards: readonly BoardProject[]): Set<string> {
   return new Set(boards.flatMap(board => board.strips.map(strip => strip.speciesId)))
 }
-
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 export const boardKind: PackageKind<BoardPayload> = {
   type: 'board',

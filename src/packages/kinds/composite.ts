@@ -1,6 +1,6 @@
 import type { BoardProject, CompositeBoard } from '../../types'
 import type { PackageKind } from '../kind'
-import { IMPORTED_SUFFIX, fail, isPlainRecord, normalizeIncoming } from '../shared'
+import { IMPORTED_SUFFIX, fail, isPlainRecord, normalizeIncoming, plural } from '../shared'
 import { boardWoodIds } from './board'
 
 export interface CompositePayload {
@@ -8,8 +8,6 @@ export interface CompositePayload {
   composite: CompositeBoard
   panelBoards: BoardProject[]
 }
-
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 export const compositeKind: PackageKind<CompositePayload> = {
   type: 'composite',

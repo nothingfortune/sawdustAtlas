@@ -8,7 +8,7 @@ import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
-import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './packages'
+import { buildProjectPackage, describeProject, mergeProjectPackage, readProjectPackage } from './packages'
 import type { ProjectMergeSummary, ProjectType } from './packages'
 import { downloadProjectPackage } from './projectPackageDownload'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
@@ -236,8 +236,7 @@ export default function App() {
     if (!read.ok) { setProjectImport(read); return }
     const merged = mergeProjectPackage(dataRef.current, read.pkg, createId)
     commitData(() => merged.data)
-    const project = read.pkg.project
-    setProjectImport({ ok: true, summary: merged.summary, name: project.type === 'board' ? project.board.name : project.composite.name })
+    setProjectImport({ ok: true, summary: merged.summary, name: describeProject(read.pkg).name })
   }
   const restorePreImport = () => {
     if (!preImport) return

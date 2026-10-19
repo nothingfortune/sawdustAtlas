@@ -48,6 +48,8 @@ These fill gaps the spec leaves open. Each is cheap to reverse.
 | P9 | Navigation gains `{ type: 'openProject'; kind: 'board' \| 'composite' \| 'furniture'; id }` (parked in AI-000). | A share import opens the project the same way a click does. |
 | P10 | `ShareDialog` is lazy-loaded so `qrcode-generator` lands in its own chunk. | The main bundle does not grow. |
 | P11 | A package's furniture species missing from its `woods` get placeholder woods (same as board strips). A backup with the same gap is logged in `TODO.md`, not fixed. | Prevents silent species loss in packages; backups are out of scope. |
+| P12 | The link and QR targets also refuse when the value's UTF-8 size (`payloadBytes`) exceeds `maxDecodedBytes`, not only when the link is too long. | Repetitive JSON can compress under `maxLinkLength` yet inflate past every recipient's cap, so the link would always fail to open. (Codex review on #174.) |
+| P13 | `useLinkIntent` routes the fragment on mount and again on every `hashchange`. | Opening or pasting a share URL into an already-loaded tab is a same-document navigation with no remount. (Codex review on #174.) |
 
 ## Review Focus
 
@@ -56,6 +58,8 @@ These fill gaps the spec leaves open. Each is cheap to reverse.
 3. **Large payloads.** Base64url of a payload over ~100 KB must not throw `RangeError` from argument spreading. Pinned in Task 5.
 4. **Decompression bomb.** A few KB that inflates past 1 MB is cancelled mid-stream and refused. Pinned in Task 5.
 5. **Back/Forward after a share link.** Clearing the fragment must keep `history.state`, or browser Back stops restoring screens. Pinned in Task 9 (e2e).
+6. **A link opened in a tab that already has the app.** No remount happens, so only a `hashchange` listener sees it. Pinned in Task 9 (e2e).
+7. **A short link that inflates too far.** It must not be offered, because every recipient would refuse it. Pinned in Task 6.
 
 Also pinned: `packageVersion: "1"` (a string) and `packageVersion` missing both read as 1 (Task 2).
 
@@ -1118,7 +1122,7 @@ Branch: `feat/ai-001-share-out` from `develop` after PR A merges.
   - `LinkCodec { version; encode(value): Promise<string>; decode(payload, limits): Promise<DecodeResult> }`, `DecodeResult` (`link/codec.ts`)
   - `bytesToBase64Url(bytes)`, `base64UrlToBytes(text): Uint8Array<ArrayBuffer> | null`
   - `v1Codec`, `LINK_CODECS`, `CURRENT_CODEC`, `findCodec(version)`
-  - `LinkLimits`, `parseFragment(hash)`, `encodeLink(intent, value, baseUrl, codec?)`, `decodeValue(encoded, limits)`, `decodeFragment(hash, limits)` (`link/link.ts`)
+  - `LinkLimits`, `parseFragment(hash)`, `encodeLink(intent, value, baseUrl, codec?)`, `decodeValue(encoded, limits)`, `decodeFragment(hash, limits)`, `payloadBytes(value)` (`link/link.ts`)
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1129,7 +1133,7 @@ import { describe, expect, it } from 'vitest'
 import { base64UrlToBytes, bytesToBase64Url } from '../src/packages/link/base64url'
 import { v1Codec } from '../src/packages/link/codecs/v1'
 import { LINK_DAMAGED_ERROR, LINK_NEWER_CODEC_ERROR } from '../src/packages/link/errors'
-import { decodeFragment, encodeLink, parseFragment } from '../src/packages/link/link'
+import { decodeFragment, encodeLink, parseFragment, payloadBytes } from '../src/packages/link/link'
 import { PACKAGE_KINDS, buildProjectPackage, readProjectPackage } from '../src/packages'
 import { SHARE_CONFIG, TOO_LARGE_ERROR, packageFileTooLarge } from '../src/packages/share/config'
 import { fixedContext, FIXED_NOW } from './fixtures/context'
@@ -1189,6 +1193,10 @@ describe('share links', () => {
   it('encodes a large, poorly compressible value without throwing', async () => {
     const text = Array.from(noise(400_000), byte => String.fromCharCode(97 + (byte % 26))).join('')
     await expect(v1Codec.encode(text)).resolves.toMatch(/^[A-Za-z0-9_-]+$/)
+  })
+
+  it('measures the bytes a recipient will inflate', () => {
+    expect(payloadBytes({ a: 'é' })).toBe(new TextEncoder().encode('{"a":"é"}').length)
   })
 
   it('parses the intent and payload out of a fragment', () => {
@@ -1436,6 +1444,11 @@ export async function encodeLink(intent: string, value: unknown, baseUrl: string
   return `${baseUrl}#${intent}=${codec.version}.${await codec.encode(value)}`
 }
 
+/** UTF-8 size of the compact JSON a link carries, which is what the recipient inflates and caps. */
+export function payloadBytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).byteLength
+}
+
 export async function decodeValue(encoded: string, limits: LinkLimits): Promise<DecodeResult> {
   if (encoded.length > limits.maxIncomingFragmentLength) return { ok: false, error: TOO_LARGE_ERROR }
   const dot = encoded.indexOf('.')
@@ -1479,7 +1492,7 @@ git commit -m "feat(packages): share link codec v1 with incoming size limits"
 
 **Interfaces:**
 - Consumes: `ProjectPackage` (PR A), `ShareConfig`, `SHARE_CONFIG` (Task 5)
-- Produces: `ShareEnvironment`, `ShareContext`, `ShareIO`, `ShareDetail`, `ShareAvailability`, `ShareTarget`, `NO_LINK_REASON` (`share/target.ts`); `qrModules(text): boolean[][] | null`; `fileTarget`, `linkTarget`, `qrTarget`, `SHARE_TARGETS`
+- Produces: `ShareEnvironment`, `ShareContext` (including `payloadBytes`), `ShareIO`, `ShareDetail`, `ShareAvailability`, `ShareTarget`, `NO_LINK_REASON`, `linkTooBig(ctx, maxLength)` (`share/target.ts`); `qrModules(text): boolean[][] | null`; `fileTarget`, `linkTarget`, `qrTarget`, `SHARE_TARGETS`
 
 - [ ] **Step 1: Measure the bundle baseline, then add the QR dependency**
 
@@ -1519,9 +1532,9 @@ function pkg(): ProjectPackage {
   return buildProjectPackage(data, { type: 'board', id }, FIXED_NOW)!
 }
 
-function context(link: string | null, env: ShareEnvironment = NO_SHARING): ShareContext {
+function context(link: string | null, env: ShareEnvironment = NO_SHARING, payloadBytes = 1000): ShareContext {
   const p = pkg()
-  return { pkg: p, name: describeProject(p).name, fileName: projectPackageFileName(p), json: JSON.stringify(p, null, 2), link, config: TEST_CONFIG, env }
+  return { pkg: p, name: describeProject(p).name, fileName: projectPackageFileName(p), json: JSON.stringify(p, null, 2), link, payloadBytes, config: TEST_CONFIG, env }
 }
 
 function fakeIO() {
@@ -1575,6 +1588,12 @@ describe('link target', () => {
     expect(linkTarget.available(context(link(100))).ok).toBe(true)
     expect(linkTarget.available(context(link(101)))).toEqual({ ok: false, reason: 'This project is too big for a link. Share the file instead.' })
     expect(linkTarget.available(context(null)).ok).toBe(false)
+  })
+
+  it('is unavailable when the value would inflate past the recipient cap, however short the link', () => {
+    expect(linkTarget.available(context(link(10), NO_SHARING, TEST_CONFIG.maxDecodedBytes)).ok).toBe(true)
+    expect(linkTarget.available(context(link(10), NO_SHARING, TEST_CONFIG.maxDecodedBytes + 1))).toEqual({ ok: false, reason: 'This project is too big for a link. Share the file instead.' })
+    expect(qrTarget.available(context(link(10), NO_SHARING, TEST_CONFIG.maxDecodedBytes + 1)).ok).toBe(false)
   })
 
   it('offers share, then copy, then only the selectable text', async () => {
@@ -1640,6 +1659,8 @@ export interface ShareContext {
   json: string
   /** The share link, or null when it could not be made. */
   link: string | null
+  /** UTF-8 size of the value the link carries (`payloadBytes`). */
+  payloadBytes: number
   config: ShareConfig
   env: ShareEnvironment
 }
@@ -1670,6 +1691,11 @@ export interface ShareTarget {
 }
 
 export const NO_LINK_REASON = 'A link could not be made for this project. Share the file instead.'
+
+// A short link can still inflate past the recipient's cap, so both sizes are checked.
+export function linkTooBig(ctx: ShareContext, maxLength: number): boolean {
+  return ctx.link !== null && (ctx.link.length > maxLength || ctx.payloadBytes > ctx.config.maxDecodedBytes)
+}
 ```
 
 - [ ] **Step 4: Write the QR grid helper**
@@ -1733,7 +1759,7 @@ export const fileTarget: ShareTarget = {
 Create `src/packages/share/targets/link.ts`:
 
 ```ts
-import { NO_LINK_REASON } from '../target'
+import { NO_LINK_REASON, linkTooBig } from '../target'
 import type { ShareTarget } from '../target'
 
 export const linkTarget: ShareTarget = {
@@ -1741,7 +1767,7 @@ export const linkTarget: ShareTarget = {
   label: 'Link',
   available(ctx) {
     if (ctx.link === null) return { ok: false, reason: NO_LINK_REASON }
-    if (ctx.link.length > ctx.config.maxLinkLength) return { ok: false, reason: 'This project is too big for a link. Share the file instead.' }
+    if (linkTooBig(ctx, ctx.config.maxLinkLength)) return { ok: false, reason: 'This project is too big for a link. Share the file instead.' }
     return { ok: true }
   },
   action(ctx) {
@@ -1767,7 +1793,7 @@ Create `src/packages/share/targets/qr.ts`:
 
 ```ts
 import { qrModules } from '../qr'
-import { NO_LINK_REASON } from '../target'
+import { NO_LINK_REASON, linkTooBig } from '../target'
 import type { ShareTarget } from '../target'
 
 export const qrTarget: ShareTarget = {
@@ -1775,7 +1801,7 @@ export const qrTarget: ShareTarget = {
   label: 'QR code',
   available(ctx) {
     if (ctx.link === null) return { ok: false, reason: NO_LINK_REASON }
-    if (ctx.link.length > ctx.config.maxQrLinkLength || !qrModules(ctx.link)) return { ok: false, reason: 'This project is too big for a QR code. Use the link or the file instead.' }
+    if (linkTooBig(ctx, ctx.config.maxQrLinkLength) || !qrModules(ctx.link)) return { ok: false, reason: 'This project is too big for a QR code. Use the link or the file instead.' }
     return { ok: true }
   },
   action() {
@@ -1828,7 +1854,7 @@ git commit -m "feat(packages): share targets for file, link, and QR code"
 - Modify: `src/components/ConnectionNotice.tsx`, `src/App.tsx`, `src/components/BoardDesigner.tsx`, `src/components/composite/CompositeScreen.tsx`, `src/components/furniture/FurnitureDesigner.tsx`, `src/styles.css`, `playwright.config.ts:16`
 
 **Interfaces:**
-- Consumes: `SHARE_TARGETS`, `ShareContext`, `ShareIO`, `ShareEnvironment`, `ShareDetail`, `ShareTarget` (Task 6); `encodeLink` (Task 5); `SHARE_CONFIG`, `TOO_LARGE_ERROR`, `packageFileTooLarge` (Task 5); `describeProject`, `projectPackageFileName`, `buildProjectPackage`, `ProjectPackage`, `ProjectType` (PR A)
+- Consumes: `SHARE_TARGETS`, `ShareContext`, `ShareIO`, `ShareEnvironment`, `ShareDetail`, `ShareTarget` (Task 6); `encodeLink`, `payloadBytes` (Task 5); `SHARE_CONFIG`, `TOO_LARGE_ERROR`, `packageFileTooLarge` (Task 5); `describeProject`, `projectPackageFileName`, `buildProjectPackage`, `ProjectPackage`, `ProjectType` (PR A)
 - Produces: `browserShareIO: ShareIO`, `detectShareEnvironment(fileName, json)`, `appBaseUrl()`, `detectBenchCapabilities()`, `ShareDialog({ pkg, onClose })`; a new `onShareProject: () => void` prop on `BoardDesigner`, `CompositeScreen`, and `FurnitureDesigner`
 
 - [ ] **Step 1: Extract bench detection**
@@ -1909,7 +1935,7 @@ Create `src/components/share/ShareDialog.tsx`:
 import { useEffect, useState } from 'react'
 import { describeProject, projectPackageFileName } from '../../packages'
 import type { ProjectPackage } from '../../packages'
-import { encodeLink } from '../../packages/link/link'
+import { encodeLink, payloadBytes } from '../../packages/link/link'
 import { SHARE_CONFIG } from '../../packages/share/config'
 import type { ShareContext, ShareDetail, ShareTarget } from '../../packages/share/target'
 import { SHARE_TARGETS } from '../../packages/share/targets'
@@ -1928,7 +1954,7 @@ export function ShareDialog({ pkg, onClose }: { pkg: ProjectPackage; onClose: ()
     let cancelled = false
     const fileName = projectPackageFileName(pkg)
     const json = JSON.stringify(pkg, null, 2)
-    const base = { pkg, name: describeProject(pkg).name, fileName, json, config: SHARE_CONFIG, env: detectShareEnvironment(fileName, json) }
+    const base = { pkg, name: describeProject(pkg).name, fileName, json, payloadBytes: payloadBytes(pkg), config: SHARE_CONFIG, env: detectShareEnvironment(fileName, json) }
     void encodeLink('share', pkg, appBaseUrl())
       .catch(() => null)
       .then(link => { if (!cancelled) setCtx({ ...base, link }) })
@@ -2434,6 +2460,18 @@ test.describe('share link', () => {
     await expect(page.getByRole('button', { name: /Walnut & maple daily board \(imported\)/ })).toHaveCount(0)
   })
 
+  test('opens a link in a tab that already has the app loaded', async ({ page }) => {
+    const link = await boardLink(page)
+    // No about:blank here: this is a same-document fragment navigation, so the app does not remount.
+    await page.getByRole('button', { name: 'Back to boards' }).click()
+    await page.evaluate(href => { window.location.href = href }, link)
+    const dialog = page.getByRole('dialog', { name: 'Import shared project' })
+    await expect(dialog).toContainText('Walnut & maple daily board')
+    await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('')
+    await dialog.getByRole('button', { name: 'Import' }).click()
+    await expect(page.locator('.board-intro h2')).toHaveText('Walnut & maple daily board (imported)')
+  })
+
   test('cancel imports nothing', async ({ page }) => {
     const link = await boardLink(page)
     await page.goto('about:blank')
@@ -2484,22 +2522,32 @@ export function clearFragment(): void {
   window.history.replaceState(window.history.state, '', pathname + search)
 }
 
-/** Reads the link fragment once on load, clears it, and hands an open or error route to the app. */
+/** Routes the link fragment on load and on every later fragment change, clears it, and hands an open or error route to the app. */
 export function useLinkIntent(onRoute: (route: LinkRoute) => void): void {
   const handler = useRef(onRoute)
   useEffect(() => { handler.current = onRoute })
   useEffect(() => {
-    const hash = window.location.hash
-    if (!hash) return
     let cancelled = false
-    void routeFragment(hash, LINK_INTENTS, SHARE_CONFIG).then(route => {
-      if (route.kind !== 'none') clearFragment()
-      if (!cancelled && (route.kind === 'open' || route.kind === 'error')) handler.current(route)
-    })
-    return () => { cancelled = true }
+    const handle = () => {
+      const hash = window.location.hash
+      if (!hash) return
+      void routeFragment(hash, LINK_INTENTS, SHARE_CONFIG).then(route => {
+        if (route.kind !== 'none') clearFragment()
+        if (!cancelled && (route.kind === 'open' || route.kind === 'error')) handler.current(route)
+      })
+    }
+    handle()
+    // A share URL opened in a tab that already runs the app is a same-document navigation: no remount.
+    window.addEventListener('hashchange', handle)
+    return () => {
+      cancelled = true
+      window.removeEventListener('hashchange', handle)
+    }
   }, [])
 }
 ```
+
+A same-document fragment navigation also fires `popstate` with a null state before `hashchange`, which `useNavigationHistory` restores as the home screen. The preview then opens over Home, which is acceptable. Do not special-case it; the "already loaded" e2e above covers the path.
 
 - [ ] **Step 3: Write the import dialog**
 

@@ -8,7 +8,7 @@ import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
-import { buildProjectPackage, describeProject, importedCountsText, mergeProjectPackage, projectPackageFileName, readProjectPackage } from './packages'
+import { buildProjectPackage, describeProject, importedCountsText, mergeProjectPackage, previewProjectPackage, projectPackageFileName, readProjectPackage } from './packages'
 import type { ProjectMergeSummary, ProjectPackage, ProjectType } from './packages'
 import { browserShareIO } from './components/share/browserShareIO'
 import { TOO_LARGE_ERROR, packageFileTooLarge } from './packages/share/config'
@@ -34,6 +34,9 @@ import { addWood as addWoodAction, deleteWood as deleteWoodAction, updateWood as
 import { updateAllowances as updateAllowancesAction, updatePricing as updatePricingAction } from './domain/workspace/settings'
 import type { Created, WorkspaceContext } from './domain/workspace/context'
 import { createId } from './id'
+import { useLinkIntent } from './useLinkIntent'
+import { ShareImportDialog } from './components/share/ShareImportDialog'
+import type { ShareImportState } from './components/share/ShareImportDialog'
 import { initialNav, navigate } from './navigation'
 import { useNavigationHistory } from './useNavigationHistory'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
@@ -84,6 +87,8 @@ export default function App() {
   // Result of the most recent single-project import (merge, not replace).
   // The package open in the share dialog, if any.
   const [sharing, setSharing] = useState<ProjectPackage | null>(null)
+  // An incoming share link's preview or error, shown until the user imports or closes it.
+  const [shareImport, setShareImport] = useState<ShareImportState | null>(null)
   const [projectImport, setProjectImport] = useState<{ ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string } | null>(null)
   // First-run welcome (UX-004): shown until dismissed; reopenable from Home.
   const [showWelcome, setShowWelcome] = useState(() => !hasOnboarded())
@@ -139,6 +144,19 @@ export default function App() {
     if (!result) return undefined
     commitData(() => result.data)
     return result.id
+  }
+
+  useLinkIntent(route => {
+    if (route.kind === 'error') { setShareImport({ kind: 'error', error: route.error }); return }
+    const { read } = route.outcome
+    setShareImport(read.ok ? { kind: 'preview', pkg: read.pkg, preview: previewProjectPackage(dataRef.current, read.pkg) } : { kind: 'error', error: read.error })
+  })
+  // Merges through commitData so Undo removes it, then opens it the way a click would.
+  const importShared = (pkg: ProjectPackage) => {
+    const merged = mergeProjectPackage(dataRef.current, pkg, createId)
+    commitData(() => merged.data)
+    dispatch({ type: 'openProject', kind: pkg.project.type, id: merged.summary.projectId })
+    setShareImport(null)
   }
 
   const updateShop = (project: ShopProject) => commitData(current => updateShopAction(current, project, ctx()))
@@ -369,6 +387,7 @@ export default function App() {
       </main>
       <input ref={importRef} type="file" accept="application/json" hidden aria-label="Backup file" onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
       {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+      {shareImport && <ShareImportDialog state={shareImport} onImport={() => { if (shareImport.kind === 'preview') importShared(shareImport.pkg) }} onClose={() => setShareImport(null)} />}
       {sharing && <Suspense fallback={null}><ShareDialog pkg={sharing} onClose={() => setSharing(null)} /></Suspense>}
       {projectImport && <ProjectImportDialog result={projectImport} onClose={() => setProjectImport(null)} />}
       {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}

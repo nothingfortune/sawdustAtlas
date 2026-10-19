@@ -80,8 +80,9 @@ Creating actions also need to say what they created, so the UI can open it. They
   stays where it is (`furniture/project.ts`) and is called from the action.
 - **Board editing.** New `src/domain/boardEditing.ts` (mirroring `furniture/editing.ts`):
   `addStrip`, `updateStrip`, `deleteStrip`, `reorderStrips`, `duplicatePattern`, `mirrorPattern`,
-  `reverseStrips`, and `updateEndGrain` (merges the patch, then clamps slice transforms to the new
-  slice count with the existing `clampTransforms`). Each is
+  `reverseStrips`, `updateEndGrain` (merges the patch, then clamps slice transforms to the new
+  slice count with the existing `clampTransforms`), and the slice-row edits `setRowPattern` and
+  `cycleSliceRow`. Each is
   `(project: BoardProject, args, ctx) => BoardProject`. The existing pattern helpers in
   `boardPatterns.ts` stay where they are.
 - **The UI stays thin.** `App.tsx` handlers become one-liners:
@@ -110,10 +111,12 @@ interface NavState {
 }
 ```
 
-Named actions replace direct setter calls: `goTo(view)`, `openShop`, `openBoard`, `editPanelBoard`,
-`openComposite`, `openFurniture(id, focusId?)`, `back`, `restoreFromHistory(state)` (browser
-Back and Forward), `restoreSelection(activeShop, activeBoard)` (undo and redo),
-`projectRemoved(type, id, remaining)`, and `workspaceReplaced(data)` (after a backup import).
+Named actions replace direct setter calls: `goTo(view)`, `browseBoards`, `browseFurniture`,
+`openShop`, `selectShop`, `selectBoard`, `openBoard`, `editPanelBoard`, `openComposite`,
+`boardBack`, `compositeBack`, `openFurniture(id, focusId?)`, `furnitureBack`,
+`projectRemoved(kind, id, remainingIds)`, `restoreSelection(activeShop, activeBoard)` (undo, redo,
+and "Undo import"), `backupImported(activeShop, activeBoard)` (after a backup import), and
+`restoreFromHistory(state)` (browser Back and Forward).
 
 - **One fallback rule.** `projectRemoved` holds the "the open project was deleted" behavior that
   each delete handler repeats today: a deleted shop or board selects the first remaining one, and a
@@ -122,8 +125,7 @@ Back and Forward), `restoreSelection(activeShop, activeBoard)` (undo and redo),
   `pushState`/`popstate` effects. It serializes exactly the fields serialized today, so Back and
   Forward behave as they do now.
 - **Undo selection.** The undo snapshot keeps its current shape: data plus `activeShop` and
-  `activeBoard`, read from `NavState`. Undo and redo restore them through one `restoreSelection`
-  action. Widening the snapshot to all of `NavState` would change undo behavior, so it is out of
+  `activeBoard`, read from `NavState`. Undo and redo restore them through `restoreSelection`. Widening the snapshot to all of `NavState` would change undo behavior, so it is out of
   scope.
 - `App.tsx` holds `useReducer(navigate, initialNav(data))` in place of the ten states.
 
@@ -179,10 +181,10 @@ Three PRs to `develop`, in this order, each green on its own and revertible on i
 
 ## Testing
 
-- `tests/normalize/*.test.ts`: each domain normalizer on valid, legacy, and malformed input, and
+- `tests/normalize*.test.ts` (flat, like the existing `tests/furniture*.test.ts`): each domain normalizer on valid, legacy, and malformed input, and
   each coercer's sign and NaN behavior. Existing `storage.test.ts` keeps passing as the end-to-end
   check of `normalizeData`.
-- `tests/workspace/*.test.ts`: every action, including that `updateAllowances` writes through to
+- `tests/workspace*.test.ts`: every action, including that `updateAllowances` writes through to
   every board, `duplicateFurniture` keeps internal ids, `createPanelBoard` inherits construction,
   `deleteWood` blockers, and `updatedAt` stamping from the context.
 - `tests/boardEditing.test.ts`: strip edits and `updateEndGrain` clamping when the slice count

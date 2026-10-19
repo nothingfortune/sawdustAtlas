@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { base64UrlToBytes, bytesToBase64Url } from '../src/packages/link/base64url'
 import { v1Codec } from '../src/packages/link/codecs/v1'
 import { LINK_DAMAGED_ERROR, LINK_NEWER_CODEC_ERROR } from '../src/packages/link/errors'
@@ -83,6 +83,23 @@ describe('decodeFragment errors', () => {
     for (const hash of ['', '#share', '#share=nodot', '#share=x1.abc', '#share=v1.@@@@', '#share=v1.AAAA', valid.slice(0, valid.length - 6), notJson]) {
       expect(await decodeFragment(hash, SHARE_CONFIG)).toEqual({ ok: false, error: LINK_DAMAGED_ERROR })
     }
+  })
+
+  describe('without deflate-raw support', () => {
+    const original = globalThis.DecompressionStream
+    afterEach(() => {
+      globalThis.DecompressionStream = original
+    })
+
+    it('reports a damaged link instead of rejecting', async () => {
+      const valid = fragmentOf(await encodeLink('share', { hello: 'world' }, BASE))
+      globalThis.DecompressionStream = class {
+        constructor() {
+          throw new TypeError('unsupported format')
+        }
+      } as unknown as typeof DecompressionStream
+      expect(await decodeFragment(valid, SHARE_CONFIG)).toEqual({ ok: false, error: LINK_DAMAGED_ERROR })
+    })
   })
 
   it('asks for a newer app on an unknown codec version', async () => {

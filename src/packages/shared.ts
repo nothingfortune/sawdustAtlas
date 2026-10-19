@@ -37,11 +37,17 @@ export interface IncomingRaw {
   furniture?: unknown[]
 }
 
+// An untrusted package can repeat an id, and clash checks only compare against local ids, so the first entry wins.
+function firstById<T extends { id: string }>(items: readonly T[]): T[] {
+  const seen = new Set<string>()
+  return items.filter(item => !seen.has(item.id) && seen.add(item.id))
+}
+
 // Migrations read top-level lists, so a package's pieces are put back into a workspace shape before migrating.
 export function normalizeIncoming(raw: IncomingRaw, ctx: ReadContext): IncomingProjects {
   const migrated = migrate({ schemaVersion: raw.schemaVersion, woods: raw.woods, boards: raw.boards ?? [], composites: raw.composites ?? [], furniture: raw.furniture ?? [] }).data
   const rawBoards = records(migrated['boards'])
-  const library = normalizeWoodLibrary(migrated['woods'], ctx)
+  const library = firstById(normalizeWoodLibrary(migrated['woods'], ctx))
   const fallbackSpeciesId = library[0]?.id ?? 'walnut'
   const allowances = normalizeAllowances(rawBoards[0]?.['allowances'] as (BuildAllowances & { drumSanding?: number }) | undefined)
   const boards = rawBoards.map(board => normalizeBoard(board, { allowances, fallbackSpeciesId }, ctx))
@@ -53,7 +59,12 @@ export function normalizeIncoming(raw: IncomingRaw, ctx: ReadContext): IncomingP
   const stripSpecies = rawBoards.flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? '')))
   // A part naming a species the package does not carry gets a placeholder, so the id is never lost.
   const partSpecies = records(migrated['furniture']).flatMap(project => records(project['parts']).map(part => typeof part['speciesId'] === 'string' ? part['speciesId'] : ''))
-  return { boards: [...boards, ...migratedBoards], composites, furniture, woods: [...library, ...placeholderWoodsFor([...stripSpecies, ...partSpecies], library, ctx)] }
+  return {
+    boards: firstById([...boards, ...migratedBoards]),
+    composites: firstById(composites),
+    furniture: firstById(furniture),
+    woods: firstById([...library, ...placeholderWoodsFor([...stripSpecies, ...partSpecies], library, ctx)]),
+  }
 }
 
 export function woodsUsedBy(woods: readonly WoodSpecies[], used: ReadonlySet<string>): WoodSpecies[] {

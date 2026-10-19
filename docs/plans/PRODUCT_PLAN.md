@@ -150,16 +150,19 @@ Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md). A
 
 ### Furniture Joinery
 
-Today every joint renders as a butt joint, and a joint's only effect on milling is a cut-list length
-allowance (for example, tenon length). Joints should look, measure, and mill like the real thing.
-Joint parameters are what the AI-002 operations will set, so this work should land on the same
-registry-per-joint-kind pattern.
+Joinery already shapes the numbers. Mortise-and-tenon joints, and parts seated in a dado, rabbet,
+or groove, add a length or width allowance to the part's cut size, and that cut size carries into
+rough stock, the cut list, and board feet (`joinery.ts`, `partsList.ts`). Joint operations become
+setup and dry-fit steps (`furnitureInstructions.ts`), and dowels and loose tenons are listed as
+hardware. What is missing is what the woodworker sees and lays out: every joint renders as two
+boxes meeting. Joint parameters are what the AI-002 operations will set, so this work should keep
+one module per joint kind.
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
 | ⚪ | JOIN-001 | Joint geometry in drawings and 3D | Planned | Next | Each joint kind (mortise and tenon, loose tenon, dowel, dado, rabbet, groove, pocket screw, screw, tabletop fastener) draws its real cut geometry (tenon cheeks and shoulders, mortise pocket, dado or rabbet channel, holes) in the projected drawings and the 3D view, instead of two boxes meeting. Butt stays the only joint that looks like a butt joint. |
-| ⚪ | JOIN-002 | Joint specs and build instructions | Planned | Next | Each joint shows a detail card with its dimensions, fit clearance, tool and setup (bit, blade, fence and depth settings), and the order of operations; the furniture instruction generator emits per-joint layout, cut, test-fit, and glue steps, with defaulted values labeled as assumptions. |
-| ⚪ | JOIN-003 | Joinery-aware milling dimensions | Planned | Next | A part's milled (cut) size accounts for every joint on it: added length for tenons and tongues, unchanged modeled finished size, and correct rough-stock sizes in the cut list, BOM, and board feet. Each adjustment is listed on the part's line with the joint it comes from. |
+| ⚪ | JOIN-002 | Joint detail and layout measurements | Planned | Next | A detail card per joint lists every derived dimension (tenon thickness, width, length, and shoulders; mortise depth with its clearance; dado, rabbet, or groove width and depth; hole diameter, depth, spacing, and edge distance), each marked as entered or defaulted. The existing joinery steps gain the layout measurements taken from a named reference face. Builds on the current operations and steps rather than replacing them. |
+| ⚪ | JOIN-003 | Joinery milling gaps | Planned | Later | Audit every joint kind against the existing cut-allowance path and close the gaps found. Known gap: loose tenons and dowels are listed only as bought hardware, so shop-made tenon stock never reaches the cut list, rough stock, or board feet. |
 
 ### Tablet, UX, and Accessibility
 

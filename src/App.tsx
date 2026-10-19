@@ -1,8 +1,8 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Armchair, Boxes, Compass, DollarSign, Grid2X2, Home, Import, Menu, PanelLeftClose, Redo2, Ruler, Save, TriangleAlert, Trees, Undo2, Upload, Wrench } from 'lucide-react'
 import type { FurnitureProject } from './domain/furniture/types'
-import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, View, WoodSpecies } from './types'
+import type { AtlasData, BoardProject, BuildAllowances, CompositeBoard, ShopProject, WoodSpecies } from './types'
 import { loadData, saveData, downloadData, importData, savePreImportSnapshot, loadPreImportSnapshot, clearPreImportSnapshot, hasOnboarded, markOnboarded, loadSketch, saveSketch } from './storage'
 import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
@@ -33,6 +33,8 @@ import { addWood as addWoodAction, deleteWood as deleteWoodAction, updateWood as
 import { updateAllowances as updateAllowancesAction, updatePricing as updatePricingAction } from './domain/workspace/settings'
 import type { Created, WorkspaceContext } from './domain/workspace/context'
 import { createId } from './id'
+import { initialNav, navigate } from './navigation'
+import { useNavigationHistory } from './useNavigationHistory'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History } from './history'
 import type { LengthUnit } from './domain/lengthUnits'
@@ -47,18 +49,9 @@ interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
 
 export default function App() {
   const [data, setData] = useState<AtlasData>(loadData)
-  const [view, setView] = useState<View>('home')
-  const [activeShop, setActiveShop] = useState(data.shops[0]?.id ?? '')
-  const [activeBoard, setActiveBoard] = useState(data.boards[0]?.id ?? '')
-  const [activeComposite, setActiveComposite] = useState('')
-  const [boardsMode, setBoardsMode] = useState<'gallery' | 'board' | 'composite'>('gallery')
-  const [boardBackTo, setBoardBackTo] = useState<'gallery' | 'composite'>('gallery')
-  const [activeFurniture, setActiveFurniture] = useState('')
-  const [furnitureMode, setFurnitureMode] = useState<'gallery' | 'designer'>('gallery')
-  // Part to select when the designer opens from a warning (WarningLocation.focusId).
-  const [furnitureFocus, setFurnitureFocus] = useState<string | undefined>()
-  // Counts opens so the designer remounts (and re-selects focusId) on each one.
-  const [furnitureOpens, setFurnitureOpens] = useState(0)
+  const [nav, dispatch] = useReducer(navigate, data, initialNav)
+  const { view, activeShop, activeBoard, activeComposite, boardsMode, activeFurniture, furnitureMode, furnitureFocus, furnitureOpens } = nav
+  useNavigationHistory(nav, dispatch)
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1180)
   const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saveOk, setSaveOk] = useState(true)
@@ -118,8 +111,7 @@ export default function App() {
     setHistory(result.history)
     dataRef.current = result.restored.data
     setData(result.restored.data)
-    setActiveShop(result.restored.activeShop)
-    setActiveBoard(result.restored.activeBoard)
+    dispatch({ type: 'restoreSelection', activeShop: result.restored.activeShop, activeBoard: result.restored.activeBoard })
   }
 
   useEffect(() => {
@@ -135,30 +127,6 @@ export default function App() {
     // applyHistory is recreated each render from these values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history, activeShop, activeBoard])
-
-  // Mirror in-app navigation into browser history so the Back button moves between
-  // screens (composite → gallery → home) instead of leaving the app.
-  const navRef = useRef({ skip: false, first: true })
-  useEffect(() => {
-    const state = { view, boardsMode, activeBoard, activeComposite, furnitureMode, activeFurniture }
-    if (navRef.current.skip) { navRef.current.skip = false; return }
-    if (navRef.current.first) { navRef.current.first = false; window.history.replaceState(state, ''); return }
-    window.history.pushState(state, '')
-  }, [view, boardsMode, activeBoard, activeComposite, furnitureMode, activeFurniture])
-  useEffect(() => {
-    const onPop = (event: PopStateEvent) => {
-      const state = event.state as { view?: View; boardsMode?: 'gallery' | 'board' | 'composite'; activeBoard?: string; activeComposite?: string; furnitureMode?: 'gallery' | 'designer'; activeFurniture?: string } | null
-      navRef.current.skip = true
-      setView(state?.view ?? 'home')
-      setBoardsMode(state?.boardsMode ?? 'gallery')
-      if (typeof state?.activeBoard === 'string') setActiveBoard(state.activeBoard)
-      if (typeof state?.activeComposite === 'string') setActiveComposite(state.activeComposite)
-      setFurnitureMode(state?.furnitureMode ?? 'gallery')
-      if (typeof state?.activeFurniture === 'string') setActiveFurniture(state.activeFurniture)
-    }
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
 
   // The domain never reads the clock or random ids; this is where they come from.
   const ctx = (): WorkspaceContext => ({ createId, now: new Date().toISOString() })
@@ -188,45 +156,45 @@ export default function App() {
     if (!project || !window.confirm(`Delete workshop "${project.name}"?`)) return
     const remaining = data.shops.filter(p => p.id !== id)
     commitData(current => deleteShopAction(current, id))
-    if (activeShop === id) setActiveShop(remaining[0]?.id ?? '')
+    dispatch({ type: 'projectRemoved', kind: 'shop', id, remainingIds: remaining.map(p => p.id) })
   }
   const deleteBoard = (id: string) => {
     const project = data.boards.find(p => p.id === id)
     if (!project || !window.confirm(`Delete board "${project.name}"?`)) return
     const remaining = data.boards.filter(p => p.id !== id)
     commitData(current => deleteBoardAction(current, id))
-    if (activeBoard === id) setActiveBoard(remaining[0]?.id ?? '')
+    dispatch({ type: 'projectRemoved', kind: 'board', id, remainingIds: remaining.map(p => p.id) })
   }
   const createShop = () => {
     const id = commitCreated(createShopAction(dataRef.current, ctx()))
-    if (id) { setActiveShop(id); setView('shop') }
+    if (id) dispatch({ type: 'openShop', id })
   }
   const createBoard = () => {
     const id = commitCreated(createBoardAction(dataRef.current, ctx()))
-    if (id) { setActiveBoard(id); setView('boards'); setBoardBackTo('gallery'); setBoardsMode('board') }
+    if (id) { dispatch({ type: 'openBoard', id }); dispatch({ type: 'goTo', view: 'boards' }) }
   }
   const createFurniture = (request: NewFurnitureRequest) => {
     const id = commitCreated(createFurnitureAction(dataRef.current, request, ctx()))
     if (id) openFurniture(id)
   }
-  const openFurniture = (id: string, focusId?: string) => { setActiveFurniture(id); setFurnitureFocus(focusId); setFurnitureOpens(count => count + 1); setFurnitureMode('designer') }
+  const openFurniture = (id: string, focusId?: string) => dispatch({ type: 'openFurniture', id, focusId })
   const duplicateFurniture = (id: string) => { commitCreated(duplicateFurnitureAction(dataRef.current, id, ctx())) }
   const updateFurniture = (project: FurnitureProject) => commitData(current => updateFurnitureAction(current, project, ctx()))
   const deleteFurniture = (id: string) => {
     const project = data.furniture.find(p => p.id === id)
     if (!project || !window.confirm(`Delete furniture "${project.name}"?`)) return
     commitData(current => deleteFurnitureAction(current, id))
-    if (activeFurniture === id) { setActiveFurniture(''); setFurnitureMode('gallery') }
+    dispatch({ type: 'projectRemoved', kind: 'furniture', id, remainingIds: [] })
   }
   // Composite handlers (composites live inside the Cutting Boards module).
   const updateComposite = (project: CompositeBoard) => commitData(current => updateCompositeAction(current, project, ctx()))
-  const openBoard = (id: string) => { setActiveBoard(id); setBoardBackTo('gallery'); setBoardsMode('board') }
-  const openComposite = (id: string) => { setActiveComposite(id); setBoardsMode('composite') }
-  const editPanelBoard = (boardId: string) => { setActiveBoard(boardId); setBoardBackTo('composite'); setBoardsMode('board') }
+  const openBoard = (id: string) => dispatch({ type: 'openBoard', id })
+  const openComposite = (id: string) => dispatch({ type: 'openComposite', id })
+  const editPanelBoard = (id: string) => dispatch({ type: 'editPanelBoard', id })
   const createBoardForPanel = (construction: 'edge' | 'end'): string => commitCreated(createPanelBoard(dataRef.current, construction, ctx())) ?? ''
   const makeComposite = (board: BoardProject) => {
     const id = commitCreated(makeCompositeAction(dataRef.current, board.id, ctx()))
-    if (id) { setActiveComposite(id); setBoardsMode('composite') }
+    if (id) openComposite(id)
   }
 
   async function importFile(file?: File) {
@@ -245,11 +213,7 @@ export default function App() {
       savePreImportSnapshot(previous)
       setPreImport(previous)
       commitData(() => result.data!)
-      setActiveShop(result.data.shops[0]?.id ?? '')
-      setActiveBoard(result.data.boards[0]?.id ?? '')
-      setActiveFurniture('')
-      setFurnitureMode('gallery')
-      setView('home')
+      dispatch({ type: 'backupImported', activeShop: result.data.shops[0]?.id ?? '', activeBoard: result.data.boards[0]?.id ?? '' })
     }
     // Show the summary (counts + warnings) on success, or the errors on failure.
     setImportResult(result)
@@ -278,8 +242,7 @@ export default function App() {
   const restorePreImport = () => {
     if (!preImport) return
     commitData(() => preImport)
-    setActiveShop(preImport.shops[0]?.id ?? '')
-    setActiveBoard(preImport.boards[0]?.id ?? '')
+    dispatch({ type: 'restoreSelection', activeShop: preImport.shops[0]?.id ?? '', activeBoard: preImport.boards[0]?.id ?? '' })
     clearPreImportSnapshot()
     setPreImport(null)
   }
@@ -292,11 +255,11 @@ export default function App() {
   const warnings = useMemo(() => collectWorkspaceWarnings(data, saveOk), [data, saveOk])
   const goToWarning = (location?: WarningLocation) => {
     if (!location) return
-    if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); setView('boards') }
-    else if (location.view === 'composite' && location.targetId) { openComposite(location.targetId); setView('boards') }
-    else if (location.view === 'furniture' && location.targetId) { openFurniture(location.targetId, location.focusId); setView('furniture') }
-    else if (location.view === 'shop' && location.targetId) { setActiveShop(location.targetId); setView('shop') }
-    else if (location.view === 'woods') setView('woods')
+    if (location.view === 'boards' && location.targetId) { openBoard(location.targetId); dispatch({ type: 'goTo', view: 'boards' }) }
+    else if (location.view === 'composite' && location.targetId) { openComposite(location.targetId); dispatch({ type: 'goTo', view: 'boards' }) }
+    else if (location.view === 'furniture' && location.targetId) { openFurniture(location.targetId, location.focusId); dispatch({ type: 'goTo', view: 'furniture' }) }
+    else if (location.view === 'shop' && location.targetId) dispatch({ type: 'openShop', id: location.targetId })
+    else if (location.view === 'woods') dispatch({ type: 'goTo', view: 'woods' })
   }
 
   // Accessible names start with the visible label (WCAG 2.5.3) so a voice-control user can
@@ -306,19 +269,19 @@ export default function App() {
   return <UnitSystemProvider lengthUnit={lengthUnit} toggleLengthUnit={toggleLengthUnit}>
     <div className="app-shell">
       <aside className={sidebarOpen ? 'sidebar' : 'sidebar collapsed'}>
-        <button type="button" className="brand" onClick={() => setView('home')} aria-label="Sawdust Atlas, go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
+        <button type="button" className="brand" onClick={() => dispatch({ type: 'goTo', view: 'home' })} aria-label="Sawdust Atlas, go to home"><div className="brand-mark"><Ruler size={21} /></div>{sidebarOpen && <div><strong>Sawdust</strong><span>ATLAS</span></div>}</button>
         <button className="collapse-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar">{sidebarOpen ? <PanelLeftClose size={18} /> : <Menu size={18} />}</button>
         <nav>
-          <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => setView('home')} />
+          <NavButton active={view === 'home'} icon={<Home />} label="Home" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'home' })} />
           <p className="nav-label">{sidebarOpen ? 'DESIGN' : '—'}</p>
-          <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => setView('shop')} />
-          <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => { setView('boards'); setBoardsMode('gallery') }} />
-          <NavButton active={view === 'furniture'} icon={<Armchair />} label="Furniture" open={sidebarOpen} onClick={() => { setView('furniture'); setFurnitureMode('gallery') }} />
+          <NavButton active={view === 'shop'} icon={<Grid2X2 />} label="Workshop layout" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'shop' })} />
+          <NavButton active={view === 'boards'} icon={<Boxes />} label="Cutting boards" open={sidebarOpen} onClick={() => dispatch({ type: 'browseBoards' })} />
+          <NavButton active={view === 'furniture'} icon={<Armchair />} label="Furniture" open={sidebarOpen} onClick={() => dispatch({ type: 'browseFurniture' })} />
           <p className="nav-label">{sidebarOpen ? 'LIBRARY' : '—'}</p>
-          <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => setView('woods')} />
-          <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => setView('geometry')} />
-          <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => setView('allowances')} />
-          <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => setView('pricing')} />
+          <NavButton active={view === 'woods'} icon={<Trees />} label="Wood library" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'woods' })} />
+          <NavButton active={view === 'geometry'} icon={<Compass />} label="Geometry" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'geometry' })} />
+          <NavButton active={view === 'allowances'} icon={<Wrench />} label="Milling allowances" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'allowances' })} />
+          <NavButton active={view === 'pricing'} icon={<DollarSign />} label="Pricing" open={sidebarOpen} onClick={() => dispatch({ type: 'goTo', view: 'pricing' })} />
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-button" aria-label="Import backup" onClick={() => importRef.current?.click()}><Import />{sidebarOpen && <span>Import backup</span>}</button>
@@ -328,7 +291,7 @@ export default function App() {
       </aside>
       <main>
         <header className="topbar">
-          <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => setView('home')}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : view === 'furniture' ? 'Furniture' : 'Cutting boards'}</strong></div>
+          <div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={() => dispatch({ type: 'goTo', view: 'home' })}>SawdustAtlas</button><b>/</b><strong>{view === 'home' ? 'Home' : view === 'shop' ? 'Workshop layout' : view === 'woods' ? 'Wood library' : view === 'geometry' ? 'Geometry' : view === 'allowances' ? 'Milling allowances' : view === 'pricing' ? 'Pricing' : view === 'furniture' ? 'Furniture' : 'Cutting boards'}</strong></div>
           <div className="topbar-actions">
             <WarningCenter warnings={warnings} onNavigate={goToWarning} />
             {saveOk
@@ -344,8 +307,8 @@ export default function App() {
         </header>
         <ConnectionNotice />
         <section className="workspace">
-          {view === 'home' && <Dashboard data={data} onOpenShop={id => { setActiveShop(id); setView('shop') }} onOpenBoard={id => { openBoard(id); setView('boards') }} onCreateShop={createShop} onCreateBoard={createBoard} onOpenFurniture={id => { openFurniture(id); setView('furniture') }} onBrowseFurniture={() => { setFurnitureMode('gallery'); setView('furniture') }} onShowGuide={() => setShowWelcome(true)} />}
-          {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={setActiveShop} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
+          {view === 'home' && <Dashboard data={data} onOpenShop={id => dispatch({ type: 'openShop', id })} onOpenBoard={id => { openBoard(id); dispatch({ type: 'goTo', view: 'boards' }) }} onCreateShop={createShop} onCreateBoard={createBoard} onOpenFurniture={id => { openFurniture(id); dispatch({ type: 'goTo', view: 'furniture' }) }} onBrowseFurniture={() => dispatch({ type: 'browseFurniture' })} onShowGuide={() => setShowWelcome(true)} />}
+          {view === 'shop' && <ShopPlanner projects={data.shops} project={data.shops.find(p => p.id === activeShop) ?? data.shops[0]} onSelect={id => dispatch({ type: 'selectShop', id })} onCreate={createShop} onChange={updateShop} onDelete={deleteShop} />}
           {view === 'boards' && boardsMode === 'gallery' && (
             <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
           )}
@@ -355,13 +318,13 @@ export default function App() {
               project={data.boards.find(p => p.id === activeBoard) ?? data.boards[0]}
               woods={data.woods}
               pricing={data.pricing}
-              onSelect={setActiveBoard}
+              onSelect={id => dispatch({ type: 'selectBoard', id })}
               onCreate={createBoard}
               onChange={updateBoard}
               onDelete={deleteBoard}
               onMakeComposite={makeComposite}
               onExportProject={() => exportProject({ type: 'board', id: (data.boards.find(p => p.id === activeBoard) ?? data.boards[0])?.id ?? '' })}
-              onBack={() => setBoardsMode(boardBackTo)}
+              onBack={() => dispatch({ type: 'boardBack' })}
             />
           )}
           {view === 'boards' && boardsMode === 'composite' && (() => {
@@ -377,7 +340,7 @@ export default function App() {
                   onExportProject={() => exportProject({ type: 'composite', id: composite.id })}
                   onCreateBoardForPanel={createBoardForPanel}
                   onEditBoard={editPanelBoard}
-                  onBack={() => setBoardsMode('gallery')}
+                  onBack={() => dispatch({ type: 'compositeBack' })}
                 />
               )
               : <BoardGallery boards={data.boards} composites={data.composites} woods={data.woods} onOpenBoard={openBoard} onOpenComposite={openComposite} onCreateBoard={createBoard} onImportProject={importProjectFile} />
@@ -385,7 +348,7 @@ export default function App() {
           {view === 'furniture' && <Suspense fallback={<p className="section-loading" role="status">Loading furniture…</p>}>{(() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
-              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => setFurnitureMode('gallery')} />
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => dispatch({ type: 'furnitureBack' })} />
               : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
           })()}</Suspense>}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}

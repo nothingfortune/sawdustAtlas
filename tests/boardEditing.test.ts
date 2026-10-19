@@ -43,9 +43,10 @@ describe('end-grain edits', () => {
     const count = calculateEndGrainMetrics(wide).sliceCount
     expect(wide.endGrain.rowFlips.length).toBeLessThanOrEqual(count)
     const thicker = updateEndGrain(wide, { sliceThickness: wide.endGrain.sliceThickness * 3 })
+    expect(calculateEndGrainMetrics(thicker).sliceCount).toBeLessThan(count)
     expect(thicker.endGrain.rowFlips.length).toBeLessThanOrEqual(calculateEndGrainMetrics(thicker).sliceCount)
     const back = updateEndGrain(thicker, { sliceThickness: wide.endGrain.sliceThickness })
-    expect(back.endGrain.rowFlips.length).toBeLessThanOrEqual(calculateEndGrainMetrics(thicker).sliceCount)
+    expect(back.endGrain.rowFlips).toEqual(thicker.endGrain.rowFlips)
   })
 
   it('setRowPattern flip flips every other slice and clears offsets', () => {

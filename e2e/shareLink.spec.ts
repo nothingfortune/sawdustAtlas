@@ -32,6 +32,7 @@ test.describe('share link', () => {
     const dialog = page.getByRole('dialog', { name: 'Import shared project' })
     await expect(dialog).toContainText('Walnut & maple daily board')
     await expect(dialog).toContainText('Cutting board')
+    await expect(dialog).toContainText('You already have this project, so it will be added as a copy marked "(imported)".')
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('')
     // Clearing the fragment must keep the screen stored in history.state, or Back stops working.
     expect(await page.evaluate(() => (window.history.state as { view?: string } | null)?.view)).toBe('home')

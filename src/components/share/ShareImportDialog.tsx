@@ -18,6 +18,7 @@ export function ShareImportDialog({ state, onImport, onClose }: { state: ShareIm
             Woods: {preview.woodsAdded.length > 0 ? `${preview.woodsAdded.join(', ')} will be added to your library` : 'nothing new for your library'}
             {preview.woodsPresent.length > 0 ? `; ${preview.woodsPresent.join(', ')} already there (your versions are kept)` : ''}.
           </p>
+          {preview.importsAsCopy && <p className="import-counts">You already have this project, so it will be added as a copy marked "(imported)".</p>}
           <p className="import-counts">Importing adds this project to this browser. Nothing you already have changes, and Undo takes it back out.</p>
         </>
         : state.kind === 'error' && <ul className="import-errors"><li>{state.error}</li></ul>}

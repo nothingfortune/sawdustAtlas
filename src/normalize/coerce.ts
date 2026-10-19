@@ -2,7 +2,7 @@ export function records(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : []
 }
 
-// Arrays pass too (unlike projectPackage's isRecord); callers only read named keys.
+// Arrays pass too (unlike packages/shared's isPlainRecord); callers only read named keys.
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }

@@ -8,6 +8,7 @@ import { fail, isPlainRecord, mergeWoods, woodsUsedBy } from './shared'
 
 export const PROJECT_PACKAGE_KIND = 'sawdust-atlas/project-package'
 export const SUPPORTED_PACKAGE_VERSION = 1
+export const NEWER_VERSION_ERROR = 'This project was made with a newer version of SawdustAtlas. Update this app to open it.'
 
 export interface ProjectPackage {
   kind: typeof PROJECT_PACKAGE_KIND
@@ -31,6 +32,12 @@ function schemaVersionOf(raw: Record<string, unknown>): number {
   return typeof version === 'number' && Number.isFinite(version) ? version : 1
 }
 
+// Files exported before the field was checked carry no usable packageVersion; they are version 1.
+function packageVersionOf(raw: Record<string, unknown>): number {
+  const version = raw['packageVersion']
+  return typeof version === 'number' && Number.isInteger(version) ? version : 1
+}
+
 export function buildProjectPackage(data: AtlasData, ref: { type: ProjectType; id: string }, exportedAt: string): ProjectPackage | null {
   const entry = findKind(ref.type)
   const project = entry?.build(data, ref.id)
@@ -40,6 +47,7 @@ export function buildProjectPackage(data: AtlasData, ref: { type: ProjectType; i
 
 export function readProjectPackage(parsed: unknown, ctx: ReadContext = defaultNormalizeContext()): PackageReadResult {
   if (!isPlainRecord(parsed) || parsed['kind'] !== PROJECT_PACKAGE_KIND) return fail('This file is not a SawdustAtlas project package.')
+  if (packageVersionOf(parsed) > SUPPORTED_PACKAGE_VERSION || schemaVersionOf(parsed) > LATEST_SCHEMA_VERSION) return fail(NEWER_VERSION_ERROR)
   const project = parsed['project']
   if (!isPlainRecord(project)) return fail('The project package has no project in it.')
   const entry = findKind(project['type'])

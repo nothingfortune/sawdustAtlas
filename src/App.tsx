@@ -8,9 +8,11 @@ import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
-import { buildProjectPackage, describeProject, importedCountsText, mergeProjectPackage, readProjectPackage } from './packages'
-import type { ProjectMergeSummary, ProjectType } from './packages'
-import { downloadProjectPackage } from './projectPackageDownload'
+import { buildProjectPackage, describeProject, importedCountsText, mergeProjectPackage, previewProjectPackage, projectPackageFileName, readProjectPackage } from './packages'
+import type { ProjectMergeSummary, ProjectPackage, ProjectType } from './packages'
+import { browserShareIO } from './components/share/browserShareIO'
+import { LINK_DAMAGED_ERROR } from './packages/link/errors'
+import { TOO_LARGE_ERROR, packageFileTooLarge } from './packages/share/config'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
 import { ShopPlanner } from './components/ShopPlanner'
@@ -33,6 +35,9 @@ import { addWood as addWoodAction, deleteWood as deleteWoodAction, updateWood as
 import { updateAllowances as updateAllowancesAction, updatePricing as updatePricingAction } from './domain/workspace/settings'
 import type { Created, WorkspaceContext } from './domain/workspace/context'
 import { createId } from './id'
+import { useLinkIntent } from './useLinkIntent'
+import { ShareImportDialog } from './components/share/ShareImportDialog'
+import type { ShareImportState } from './components/share/ShareImportDialog'
 import { initialNav, navigate } from './navigation'
 import { useNavigationHistory } from './useNavigationHistory'
 import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
@@ -43,6 +48,7 @@ import type { LengthUnit } from './domain/lengthUnits'
 // (three.js is split further, inside the designer). The service worker precaches every
 // emitted chunk, so this still works offline after the first visit.
 const FurnitureDesigner = lazy(() => import('./components/furniture/FurnitureDesigner').then(module => ({ default: module.FurnitureDesigner })))
+const ShareDialog = lazy(() => import('./components/share/ShareDialog').then(module => ({ default: module.ShareDialog })))
 const FurnitureGallery = lazy(() => import('./components/furniture/FurnitureGallery').then(module => ({ default: module.FurnitureGallery })))
 
 interface Snapshot { data: AtlasData; activeShop: string; activeBoard: string }
@@ -79,6 +85,10 @@ export default function App() {
   const [preImport, setPreImport] = useState<AtlasData | null>(loadPreImportSnapshot)
   // Result of the most recent import, shown in a confirmation/error dialog.
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  // The package open in the share dialog, if any.
+  const [sharing, setSharing] = useState<ProjectPackage | null>(null)
+  // An incoming share link's preview or error, shown until the user imports or closes it.
+  const [shareImport, setShareImport] = useState<ShareImportState | null>(null)
   // Result of the most recent single-project import (merge, not replace).
   const [projectImport, setProjectImport] = useState<{ ok: true; summary: ProjectMergeSummary; name: string } | { ok: false; error: string } | null>(null)
   // First-run welcome (UX-004): shown until dismissed; reopenable from Home.
@@ -135,6 +145,24 @@ export default function App() {
     if (!result) return undefined
     commitData(() => result.data)
     return result.id
+  }
+
+  useLinkIntent(route => {
+    if (route.kind === 'error') { setShareImport({ kind: 'error', error: route.error }); return }
+    const { read } = route.outcome
+    if (!read.ok) { setShareImport({ kind: 'error', error: read.error }); return }
+    try {
+      setShareImport({ kind: 'preview', pkg: read.pkg, preview: previewProjectPackage(dataRef.current, read.pkg) })
+    } catch {
+      setShareImport({ kind: 'error', error: LINK_DAMAGED_ERROR })
+    }
+  })
+  // Merges through commitData so Undo removes it, then opens it the way a click would.
+  const importShared = (pkg: ProjectPackage) => {
+    const merged = mergeProjectPackage(dataRef.current, pkg, createId)
+    commitData(() => merged.data)
+    dispatch({ type: 'openProject', kind: pkg.project.type, id: merged.summary.projectId })
+    setShareImport(null)
   }
 
   const updateShop = (project: ShopProject) => commitData(current => updateShopAction(current, project, ctx()))
@@ -220,11 +248,16 @@ export default function App() {
   }
   const exportProject = (ref: { type: ProjectType; id: string }) => {
     const pkg = buildProjectPackage(data, ref, new Date().toISOString())
-    if (pkg) downloadProjectPackage(pkg)
+    if (pkg) browserShareIO.download(projectPackageFileName(pkg), JSON.stringify(pkg, null, 2))
+  }
+  const shareProject = (ref: { type: ProjectType; id: string }) => {
+    const pkg = buildProjectPackage(data, ref, new Date().toISOString())
+    if (pkg) setSharing(pkg)
   }
   // Merges one project into the workspace through commitData, so Undo removes it again.
   const importProjectFile = async (file: File | undefined) => {
     if (!file) return
+    if (packageFileTooLarge(file.size)) { setProjectImport({ ok: false, error: TOO_LARGE_ERROR }); return }
     let parsed: unknown
     try {
       parsed = JSON.parse(await file.text())
@@ -323,6 +356,7 @@ export default function App() {
               onDelete={deleteBoard}
               onMakeComposite={makeComposite}
               onExportProject={() => exportProject({ type: 'board', id: (data.boards.find(p => p.id === activeBoard) ?? data.boards[0])?.id ?? '' })}
+              onShareProject={() => shareProject({ type: 'board', id: (data.boards.find(p => p.id === activeBoard) ?? data.boards[0])?.id ?? '' })}
               onBack={() => dispatch({ type: 'boardBack' })}
             />
           )}
@@ -337,6 +371,7 @@ export default function App() {
                   pricing={data.pricing}
                   onChange={updateComposite}
                   onExportProject={() => exportProject({ type: 'composite', id: composite.id })}
+                  onShareProject={() => shareProject({ type: 'composite', id: composite.id })}
                   onCreateBoardForPanel={createBoardForPanel}
                   onEditBoard={editPanelBoard}
                   onBack={() => dispatch({ type: 'compositeBack' })}
@@ -347,7 +382,7 @@ export default function App() {
           {view === 'furniture' && <Suspense fallback={<p className="section-loading" role="status">Loading furniture…</p>}>{(() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
-              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onExportProject={() => exportProject({ type: 'furniture', id: project.id })} onBack={() => dispatch({ type: 'furnitureBack' })} />
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onExportProject={() => exportProject({ type: 'furniture', id: project.id })} onShareProject={() => shareProject({ type: 'furniture', id: project.id })} onBack={() => dispatch({ type: 'furnitureBack' })} />
               : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} onImportProject={importProjectFile} />
           })()}</Suspense>}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
@@ -358,8 +393,10 @@ export default function App() {
       </main>
       <input ref={importRef} type="file" accept="application/json" hidden aria-label="Backup file" onChange={e => { void importFile(e.target.files?.[0]); e.currentTarget.value = '' }} />
       {importResult && <ImportSummaryDialog result={importResult} onExportBackup={() => downloadData(data)} onClose={() => setImportResult(null)} />}
+      {shareImport && <ShareImportDialog state={shareImport} onImport={() => { if (shareImport.kind === 'preview') importShared(shareImport.pkg) }} onClose={() => setShareImport(null)} />}
+      {sharing && <Suspense fallback={null}><ShareDialog pkg={sharing} onClose={() => setSharing(null)} /></Suspense>}
       {projectImport && <ProjectImportDialog result={projectImport} onClose={() => setProjectImport(null)} />}
-      {showWelcome && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
+      {showWelcome && !shareImport && <WelcomeDialog onExportBackup={() => downloadData(data)} onClose={dismissWelcome} />}
       <BuildBadge />
     </div>
   </UnitSystemProvider>

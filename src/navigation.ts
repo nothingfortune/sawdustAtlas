@@ -32,6 +32,7 @@ export type NavAction =
   | { type: 'compositeBack' }
   | { type: 'openFurniture'; id: string; focusId?: string | undefined }
   | { type: 'furnitureBack' }
+  | { type: 'openProject'; kind: 'board' | 'composite' | 'furniture'; id: string }
   | { type: 'projectRemoved'; kind: 'shop' | 'board' | 'furniture'; id: string; remainingIds: readonly string[] }
   | { type: 'restoreSelection'; activeShop: string; activeBoard: string }
   | { type: 'backupImported'; activeShop: string; activeBoard: string }
@@ -73,10 +74,20 @@ export function navigate(state: NavState, action: NavAction): NavState {
     case 'compositeBack': return { ...state, boardsMode: 'gallery' }
     case 'openFurniture': return { ...state, activeFurniture: action.id, furnitureFocus: action.focusId, furnitureOpens: state.furnitureOpens + 1, furnitureMode: 'designer' }
     case 'furnitureBack': return { ...state, furnitureMode: 'gallery' }
+    case 'openProject': return openProject(state, action)
     case 'projectRemoved': return removed(state, action)
     case 'restoreSelection': return { ...state, activeShop: action.activeShop, activeBoard: action.activeBoard }
     case 'backupImported': return { ...state, activeShop: action.activeShop, activeBoard: action.activeBoard, activeFurniture: '', furnitureMode: 'gallery', view: 'home' }
     case 'restoreFromHistory': return fromHistory(state, action.state)
+  }
+}
+
+// "Show this project" from outside a click (a share import), choosing the screen as well.
+function openProject(state: NavState, action: Extract<NavAction, { type: 'openProject' }>): NavState {
+  switch (action.kind) {
+    case 'board': return { ...navigate(state, { type: 'openBoard', id: action.id }), view: 'boards' }
+    case 'composite': return { ...navigate(state, { type: 'openComposite', id: action.id }), view: 'boards' }
+    case 'furniture': return { ...navigate(state, { type: 'openFurniture', id: action.id }), view: 'furniture' }
   }
 }
 

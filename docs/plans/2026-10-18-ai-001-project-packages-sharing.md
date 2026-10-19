@@ -465,7 +465,7 @@ export type { ProjectPayload, ProjectType } from './kinds'
 - [ ] **Step 8: Run the existing package tests and the full gate**
 
 Run: `pnpm test tests/projectPackage.test.ts`
-Expected: PASS, all 16 tests, unchanged except the import path.
+Expected: PASS, all 17 tests, unchanged except the import path.
 
 Run: `pnpm typecheck && pnpm lint && pnpm test:coverage`
 Expected: PASS; coverage thresholds green.
@@ -1929,7 +1929,7 @@ export function ShareDialog({ pkg, onClose }: { pkg: ProjectPackage; onClose: ()
     const fileName = projectPackageFileName(pkg)
     const json = JSON.stringify(pkg, null, 2)
     const base = { pkg, name: describeProject(pkg).name, fileName, json, config: SHARE_CONFIG, env: detectShareEnvironment(fileName, json) }
-    encodeLink('share', pkg, appBaseUrl())
+    void encodeLink('share', pkg, appBaseUrl())
       .catch(() => null)
       .then(link => { if (!cancelled) setCtx({ ...base, link }) })
       .catch(() => undefined)

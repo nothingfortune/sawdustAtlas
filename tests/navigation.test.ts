@@ -71,3 +71,19 @@ describe('navigate', () => {
     expect(navigate(opened, { type: 'restoreFromHistory', state: null })).toMatchObject({ view: 'home', boardsMode: 'gallery', furnitureMode: 'gallery', activeBoard: 'b2' })
   })
 })
+
+describe('openProject', () => {
+  const fresh = initialNav({ shops: [], boards: [] })
+
+  it('opens a board on the boards screen', () => {
+    expect(navigate(fresh, { type: 'openProject', kind: 'board', id: 'b' })).toMatchObject({ view: 'boards', boardsMode: 'board', activeBoard: 'b', boardBackTo: 'gallery' })
+  })
+
+  it('opens a composite on the boards screen', () => {
+    expect(navigate(fresh, { type: 'openProject', kind: 'composite', id: 'c' })).toMatchObject({ view: 'boards', boardsMode: 'composite', activeComposite: 'c' })
+  })
+
+  it('opens a furniture project in its designer', () => {
+    expect(navigate(fresh, { type: 'openProject', kind: 'furniture', id: 'f' })).toMatchObject({ view: 'furniture', furnitureMode: 'designer', activeFurniture: 'f', furnitureOpens: 1 })
+  })
+})

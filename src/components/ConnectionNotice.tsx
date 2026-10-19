@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react'
-import { describeBenchCapabilities } from '../domain/benchCapabilities'
-import type { BenchCapabilities } from '../domain/benchCapabilities'
+import { detectBenchCapabilities } from './benchDetect'
 
 const DISMISSED_KEY = 'sawdust-atlas:connection-notice-dismissed'
 const TABLET_GUIDE_URL = 'https://github.com/nothingfortune/sawdustAtlas/blob/main/docs/howTo/use-on-a-tablet.md'
-
-function detect(): BenchCapabilities {
-  return describeBenchCapabilities({
-    secureContext: window.isSecureContext,
-    serviceWorker: 'serviceWorker' in navigator,
-    wakeLock: 'wakeLock' in navigator,
-    storageManager: typeof navigator.storage !== 'undefined',
-  })
-}
 
 function wasDismissed(): boolean {
   try { return localStorage.getItem(DISMISSED_KEY) === '1' } catch { return false }
@@ -35,7 +25,7 @@ function requestPersistentStorage(): void {
 // Explains limited bench mode (no offline use or keep-awake) on insecure addresses, and
 // on a secure one requests persistent storage once.
 export function ConnectionNotice() {
-  const [caps] = useState(detect)
+  const [caps] = useState(detectBenchCapabilities)
   const [dismissed, setDismissed] = useState(wasDismissed)
 
   useEffect(() => {

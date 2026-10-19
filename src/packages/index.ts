@@ -3,3 +3,4 @@ export type { PackageReadResult, ProjectMergeSummary, ProjectPackage } from './e
 export type { KindMergeSummary, PackageDescription, PackageKind } from './kind'
 export { PACKAGE_KINDS, findKind } from './kinds'
 export type { ProjectPayload, ProjectType } from './kinds'
+export { importedCountsText } from './summary'

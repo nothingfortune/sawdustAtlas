@@ -8,7 +8,7 @@ import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
-import { buildProjectPackage, describeProject, mergeProjectPackage, readProjectPackage } from './packages'
+import { buildProjectPackage, describeProject, importedCountsText, mergeProjectPackage, readProjectPackage } from './packages'
 import type { ProjectMergeSummary, ProjectType } from './packages'
 import { downloadProjectPackage } from './projectPackageDownload'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
@@ -347,8 +347,8 @@ export default function App() {
           {view === 'furniture' && <Suspense fallback={<p className="section-loading" role="status">Loading furniture…</p>}>{(() => {
             const project = furnitureMode === 'designer' ? data.furniture.find(p => p.id === activeFurniture) : undefined
             return project
-              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onBack={() => dispatch({ type: 'furnitureBack' })} />
-              : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} />
+              ? <FurnitureDesigner key={`${project.id}:${furnitureOpens}`} project={project} woods={data.woods} boards={data.boards} allowances={data.allowances} {...(furnitureFocus ? { focusId: furnitureFocus } : {})} onChange={updateFurniture} onExportProject={() => exportProject({ type: 'furniture', id: project.id })} onBack={() => dispatch({ type: 'furnitureBack' })} />
+              : <FurnitureGallery projects={data.furniture} woods={data.woods} allowances={data.allowances} onCreate={createFurniture} onOpen={openFurniture} onDuplicate={duplicateFurniture} onDelete={deleteFurniture} onImportProject={importProjectFile} />
           })()}</Suspense>}
           {view === 'woods' && <WoodLibrary woods={data.woods} onAdd={addWood} onUpdate={updateWood} onDelete={deleteWood} />}
           {view === 'geometry' && <GeometryCalculator sketch={sketch} onChange={updateSketch} />}
@@ -395,7 +395,7 @@ function ProjectImportDialog({ result, onClose }: { result: { ok: true; summary:
       <header><strong>{result.ok ? 'Project imported' : "Couldn't import that project"}</strong></header>
       {result.ok
         ? <>
-          <p className="import-counts">Added <b>{result.name}</b> to your boards ({result.summary.boards} board{result.summary.boards === 1 ? '' : 's'}{result.summary.composites > 0 ? ` and ${result.summary.composites} composite` : ''}). Nothing you already had was changed. Use Undo to take it back out.</p>
+          <p className="import-counts">Added <b>{result.name}</b> ({importedCountsText(result.summary)}). Nothing you already had was changed. Use Undo to take it back out.</p>
           {result.summary.importedAsCopy && <div className="import-warnings"><span className="eyebrow">HEADS UP</span><ul><li>You already had this project, so it was added as a copy marked "(imported)".</li></ul></div>}
           <p className="import-counts">Woods: {result.summary.woodsAdded} added to your library, {result.summary.woodsKept} already there (your versions were kept).</p>
         </>

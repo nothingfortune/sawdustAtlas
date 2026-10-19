@@ -8,8 +8,8 @@ import { GeometryCalculator } from './components/GeometryCalculator'
 import type { Sketch } from './domain/geometry2d'
 import type { ImportResult } from './storage'
 import { useModalDialog } from './components/useModalDialog'
-import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './projectPackage'
-import type { ProjectMergeSummary } from './projectPackage'
+import { buildProjectPackage, mergeProjectPackage, readProjectPackage } from './packages'
+import type { ProjectMergeSummary, ProjectType } from './packages'
 import { downloadProjectPackage } from './projectPackageDownload'
 import { collectWorkspaceWarnings } from './domain/workspaceWarnings'
 import type { WarningLocation, WorkspaceWarning } from './domain/workspaceWarnings'
@@ -218,7 +218,7 @@ export default function App() {
     // Show the summary (counts + warnings) on success, or the errors on failure.
     setImportResult(result)
   }
-  const exportProject = (ref: { type: 'board' | 'composite'; id: string }) => {
+  const exportProject = (ref: { type: ProjectType; id: string }) => {
     const pkg = buildProjectPackage(data, ref, new Date().toISOString())
     if (pkg) downloadProjectPackage(pkg)
   }

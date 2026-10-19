@@ -46,6 +46,12 @@ Split out of the product plan: 2026-06-28.
 | DATA-002 | LAN-accessible development server | `pnpm dev:lan` binds to the private network and documents firewall constraints. |
 | DATA-003 | Docker appliance configuration | Public Docker Hub image, compose build, health check, restart policy, local and LAN responses, PWA endpoints, updates, and recovery are verified and documented. |
 
+## AI Design Assistant
+
+| ID | Feature | Delivered |
+| --- | --- | --- |
+| AI-000 | Foundation refactor | Workspace changes are pure domain actions in `src/domain/workspace/` and `boardEditing.ts`, screen state is one navigation reducer (`src/navigation.ts`), and normalizers are split per domain in `src/normalize/`; no behavior change, all tests green. (#170, #171) |
+
 ## Recently shipped (post-2026-06-25, not folded into feature IDs)
 
 Work merged to `develop` after the last plan revision. These should be reconciled into

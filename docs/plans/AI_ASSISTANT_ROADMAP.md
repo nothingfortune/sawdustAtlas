@@ -21,7 +21,7 @@ in order; a later spec may not start implementation until the earlier ones are m
 
 | Order | ID | Sub-project | Depends on | Status | Spec | Plan |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | AI-000 | Foundation refactor | — | ⚪ Plan in review | [spec](../specs/2026-10-18-ai-000-foundation-refactor-design.md) | [plan](2026-10-18-ai-000-foundation-refactor.md) |
+| 0 | AI-000 | Foundation refactor | — | 🟢 Complete (#170, #171) | [spec](../specs/2026-10-18-ai-000-foundation-refactor-design.md) | [plan](2026-10-18-ai-000-foundation-refactor.md) |
 | 1 | AI-001 | Project packages and sharing | AI-000 | ⚪ Spec approved | [spec](../specs/2026-10-18-ai-001-project-packages-sharing-design.md) | — |
 | 2 | AI-002 | Design operations layer | AI-001 | ⚪ Planned | — | — |
 | 3 | AI-003 | MCP server | AI-001, AI-002 | ⚪ Planned | — | — |

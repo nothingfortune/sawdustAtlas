@@ -138,16 +138,28 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 
 ### AI Design Assistant
 
-Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md).
+Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md). AI-000 (foundation refactor) is complete and recorded in [COMPLETED.md](COMPLETED.md).
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| ⚪ | AI-000 | Foundation refactor | Planned | Now | Workspace changes are pure domain actions, navigation is one reducer, and normalizers are split per domain; no behavior change, all tests green. |
-| ⚪ | AI-001 | Project packages and sharing | Planned | Next | Board, composite, and furniture each export and import as one package through `normalizeData`, with a defined backend-free share path. |
+| ⚪ | AI-001 | Project packages and sharing | Planned | Now | Board, composite, and furniture each export and import as one package through `normalizeData`, with a defined backend-free share path. |
 | ⚪ | AI-002 | Design operations layer | Planned | Next | Pure, schema-described operations for boards, composites, and furniture; each returns the new project plus validation issues; the UI uses the same operations. |
 | ⚪ | AI-003 | MCP server | Planned | Later | An MCP client can open a package, draft or edit a design through AI-002 tools, validate it, and save a package the app imports. |
 | ⚪ | AI-004 | In-app assistant | Planned | Later | Chat panel calls the Claude API with a user-provided key; AI changes are reviewable, accept/reject, undoable; the app is unchanged without a key or offline. |
 | ⚪ | AI-005 | User templates and design import | Planned | Later | Save any design as a template stored as data (with migration); the AI can build a design from an online source and save it as a template with the source recorded. |
+
+### Furniture Joinery
+
+Today every joint renders as a butt joint, and a joint's only effect on milling is a cut-list length
+allowance (for example, tenon length). Joints should look, measure, and mill like the real thing.
+Joint parameters are what the AI-002 operations will set, so this work should land on the same
+registry-per-joint-kind pattern.
+
+|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
+| --- | --- | --- | --- | --- | --- |
+| ⚪ | JOIN-001 | Joint geometry in drawings and 3D | Planned | Next | Each joint kind (mortise and tenon, loose tenon, dowel, dado, rabbet, groove, pocket screw, screw, tabletop fastener) draws its real cut geometry (tenon cheeks and shoulders, mortise pocket, dado or rabbet channel, holes) in the projected drawings and the 3D view, instead of two boxes meeting. Butt stays the only joint that looks like a butt joint. |
+| ⚪ | JOIN-002 | Joint specs and build instructions | Planned | Next | Each joint shows a detail card with its dimensions, fit clearance, tool and setup (bit, blade, fence and depth settings), and the order of operations; the furniture instruction generator emits per-joint layout, cut, test-fit, and glue steps, with defaulted values labeled as assumptions. |
+| ⚪ | JOIN-003 | Joinery-aware milling dimensions | Planned | Next | A part's milled (cut) size accounts for every joint on it: added length for tenons and tongues, unchanged modeled finished size, and correct rough-stock sizes in the cut list, BOM, and board feet. Each adjustment is listed on the part's line with the joint it comes from. |
 
 ### Tablet, UX, and Accessibility
 

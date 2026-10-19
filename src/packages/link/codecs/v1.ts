@@ -14,10 +14,11 @@ function streamOf(bytes: Uint8Array<ArrayBuffer>): ReadableStream<Uint8Array<Arr
 
 // Reads chunk by chunk and cancels past the cap, so a tiny payload cannot inflate into memory exhaustion.
 async function inflate(bytes: Uint8Array<ArrayBuffer>, maxBytes: number): Promise<Uint8Array<ArrayBuffer> | 'too-large' | 'damaged'> {
-  const reader = streamOf(bytes).pipeThrough(new DecompressionStream('deflate-raw')).getReader()
   const chunks: Uint8Array[] = []
   let total = 0
   try {
+    // Built inside the try so a browser without deflate-raw maps to 'damaged' instead of rejecting.
+    const reader = streamOf(bytes).pipeThrough(new DecompressionStream('deflate-raw')).getReader()
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break

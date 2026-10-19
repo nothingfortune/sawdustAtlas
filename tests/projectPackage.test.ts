@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { starterData } from '../src/data'
 import { normalizeData } from '../src/storage'
-import { buildProjectPackage, mergeProjectPackage, PROJECT_PACKAGE_KIND, projectPackageFileName, readProjectPackage } from '../src/projectPackage'
+import { buildProjectPackage, mergeProjectPackage, PROJECT_PACKAGE_KIND, projectPackageFileName, readProjectPackage } from '../src/packages'
 import type { AtlasData, BoardProject, CompositeBoard, WoodSpecies } from '../src/types'
 
 const NOW = '2026-10-10T12:00:00.000Z'

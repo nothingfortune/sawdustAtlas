@@ -23,9 +23,12 @@ export function normalizeWoodLibrary(raw: unknown, ctx: NormalizeContext): WoodS
 
 /** Placeholder species for strip references missing from the library, so colors and prices stay visible. */
 export function placeholderWoods(rawBoards: readonly Record<string, unknown>[], library: readonly WoodSpecies[], ctx: NormalizeContext): WoodSpecies[] {
+  return placeholderWoodsFor(rawBoards.flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? ''))), library, ctx)
+}
+
+/** Placeholder species for any referenced ids missing from the library. */
+export function placeholderWoodsFor(speciesIds: readonly string[], library: readonly WoodSpecies[], ctx: NormalizeContext): WoodSpecies[] {
   const known = new Set(library.map(wood => wood.id))
-  const missing = rawBoards
-    .flatMap(board => records(board['strips']).map(strip => String(strip['speciesId'] ?? '')))
-    .filter(id => id && !known.has(id))
+  const missing = speciesIds.filter(id => id && !known.has(id))
   return [...new Set(missing)].map(id => normalizeWood({ id, name: id, color: '#8c6a48', accent: '#b18a5e', pricePerBoardFoot: 0 }, ctx))
 }

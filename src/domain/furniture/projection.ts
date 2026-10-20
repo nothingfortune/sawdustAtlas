@@ -186,8 +186,8 @@ function overallDimensions(bounds: DrawingBounds): DrawingDimension[] {
 
 /** Per-part translations for an exploded view. Every top-level subassembly and every
  *  loose part moves `distance` mm away from the center of the whole piece along the
- *  axis it is furthest off-center; a child subassembly moves again, relative to its
- *  parent's center, on top of the parent's move. A unit sitting exactly at its
+ *  axis it is furthest off-center; a child subassembly, and each part directly in a
+ *  subassembly, moves again relative to its unit's center, on top of the unit's move. A unit sitting exactly at its
  *  reference center stays put. Every resolved part gets an entry. */
 export function explodeOffsets(project: FurnitureProject, parts: readonly ResolvedPart[], distance: number): Record<string, [number, number, number]> {
   const offsets: Record<string, [number, number, number]> = {}
@@ -224,6 +224,11 @@ export function explodeOffsets(project: FurnitureProject, parts: readonly Resolv
     if (!unitCenter) return
     push(members, awayFrom(reference, unitCenter, distance))
     seen.add(id)
+    // The unit's own parts separate from each other too, so a frame's legs and rails don't stay glued together.
+    for (const partId of subassemblies.get(id)?.partIds ?? []) {
+      const box = boxes.get(partId)
+      if (box) push([partId], awayFrom(unitCenter, centerOf([box])!, distance))
+    }
     for (const child of subassemblies.get(id)?.childIds ?? []) explodeUnit(child, unitCenter, seen)
   }
 

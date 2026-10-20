@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../src/domain/shopGeometry'
+import { clampItemToRoom, getBlockedZoneFootprint, getFeedClearanceZones, getShopItemFootprint, pointsAttribute, polygonsOverlap, projectIsometric, projectPolygon } from '../src/domain/shopGeometry'
 import type { Point2D } from '../src/domain/shopGeometry'
 import type { FeedDirection, ShopBlockedZone, ShopItem } from '../src/types'
 
@@ -116,5 +116,31 @@ describe('shop geometry', () => {
 
   it('formats points into a rounded SVG points attribute (TEST4)', () => {
     expect(pointsAttribute([{ x: 12.3456, y: -7.891 }, { x: 3, y: 4 }])).toBe('12.35,-7.89 3,4')
+  })
+})
+
+describe('clampItemToRoom', () => {
+  const room = { width: 5000, depth: 4000 }
+
+  it('uses the rotated footprint so a 270° item can sit flush against the walls', () => {
+    const rotated = { ...item, rotation: 270 }
+    // 1000 x 600 rotated about its center occupies 600 wide x 1000 deep.
+    const topLeft = clampItemToRoom(rotated, -9999, -9999, room)
+    const points = getShopItemFootprint({ ...rotated, ...topLeft })
+    expect(Math.min(...points.map(p => p.x))).toBeCloseTo(0)
+    expect(Math.min(...points.map(p => p.y))).toBeCloseTo(0)
+    const bottomRight = clampItemToRoom(rotated, 99999, 99999, room)
+    const far = getShopItemFootprint({ ...rotated, ...bottomRight })
+    expect(Math.max(...far.map(p => p.x))).toBeCloseTo(5000)
+    expect(Math.max(...far.map(p => p.y))).toBeCloseTo(4000)
+  })
+
+  it('matches the plain clamp at 0° and 180°', () => {
+    const plain = clampItemToRoom(item, 99999, -5, room)
+    expect(plain.x).toBeCloseTo(4000)
+    expect(plain.y).toBeCloseTo(0)
+    const flipped = clampItemToRoom({ ...item, rotation: 180 }, 99999, 99999, room)
+    expect(flipped.x).toBeCloseTo(4000)
+    expect(flipped.y).toBeCloseTo(3400)
   })
 })

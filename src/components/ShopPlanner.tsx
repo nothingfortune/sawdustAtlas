@@ -6,7 +6,7 @@ import { createId } from '../id'
 import { NumberField as Field } from './fields'
 import { createShopItem, SHOP_OBJECT_TEMPLATES } from '../domain/shopObjects'
 import type { ShopObjectDefinition } from '../domain/shopObjects'
-import { getBlockedZoneConflicts } from '../domain/shopGeometry'
+import { clampItemToRoom, getBlockedZoneConflicts } from '../domain/shopGeometry'
 import { formatDimensions, formatLength } from '../domain/lengthUnits'
 import { useUnitSystem } from './unitSystem'
 import { useShopDrag } from './useShopDrag'
@@ -97,11 +97,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
       width: nextRoom.width,
       depth: nextRoom.depth,
       gridSize: Math.max(100, patch.gridSize ?? project.gridSize),
-      items: project.items.map(candidate => ({
-        ...candidate,
-        x: clamp(candidate.x, 0, Math.max(0, nextRoom.width - candidate.width)),
-        y: clamp(candidate.y, 0, Math.max(0, nextRoom.depth - candidate.depth)),
-      })),
+      items: project.items.map(candidate => ({ ...candidate, ...clampItemToRoom(candidate, candidate.x, candidate.y, nextRoom) })),
       blockedZones: project.blockedZones.map(candidate => fitZoneToRoom(candidate, nextRoom)),
     })
   }
@@ -113,10 +109,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
     if (!delta || !project) return
     event.preventDefault()
     setSelected(`item:${target.id}`)
-    updateItem(target.id, {
-      x: clamp(target.x + delta[0], 0, Math.max(0, project.width - target.width)),
-      y: clamp(target.y + delta[1], 0, Math.max(0, project.depth - target.depth)),
-    })
+    updateItem(target.id, clampItemToRoom(target, target.x + delta[0], target.y + delta[1], project))
   }
 
   const onZoneKeyDown = (event: ReactKeyboardEvent, target: ShopBlockedZone) => {
@@ -234,7 +227,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
           <Field label="Working clearance (mm)" value={item.clearance} onChange={value => updateItem(item.id, { clearance: value })}/>
           <KindField value={item.kind} onChange={kind => updateItem(item.id, { kind })}/>
           <ColorField value={item.color} onChange={color => updateItem(item.id, { color })}/>
-          <div className="field-label">Rotation</div><div className="rotation-buttons">{[0, 90, 180, 270].map(rotation => <button className={item.rotation === rotation ? 'active' : ''} onClick={() => updateItem(item.id, { rotation })} key={rotation}>{rotation}°</button>)}</div>
+          <div className="field-label">Rotation</div><div className="rotation-buttons">{[0, 90, 180, 270].map(rotation => <button className={item.rotation === rotation ? 'active' : ''} onClick={() => updateItem(item.id, { rotation, ...clampItemToRoom({ ...item, rotation }, item.x, item.y, project) })} key={rotation}>{rotation}°</button>)}</div>
           <div className="panel-section feed-settings"><h3>Infeed / outfeed</h3><p>Direction is relative to the object and follows its rotation.</p>
             <div className="feed-direction-buttons"><button className={item.feedDirection === null ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: null })}>Off</button>{([0, 90, 180, 270] as const).map(direction => <button aria-label={`Feed ${direction === 0 ? 'right' : direction === 90 ? 'down' : direction === 180 ? 'left' : 'up'}`} className={item.feedDirection === direction ? 'active' : ''} onClick={() => updateItem(item.id, { feedDirection: direction })} key={direction}>{direction === 0 ? '→' : direction === 90 ? '↓' : direction === 180 ? '←' : '↑'}</button>)}</div>
             {item.feedDirection !== null && <><div className="field-row"><Field label="Infeed (mm)" value={item.infeedClearance} onChange={infeedClearance => updateItem(item.id, { infeedClearance })}/><Field label="Outfeed (mm)" value={item.outfeedClearance} onChange={outfeedClearance => updateItem(item.id, { outfeedClearance })}/></div><Field label="Side margin (mm)" value={item.sideClearance} onChange={sideClearance => updateItem(item.id, { sideClearance })}/></>}
@@ -244,8 +237,7 @@ export function ShopPlanner({ projects, project, onSelect, onCreate, onChange, o
             const copy = {
               ...item,
               id: createId(),
-              x: clamp(item.x + 300, 0, Math.max(0, project.width - item.width)),
-              y: clamp(item.y + 300, 0, Math.max(0, project.depth - item.depth)),
+              ...clampItemToRoom(item, item.x + 300, item.y + 300, project),
             }
             update({ items: [...project.items, copy] })
             setSelected(`item:${copy.id}`)

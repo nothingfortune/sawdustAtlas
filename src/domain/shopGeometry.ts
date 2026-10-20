@@ -146,3 +146,22 @@ function dot(a: Point2D, b: Point2D): number {
 function round(value: number): number {
   return Math.round(value * 100) / 100
 }
+
+/** Allowed (x, y) range for an item's origin so its rotated footprint stays inside the room. */
+export function getItemPositionRange(item: ShopItem, room: { width: number; depth: number }): { minX: number; maxX: number; minY: number; maxY: number } {
+  const points = getShopItemFootprint({ ...item, x: 0, y: 0 })
+  const xs = points.map(point => point.x), ys = points.map(point => point.y)
+  const minX = -Math.min(...xs), minY = -Math.min(...ys)
+  return {
+    minX,
+    maxX: Math.max(minX, room.width - Math.max(...xs)),
+    minY,
+    maxY: Math.max(minY, room.depth - Math.max(...ys)),
+  }
+}
+
+/** Clamp an item's origin into the room, respecting rotation. */
+export function clampItemToRoom(item: ShopItem, x: number, y: number, room: { width: number; depth: number }): { x: number; y: number } {
+  const range = getItemPositionRange(item, room)
+  return { x: Math.min(Math.max(x, range.minX), range.maxX), y: Math.min(Math.max(y, range.minY), range.maxY) }
+}

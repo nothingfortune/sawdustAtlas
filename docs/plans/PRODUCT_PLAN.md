@@ -138,12 +138,11 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 
 ### AI Design Assistant
 
-Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md). AI-000 (foundation refactor) is complete and recorded in [COMPLETED.md](COMPLETED.md).
+Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md). AI-000 (foundation refactor) and AI-001 (packages and sharing) are complete and recorded in [COMPLETED.md](COMPLETED.md).
 
 |  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
 | --- | --- | --- | --- | --- | --- |
-| ⚪ | AI-001 | Project packages and sharing | Planned | Now | Board, composite, and furniture each export and import as one package through `normalizeData`, with a defined backend-free share path. |
-| ⚪ | AI-002 | Design operations layer | Planned | Next | Pure, schema-described operations for boards, composites, and furniture; each returns the new project plus validation issues; the UI uses the same operations. |
+| ⚪ | AI-002 | Design operations layer | Planned | Now | Pure, schema-described operations for boards, composites, and furniture; each returns the new project plus validation issues; the UI uses the same operations. |
 | ⚪ | AI-003 | MCP server | Planned | Later | An MCP client can open a package, draft or edit a design through AI-002 tools, validate it, and save a package the app imports. |
 | ⚪ | AI-004 | In-app assistant | Planned | Later | Chat panel calls the Claude API with a user-provided key; AI changes are reviewable, accept/reject, undoable; the app is unchanged without a key or offline. |
 | ⚪ | AI-005 | User templates and design import | Planned | Later | Save any design as a template stored as data (with migration); the AI can build a design from an online source and save it as a template with the source recorded. |

@@ -144,3 +144,31 @@ Watch:
       (Docker Hub) are the same publisher.
 - [x] Mention the E2E job in CLAUDE.md/README CI descriptions; add typecheck/e2e to the PR
       template checklist; fix START_HERE "Saved locally" → "Saved in this browser".
+
+## AI-000 follow-ups
+
+- [ ] A full backup whose furniture names a species missing from its wood library gets no placeholder wood (packages do, via `placeholderWoodsFor`); `normalizeData` should add part species to its placeholder pass.
+- [ ] `woodDeleteBlocker` (and the old `deleteWood`) checks only board strips, not furniture parts, so a wood used only by furniture can be deleted; the next load then remaps those parts to the fallback species.
+- [ ] Navigation history: if a popstate restores a state equal to the current one, no mirrored field changes, so the `skip` flag stays set and the next real navigation skips its `pushState`.
+
+## AI-001 follow-ups
+
+From the AI-001 task and whole-branch reviews (#175, #176, #177). None block merge.
+
+- [ ] Before AI-003/AI-005 add a package kind: `KindMergeSummary` has fixed `boards`/`composites`/`furniture` counters (and `importedCountsText` mirrors them), and `navigation.ts` `openProject` has its own closed kind union. Move counts to a per-kind `{ noun, count }` list and derive the nav kind from `ProjectType`, so a new kind really is one module plus one registry entry.
+- [ ] The 1 MiB decoded cap still admits roughly 20,000 strips or parts, which would make the designer very slow after Import; consider a sanity cap on counts in the package read.
+- [ ] Version refusal is tested only with a board package in `tests/packageEnvelope.test.ts` (the kind contract suite covers every kind structurally); loop it over the fixtures.
+- [ ] `mergeProjectPackage` throws for an unregistered kind while `describeProject` falls back quietly; pick one behavior (unreachable with typed input today).
+- [ ] `normalizeIncoming` (`src/packages/shared.ts`) repeats `normalizeData`'s recipe; the two can drift (the furniture-placeholder gap above is one drift). Extract a shared helper into `src/normalize/`.
+- [ ] Strip species-id extraction is duplicated between `src/packages/shared.ts` and `placeholderWoods` in `src/normalize/woods.ts`.
+- [ ] `PACKAGE_KIND_FIXTURES` (`tests/fixtures/packageKinds.ts`) is typed `Record<string, …>`, forcing `!` in tests; key it by `ProjectType`.
+- [ ] Furniture gallery empty-state copy does not mention Import project.
+- [ ] `e2e/furniturePackage.spec.ts` picks the Furniture button with `/^Furniture$/` + `.first()`, which depends on nav vs header back-button order.
+- [ ] `decodeFragment` measures the whole hash and `decodeValue` only the payload against `maxIncomingFragmentLength`; measure the same thing in both.
+- [ ] Link codec tests: the large-value encode test never decodes its output, and there is no boundary test at exactly `maxDecodedBytes` and one byte over.
+- [ ] `src/packages/share/qr.ts` keeps a module-level single-entry cache (shared mutable state in a pure module); memoize in the dialog instead. `qrTarget.run` is untested (stub).
+- [ ] `ShareDialog`: one generic failure message for every target, `detectBenchCapabilities()` runs on every render, and the trailing `.catch(() => undefined)` would leave "Preparing…" forever if `setCtx` threw.
+- [ ] No UI-level test of the too-big-link path (only the target unit tests), and none of the new `.catch` paths in `useLinkIntent` / the App share-route callback.
+- [ ] `openProject` navigation tests start only from a fresh state; add one from a non-home view and a stale furniture mode.
+- [ ] `e2e/furnitureViews.spec.ts:290` (3D drag) failed 3 of 4 local runs on a clean baseline during AI-001; it is flakier than "rerun once" and needs its own fix.
+- [ ] `e2e/backButton.spec.ts` is not in `tabletSpecs` (from AI-000).

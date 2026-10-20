@@ -164,6 +164,12 @@ main { margin-left: 230px; width: calc(100% - 230px); min-height: 100vh; transit
 .import-warnings ul, .import-errors { margin:6px 0 0;padding-left:18px; }
 .import-warnings li, .import-errors li { font-size:13px;line-height:1.5;color:#5d5138; }
 .import-errors { margin-top:12px;color:#7a302b; }
+.share-target { display: grid; gap: 8px; margin: 12px 0; }
+.share-target h3 { margin: 0; font-size: 0.95rem; }
+.share-link { display: grid; gap: 4px; }
+.share-link input { width: 100%; font-family: var(--font-mono, monospace); font-size: 0.8rem; }
+.share-qr { width: 220px; max-width: 100%; height: auto; }
+.share-unavailable, .share-note { margin: 0; opacity: 0.8; }
 .import-dialog footer { display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:16px;margin-top:18px; }
 .welcome-dialog { width:min(540px,96vw);max-height:90vh;overflow:auto;background:#f8f6f0;border:1px solid #d2cec2;box-shadow:0 24px 70px #00000061;padding:24px; }
 .welcome-dialog header { display:flex;flex-direction:column;gap:4px;margin-bottom:14px; }

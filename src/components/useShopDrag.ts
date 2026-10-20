@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { ShopBlockedZone, ShopItem, ShopProject } from '../types'
-import type { Point2D } from '../domain/shopGeometry'
+import { clampItemToRoom, type Point2D } from '../domain/shopGeometry'
 import { createId } from '../id'
 import { SCALE, DRAW_ZONE_LABEL } from './shop/constants'
 import { clamp, fitZoneToRoom } from './shop/shopPlannerHelpers'
@@ -49,7 +49,7 @@ export function useShopDrag({
   // change on release (never on cancel/Escape), reading the latest project so the
   // single write can't clobber a concurrent edit. commit() applies the finished
   // position through onChange for whichever kind (item or zone) is being dragged.
-  function beginDrag(event: ReactPointerEvent, id: string, startX: number, startY: number, widthMm: number, depthMm: number, commit: (x: number, y: number) => void) {
+  function beginDrag(event: ReactPointerEvent, id: string, startX: number, startY: number, fit: (x: number, y: number, room: ShopProject) => Point2D, commit: (x: number, y: number) => void) {
     event.currentTarget.setPointerCapture(event.pointerId)
     setDraggingId(id)
     const origin = { x: event.clientX, y: event.clientY }
@@ -57,8 +57,8 @@ export function useShopDrag({
     let moved = false
     const move = (next: PointerEvent) => {
       const proj = projectRef.current
-      const x = clamp(startX + (next.clientX - origin.x) / (SCALE * zoomRef.current), 0, Math.max(0, (proj?.width ?? 0) - widthMm))
-      const y = clamp(startY + (next.clientY - origin.y) / (SCALE * zoomRef.current), 0, Math.max(0, (proj?.depth ?? 0) - depthMm))
+      if (!proj) return
+      const { x, y } = fit(startX + (next.clientX - origin.x) / (SCALE * zoomRef.current), startY + (next.clientY - origin.y) / (SCALE * zoomRef.current), proj)
       latest = { x, y }
       moved = true
       setDragPreview({ id, x, y })
@@ -82,17 +82,17 @@ export function useShopDrag({
 
   function beginItemDrag(event: ReactPointerEvent, target: ShopItem) {
     setSelected(`item:${target.id}`)
-    beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
+    beginDrag(event, target.id, target.x, target.y, (x, y, room) => clampItemToRoom(target, x, y, room), (x, y) => {
       const proj = projectRef.current
-      if (proj) onChange({ ...proj, items: proj.items.map(candidate => candidate.id === target.id ? { ...candidate, x, y } : candidate), updatedAt: new Date().toISOString() })
+      if (proj) onChange({ ...proj, items: proj.items.map(candidate => candidate.id === target.id ? { ...candidate, x, y } : candidate) })
     })
   }
 
   function beginZoneDrag(event: ReactPointerEvent, target: ShopBlockedZone) {
     setSelected(`zone:${target.id}`)
-    beginDrag(event, target.id, target.x, target.y, target.width, target.depth, (x, y) => {
+    beginDrag(event, target.id, target.x, target.y, (x, y, room) => ({ x: clamp(x, 0, Math.max(0, room.width - target.width)), y: clamp(y, 0, Math.max(0, room.depth - target.depth)) }), (x, y) => {
       const proj = projectRef.current
-      if (proj) onChange({ ...proj, blockedZones: proj.blockedZones.map(candidate => candidate.id === target.id ? fitZoneToRoom({ ...candidate, x, y }, proj) : candidate), updatedAt: new Date().toISOString() })
+      if (proj) onChange({ ...proj, blockedZones: proj.blockedZones.map(candidate => candidate.id === target.id ? fitZoneToRoom({ ...candidate, x, y }, proj) : candidate) })
     })
   }
 

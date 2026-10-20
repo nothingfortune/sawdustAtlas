@@ -266,15 +266,16 @@ describe('explodeOffsets', () => {
     return lo.map((v, i) => (v + hi[i]!) / 2)
   }
 
-  it('moves the table top up, the base down, and the leg frames out front and back', () => {
+  it('moves the table top up and the base down, then separates the parts inside each unit', () => {
     const offsets = explodeOffsets(tableProject(), tableResolvedParts(), 150)
     expect(offsets['top']).toEqual([0, 0, 150])
-    // The base unit sits slightly below the overall center, so it drops; its children
-    // then move out relative to it.
-    expect(offsets['apron-left']).toEqual([0, 0, -150])
-    expect(offsets['apron-right']).toEqual([0, 0, -150])
-    for (const id of ['leg-fl', 'leg-fr', 'apron-front']) expect(offsets[id]).toEqual([0, -150, -150])
-    for (const id of ['leg-bl', 'leg-br', 'apron-back']) expect(offsets[id]).toEqual([0, 150, -150])
+    // The base unit sits slightly below the overall center, so its legs drop.
+    expect(offsets['leg-fl']![2]).toBeLessThan(0)
+    // Parts of a leg frame then move out from the frame's own center, so the left apron
+    // goes left, the right apron goes right, and front legs separate from back legs.
+    expect(offsets['apron-left']![0]).toBeLessThan(0)
+    expect(offsets['apron-right']![0]).toBeGreaterThan(0)
+    expect(offsets['leg-fl']![1]).toBeLessThan(offsets['leg-bl']![1])
   })
 
   it('moves every table unit away from the assembly center', () => {
@@ -291,9 +292,10 @@ describe('explodeOffsets', () => {
     }
   })
 
-  it('leaves a carcass at the center and pushes the loose back away', () => {
+  it('keeps a carcass centered as a unit, spreads its parts, and pushes the loose back away', () => {
     const offsets = explodeOffsets(bookcaseProject(), bookcaseResolvedParts(), 120)
-    for (const id of ['side-l', 'side-r', 'bottom', 'top', 'shelf-1', 'shelf-2', 'shelf-3']) expect(offsets[id]).toEqual([0, 0, 0])
+    expect(offsets['side-l']![0]).toBeLessThan(0)
+    expect(offsets['side-r']![0]).toBeGreaterThan(0)
     expect(offsets['back']).toEqual([0, 120, 0])
   })
 
@@ -359,5 +361,17 @@ describe('isoCamera', () => {
     const { position } = isoCamera({ x: 5, y: 5, z: 5, sx: 0, sy: 0, sz: 0 })
     expect(position.every(Number.isFinite)).toBe(true)
     expect(position).not.toEqual([5, 5, 5])
+  })
+})
+
+describe('explodeOffsets for subassembly parts', () => {
+  it('separates the parts inside a subassembly from each other', () => {
+    const project = tableProject()
+    const offsets = explodeOffsets(project, tableResolvedParts(), 200)
+    for (const sub of project.subassemblies) {
+      const directs = sub.partIds.filter(id => offsets[id])
+      const distinct = new Set(directs.map(id => offsets[id]!.join(',')))
+      expect(distinct.size, sub.id).toBeGreaterThan(1)
+    }
   })
 })

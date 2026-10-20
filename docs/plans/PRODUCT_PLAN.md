@@ -28,6 +28,8 @@ The immediate goal is a **friend beta**: a small group can install SawdustAtlas 
 
 The next strategic foundation is the shared instruction platform: one semantic build plan that tablet build mode, print, readiness, and build tracking all consume, proven on cutting boards before furniture. See the [instruction platform design spec](../superpowers/specs/2026-10-10-instruction-platform-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-instruction-platform-wave1.md). Furniture is the second producer of that plan: see the [furniture modeler design spec](../superpowers/specs/2026-10-10-furniture-modeler-design.md) and its [wave 1 plan](../superpowers/plans/2026-10-10-furniture-modeler-wave1.md).
 
+The AI design assistant (Claude drafting and editing boards, composites, and furniture, plus importing designs found online as templates) is tracked as six ordered sub-projects, starting with a foundation refactor, in the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md).
+
 ## Product Principles
 
 - **Accuracy before cleverness.** Never present approximate geometry or utilization as exact.
@@ -133,6 +135,35 @@ This engine will serve cutting boards first and later furniture, jigs, cabinetry
 | ⚪ | DATA-007 | Private HTTPS | Parking Lot | Next | Support a trusted local certificate or Tailscale Serve without public internet exposure. |
 | ⚪ | DATA-008 | Automated backups | Planned | Next | Configurable scheduled snapshots with retention and tested restore. |
 | 🔵 | DATA-009 | Optional authentication | Research | Research | Decide whether trusted-LAN access is sufficient before adding account complexity. |
+
+### AI Design Assistant
+
+Ordered sub-projects; see the [AI assistant roadmap](AI_ASSISTANT_ROADMAP.md). AI-000 (foundation refactor) is complete and recorded in [COMPLETED.md](COMPLETED.md).
+
+|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
+| --- | --- | --- | --- | --- | --- |
+| ⚪ | AI-001 | Project packages and sharing | Planned | Now | Board, composite, and furniture each export and import as one package through `normalizeData`, with a defined backend-free share path. |
+| ⚪ | AI-002 | Design operations layer | Planned | Next | Pure, schema-described operations for boards, composites, and furniture; each returns the new project plus validation issues; the UI uses the same operations. |
+| ⚪ | AI-003 | MCP server | Planned | Later | An MCP client can open a package, draft or edit a design through AI-002 tools, validate it, and save a package the app imports. |
+| ⚪ | AI-004 | In-app assistant | Planned | Later | Chat panel calls the Claude API with a user-provided key; AI changes are reviewable, accept/reject, undoable; the app is unchanged without a key or offline. |
+| ⚪ | AI-005 | User templates and design import | Planned | Later | Save any design as a template stored as data (with migration); the AI can build a design from an online source and save it as a template with the source recorded. |
+
+### Furniture Joinery
+
+Joinery already shapes the numbers. Mortise-and-tenon joints, and parts seated in a dado, rabbet,
+or groove, add a length or width allowance to the part's cut size, and that cut size carries into
+rough stock, the cut list, and board feet (`joinery.ts`, `partsList.ts`). Joint operations become
+setup and dry-fit steps (`furnitureInstructions.ts`), and dowels and loose tenons are listed as
+hardware. What is missing is what the woodworker sees and lays out: every joint renders as two
+boxes meeting. Joint parameters are what the AI-002 operations will set, so this work should keep
+one module per joint kind.
+
+|  | ID | Feature | Status | Priority | Acceptance criteria / TODO |
+| --- | --- | --- | --- | --- | --- |
+| ⚪ | JOIN-001 | Joint geometry in drawings and 3D | Planned | Next | Each joint kind (mortise and tenon, loose tenon, dowel, dado, rabbet, groove, pocket screw, screw, tabletop fastener) draws its real cut geometry (tenon cheeks and shoulders, mortise pocket, dado or rabbet channel, holes) in the projected drawings and the 3D view, instead of two boxes meeting, on screen and in the printed build sheet's drawings. Butt stays the only joint that looks like a butt joint. |
+| ⚪ | JOIN-002 | Joint detail and layout measurements | Planned | Next | A detail card per joint lists every derived dimension (tenon thickness, width, length, and shoulders; mortise depth with its clearance; dado, rabbet, or groove width and depth; hole diameter, depth, spacing, and edge distance), each marked as entered or defaulted. The existing joinery steps gain the layout measurements taken from a named reference face. Builds on the current operations and steps rather than replacing them. The printed build sheet carries all of it: a joinery section with every joint's detail card and a close-up drawing, and build steps that print the layout measurements, tool setup (bit, blade, fence, and depth), and fit check for each joint, so the sheet works at the bench without the app. |
+| ⚪ | JOIN-004 | Joint inspector in 3D | Planned | Next | Clicking a joint in the 3D view (or picking it from the joints panel) zooms the camera to that joint and isolates the two parts it joins. The inspector shows how the joint works: the parts pull apart along the joint's assembly direction and slide back together. It overlays the JOIN-002 dimensions on the model, and lets the woodworker edit the joint's kind and parameters in place. Edits go through the same joint editing path as the joints panel (so Undo works and validation issues show live), and the geometry, cut list, and steps update as values change. Depends on JOIN-001 geometry and JOIN-002 dimensions. |
+| ⚪ | JOIN-003 | Joinery milling gaps | Planned | Later | Audit every joint kind against the existing cut-allowance path and close the gaps found. Known gap: loose tenons and dowels are listed only as bought hardware, so shop-made tenon stock never reaches the cut list, rough stock, or board feet. |
 
 ### Tablet, UX, and Accessibility
 

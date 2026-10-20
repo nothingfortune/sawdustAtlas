@@ -47,7 +47,7 @@ CI (`.github/workflows/ci.yml`) has four jobs. `Validate` runs typecheck → lin
 build. `E2E` runs the Playwright suite (desktop `chromium` project plus a touch-capable `tablet`
 project) against a dev server it boots itself, then the production-build offline smoke
 (`test:e2e:prod`). Coverage is gated only on the pure logic layer
-(`src/domain/**`, `storage.ts`, `projectPackage.ts`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
+(`src/domain/**`, `storage.ts`, `src/packages/**`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
 statements 88 — keep these green when touching domain code. `Docker verify` (PRs and pushes to
 `develop`) needs `Validate` and `E2E`, builds the image, smoke-tests it, and runs a gating Trivy
 scan (fails the build on fixable CRITICAL/HIGH vulnerabilities, uploads SARIF to code scanning).
@@ -83,8 +83,7 @@ as `CURRENT_SCHEMA_VERSION`); `normalizeData` runs them first, then coerces to t
 add or rename a field, update `normalizeData` and, if the shape changes, add a new migration step
 (never edit old ones).
 
-`src/projectPackage.ts` exports and imports a single board or composite as a package file. Reads reuse
-`normalizeData`, and merges go through `commitData` so Undo removes an import.
+`src/packages/` exports and imports a single board, composite, or furniture project as a package file, through a `PACKAGE_KINDS` registry (one module per design type). Reads run `migrate` and the per-domain normalizers, and merges go through `commitData` so Undo removes an import.
 
 ### Domain conventions (important, easy to get wrong)
 

@@ -1,5 +1,5 @@
-import { memo, useMemo, useState } from 'react'
-import { Armchair, Copy, Trash2, TriangleAlert } from 'lucide-react'
+import { memo, useMemo, useRef, useState } from 'react'
+import { Armchair, Copy, Trash2, TriangleAlert, Upload } from 'lucide-react'
 import type { BuildAllowances, WoodSpecies } from '../../types'
 import { resolveFurniture } from '../../domain/furniture/geometry'
 import type { FurnitureProject } from '../../domain/furniture/types'
@@ -57,7 +57,7 @@ function IssueBadge({ summary }: { summary: FurnitureSummary }) {
   return <span className={`furniture-issue-badge ${errors ? 'error' : 'warning'}`}><TriangleAlert size={13} aria-hidden="true" />{count} {noun}{count === 1 ? '' : 's'}</span>
 }
 
-export function FurnitureGallery({ projects, woods, allowances, onCreate, onOpen, onDuplicate, onDelete }: {
+export function FurnitureGallery({ projects, woods, allowances, onCreate, onOpen, onDuplicate, onDelete, onImportProject }: {
   projects: FurnitureProject[]
   woods: WoodSpecies[]
   allowances: BuildAllowances
@@ -65,9 +65,15 @@ export function FurnitureGallery({ projects, woods, allowances, onCreate, onOpen
   onOpen: (id: string) => void
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
+  onImportProject: (file: File | undefined) => void
 }) {
   const [creating, setCreating] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   return <div className="board-gallery furniture-gallery">
+    <div className="gallery-actions">
+      <button type="button" className="button secondary" onClick={() => fileRef.current?.click()}><Upload size={15} />Import project</button>
+      <input ref={fileRef} type="file" accept="application/json,.json" hidden aria-label="Project file" onChange={e => { onImportProject(e.target.files?.[0]); e.currentTarget.value = '' }} />
+    </div>
     <div className="gallery-grid">
       <button type="button" className="gallery-card gallery-new" onClick={() => setCreating(true)}>
         <span className="gallery-plus" aria-hidden="true">＋</span>

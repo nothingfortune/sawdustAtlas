@@ -29,17 +29,18 @@
     "@fontsource/newsreader": "^5.3.0",
     "@react-three/fiber": "^9.8.1",
     "@vitejs/plugin-react": "^6.1.2",
-    "lucide-react": "^1.52.0",
+    "lucide-react": "^1.54.0",
+    "qrcode-generator": "2.0.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "^0.186.1",
     "typescript": "^6.0.3",
-    "vite": "^8.3.3"
+    "vite": "^8.3.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",

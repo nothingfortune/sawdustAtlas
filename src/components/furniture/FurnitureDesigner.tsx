@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, X } from 'lucide-react'
+import { ArrowLeft, Download, Share2, X } from 'lucide-react'
 import type { BoardProject, BuildAllowances, WoodSpecies } from '../../types'
 import { pickPart } from '../../domain/furniture/arrange'
 import { addPart, duplicatePart, partTitle, removePart } from '../../domain/furniture/editing'
@@ -38,7 +38,7 @@ const LEFT_TABS: readonly { id: LeftTab; label: string }[] = [
 // settings), the design area, and the part inspector. The project is resolved and validated
 // once per change; every edit goes up through `onChange`, which commits it as one
 // undoable change and stamps updatedAt.
-export function FurnitureDesigner({ project, woods, boards, allowances, focusId, onChange, onBack }: {
+export function FurnitureDesigner({ project, woods, boards, allowances, focusId, onChange, onExportProject, onShareProject, onBack }: {
   project: FurnitureProject
   woods: WoodSpecies[]
   /** Every board in the workspace; the plan generator's context. */
@@ -47,6 +47,8 @@ export function FurnitureDesigner({ project, woods, boards, allowances, focusId,
   /** A part id (from the warning center) to select on open. */
   focusId?: string
   onChange: (project: FurnitureProject) => void
+  onExportProject: () => void
+  onShareProject: () => void
   onBack: () => void
 }) {
   const { lengthUnit } = useUnitSystem()
@@ -123,6 +125,8 @@ export function FurnitureDesigner({ project, woods, boards, allowances, focusId,
       <button type="button" className="furniture-issue-count" aria-expanded={showIssues} aria-controls="furniture-issues" onClick={() => setShowIssues(open => !open)}>
         {issues.length} issue{issues.length === 1 ? '' : 's'}{errors > 0 ? ` (${errors} error${errors === 1 ? '' : 's'})` : ''}
       </button>
+      <button type="button" className="button secondary" onClick={onExportProject} aria-label="Export project file"><Download size={15} />Export project</button>
+      <button type="button" className="button secondary" onClick={onShareProject} aria-label="Share project"><Share2 size={15} />Share</button>
     </header>
     {showIssues && <section id="furniture-issues" className="furniture-issues-popover" aria-label="Issues">
       <header>

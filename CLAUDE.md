@@ -194,9 +194,9 @@ reports when no review arrives. The loop, in order:
 1. `bin/await-codex-review.sh [PR]` and `bin/await-copilot-review.sh [PR]` — request (Copilot
    only; Codex cannot be requested) and poll for reviews. Both print inline findings **and**
    findings hidden in collapsed "Suppressed comments" blocks, which never appear in the comments
-   API. A clean Codex review leaves no inline comment, so confirm completion from the
-   `codex-review-state:v1` JSON in Codex's summary comment (`commit_sha` equals the head,
-   `status` is `completed`).
+   API. The Codex awaiter waits until the `codex-review-state:v1` marker in Codex's summary
+   comment names the current head as `completed`, then prints only that head's findings, so a
+   clean review reads as clean and an earlier push's findings are not shown again.
 2. Address every finding; reply in each thread
    (`gh api repos/<repo>/pulls/<pr>/comments/<id>/replies -f body=...`). For each finding's bug
    class, `search_lessons`, then `add_origin` to the matching lesson or `add_lesson` for a new

@@ -45,8 +45,9 @@ NOTE="${ARGS[1]:-}"
 read -r REPO PR < <(pr_resolve_repo_and_number "pr-reviews-done" "${ARGS[0]:-}") || exit 2
 
 # A failed comment fetch must not read as "0 unaddressed", or the gate passes without checking threads.
-if reviewcomments="$(gh api "repos/$REPO/pulls/$PR/comments" --paginate 2>/dev/null)"; then
-  unaddressed_n="$(printf '%s' "$reviewcomments" | jq -s 'add // []' | unaddressed_bot_threads | grep -c . || true)"
+if reviewcomments="$(gh api "repos/$REPO/pulls/$PR/comments" --paginate 2>/dev/null)" \
+  && threads="$(printf '%s' "$reviewcomments" | jq -s 'add // []' | unaddressed_bot_threads)"; then
+  unaddressed_n="$(printf '%s' "$threads" | grep -c . || true)"
 else
   unaddressed_n="?"   # fetch failed → unknown; treated as not-ready in the verdict below
 fi
@@ -80,7 +81,7 @@ fi
 
 # Refuse before the lessons gate: a takeaway cannot honestly be written for an unread finding.
 if [ "$unaddressed_n" = "?" ]; then
-  echo "Refusing to post: could not fetch review comments for $REPO PR #$PR, so unaddressed" >&2
+  echo "Refusing to post: could not fetch or parse review comments for $REPO PR #$PR, so unaddressed" >&2
   echo "threads are UNKNOWN. A failed fetch is never 'nothing to address'. Retry once the API answers." >&2
   exit 3
 fi

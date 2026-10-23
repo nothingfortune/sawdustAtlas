@@ -25,6 +25,7 @@ pnpm typecheck           # tsc -b only
 pnpm lint                # eslint .
 pnpm test                # vitest run (unit tests in tests/)
 pnpm test:coverage       # vitest run --coverage (CI gate; thresholds below)
+pnpm test:bin            # bash tests for the bin/ review-loop scripts (tests/bin/)
 pnpm exec playwright install --with-deps chromium  # one-time prerequisite for test:e2e
 pnpm test:e2e            # playwright smoke tests in e2e/ (boots its own dev server)
 pnpm test:e2e:prod       # offline/service-worker smoke in e2e/prod/ (builds, then serves via vite preview)
@@ -44,7 +45,7 @@ docker compose up -d --build
 ```
 
 CI (`.github/workflows/ci.yml`) has four jobs. `Validate` runs typecheck → lint → `test:coverage` →
-build. `E2E` runs the Playwright suite (desktop `chromium` project plus a touch-capable `tablet`
+`test:bin` → build. `E2E` runs the Playwright suite (desktop `chromium` project plus a touch-capable `tablet`
 project) against a dev server it boots itself, then the production-build offline smoke
 (`test:e2e:prod`). Coverage is gated only on the pure logic layer
 (`src/domain/**`, `storage.ts`, `src/packages/**`, `data.ts`, `id.ts`) at lines 90 / functions 85 / branches 75 /
@@ -148,6 +149,8 @@ add or rename a field, update `normalizeData` and, if the shape changes, add a n
 - **Unit (`tests/`, Vitest):** the domain layer plus `storage`, `history`, and a couple of pure
   hooks (`usePinchPan`, `sliceDrag`). Vitest config lives in `vite.config.ts` and **excludes
   `e2e/`**.
+- **Bin scripts (`tests/bin/`, bash):** the PR review-loop scripts in `bin/`, with `gh` stubbed
+  on `PATH` so no network or PR is touched. `tests/bin/run.sh` runs every `*.test.sh`.
 - **E2E (`e2e/`, Playwright):** smoke tests for interaction bugs unit tests can't reach (pointer
   drag vs tap, SVG layout). Drives a real Chromium against a dev server it starts itself. A second
   `tablet` project (`playwright.config.ts`) re-runs the touch/pointer-sensitive specs in a
@@ -171,3 +174,40 @@ the domain it covers). `pnpm build` typechecks all of them.
   time; the Docker image strips `.git` and falls back to `BUILD_*` env vars.
 - Service worker (`public/sw.js`) registers in production builds only — never during `pnpm dev`,
   where it would mask whether the dev server is alive.
+- `.claude/settings.json` enables the `engineering-lessons` plugin
+  (`hestiamediagroup/engineering-lessons`, private). When planning, reviewing code, designing
+  tests or orchestrating subagents, use its `lessons` skill and cite lesson ids ("per L-0023").
+- The same plugin runs the `lessons` MCP server, which is where lessons go — not Claude's
+  per-machine memory. `search_lessons` / `get_lesson` read the latest lessons; `add_origin` (a
+  known bug class happened again) and `add_lesson` (a new one) write and merge them. Record a
+  lesson whenever a review finds a bug class or a bug takes long to run down, then cite the
+  returned id.
+
+## PR review loop
+
+Codex reviews PRs here when they open; for a later push, comment `@codex review`. GitHub Copilot
+has not reviewed PRs in this repo so far, but `bin/await-copilot-review.sh` requests it and
+reports when no review arrives. The loop, in order:
+
+0. Before reviewing or sweeping a diff, call `search_lessons` with the diff's bug classes and
+   areas, and check the diff against each lesson returned.
+1. `bin/await-codex-review.sh [PR]` and `bin/await-copilot-review.sh [PR]` — request (Copilot
+   only; Codex cannot be requested) and poll for reviews. Both print inline findings **and**
+   findings hidden in collapsed "Suppressed comments" blocks, which never appear in the comments
+   API. The Codex awaiter waits until the `codex-review-state:v1` marker in Codex's summary
+   comment names the current head as `completed`, then prints only that head's findings, so a
+   clean review reads as clean and an earlier push's findings are not shown again.
+2. Address every finding; reply in each thread
+   (`gh api repos/<repo>/pulls/<pr>/comments/<id>/replies -f body=...`). For each finding's bug
+   class, `search_lessons`, then `add_origin` to the matching lesson or `add_lesson` for a new
+   class.
+3. `bin/pr-unaddressed.sh [PR]` — exits non-zero while any bot thread lacks our reply. Usable as
+   a gate.
+4. `bin/pr-reviews-done.sh [PR] --lessons "..."` — posts the summary comment. It refuses (exit 3)
+   if threads lack replies, suppressed findings are unacknowledged (`--ack-suppressed` after
+   actually reading them), or a takeaway is missing when findings existed. `--lessons` names the
+   testing-strategy change that keeps the bug class from recurring and cites the lesson ids from
+   step 2 (`"L-0082: ..."`); each id must exist on the lessons repo's `main`. `"none new: <why>"`
+   is valid but must be explicit.
+
+All four fail closed: a failed API fetch is never reported as "nothing to address".

@@ -55,6 +55,9 @@ jobs:
       - name: Test
         run: pnpm test:coverage
 
+      - name: Bin script tests
+        run: pnpm test:bin
+
       - name: Build
         run: pnpm build
 

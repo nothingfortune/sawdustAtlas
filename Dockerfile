@@ -27,7 +27,7 @@ ENV BUILD_ENV=$BUILD_ENV BUILD_NUMBER=$BUILD_NUMBER BUILD_SHA=$BUILD_SHA BUILD_B
 RUN pnpm build
 
 # Unprivileged variant: runs as UID 101 (nginx), listens on 8080 instead of 80.
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:378d0c32f6562f7fd9629170797f57d2b953aa09be983b3daaf4809bb039ca00
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
 
 # The base image already switches to USER 101; apk needs root to write the
 # package db, so switch back, patch, then drop privileges again below.
